@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jornada360</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1A2346">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: "#1A2346", // Cor principal atualizada
+                            dark: "#1A2346",    // Variação escura atualizada
+                            light: "#E8EEF7",
+                        },
+                        accent: {
+                            DEFAULT: "#F8C400",
+                        },
+                        muted: {
+                            DEFAULT: "#BDC6D1",
+                            foreground: "#6B7280",
+                        },
+                        background: "#F5F7FA",
+                        card: "#FFFFFF",
+                        foreground: "#1A2346", // Cor de texto padrão atualizada
+                    },
+                    borderRadius: {
+                        xl2: "1.5rem",
+                        xl3: "2rem",
+                    },
+                    boxShadow: {
+                        card: "0 8px 16px rgba(12, 35, 68, 0.1)",
+                        soft: "0 6px 16px rgba(0,0,0,0.08)",
+                        floating: "0 18px 35px rgba(0,0,0,0.22)",
+                    },
+                    spacing: {
+                        18: "4.5rem",
+                        22: "5.5rem",
+                    },
+                    fontSize: {
+                        "title-lg": ["1.6rem", {
+                            fontWeight: "700"
+                        }],
+                        "card-label": ["0.85rem", {
+                            letterSpacing: "0.02em"
+                        }],
+                    },
+                    fontFamily: {
+                      sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+<style>
+    /* Corrige o estilo de preenchimento automático do navegador (fundo azul) */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-text-fill-color: #1A2346 !important; /* Cor do texto (escuro) */
+        -webkit-box-shadow: 0 0 0 30px white inset !important; /* Força o fundo branco */
+        background-clip: content-box !important;
+    }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.81.1",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.5",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.553.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+</head>
+<body class="bg-background">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

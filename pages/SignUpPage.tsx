@@ -1,0 +1,126 @@
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
+import { useToast } from '../hooks/useToast';
+import Jornada360Icon from '../components/ui/Jornada360Icon';
+
+const SignUpPage: React.FC = () => {
+    const navigate = useNavigate();
+    const { toast } = useToast();
+    const [nome, setNome] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSignUp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+
+        // Primeiro, tenta cadastrar o usuário.
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    nome: nome,
+                },
+            },
+        });
+
+        if (signUpError) {
+            setLoading(false);
+            toast({ title: "Erro ao cadastrar", description: signUpError.message, variant: 'destructive' });
+            return;
+        }
+
+        // Se o cadastro foi bem-sucedido, tenta fazer o login automaticamente.
+        if (signUpData.user) {
+             const { error: signInError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+            
+            setLoading(false);
+
+            if (signInError) {
+                 // Caso o login automático falhe, informa o usuário e o redireciona para a tela de login.
+                toast({ title: "Cadastro realizado!", description: "Sua conta foi criada, mas o login automático falhou. Por favor, faça o login.", variant: 'destructive' });
+                navigate('/login');
+            } else {
+                // Se o login for bem-sucedido, redireciona para a home.
+                toast({ title: `Bem-vindo(a), ${nome.split(' ')[0]}!`, description: "Sua conta foi criada e você já está conectado." });
+                navigate('/');
+            }
+        } else {
+             setLoading(false);
+             toast({ title: "Erro inesperado", description: "Não foi possível completar o cadastro. Tente novamente.", variant: 'destructive' });
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
+            <div className="max-w-sm mx-auto px-6 w-full">
+                <div className="mb-8 text-center flex flex-col items-center">
+                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
+                    <h1 className="text-2xl font-bold text-white">Criar Conta</h1>
+                </div>
+
+                <div className="bg-card rounded-3xl shadow-card p-6 space-y-5">
+                    <h2 className="text-xl font-bold text-primary-dark">Preencha seus dados</h2>
+                    <form onSubmit={handleSignUp} className="space-y-4">
+                        <div>
+                            <label className="text-xs font-medium text-muted-foreground">Nome completo</label>
+                            <input
+                                type="text"
+                                value={nome}
+                                onChange={(e) => setNome(e.target.value)}
+                                required
+                                className="w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition"
+                                placeholder="Seu nome"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-muted-foreground">Email</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition"
+                                placeholder="seu@email.com"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-muted-foreground">Senha</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                minLength={6}
+                                className="w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition"
+                                placeholder="Mínimo 6 caracteres"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-accent text-primary-dark font-bold py-3 rounded-lg hover:bg-opacity-90 transition-colors disabled:bg-opacity-50 flex items-center justify-center"
+                        >
+                             {loading ? <div className="w-5 h-5 border-2 border-t-transparent border-primary-dark rounded-full animate-spin"></div> : 'Criar conta'}
+                        </button>
+                    </form>
+                </div>
+
+                <p className="mt-6 text-center text-sm text-gray-400">
+                    Já tem uma conta?{' '}
+                    <Link to="/login" className="text-accent font-semibold hover:underline">
+                        Faça login
+                    </Link>
+                </p>
+            </div>
+        </div>
+    );
+};
+
+export default SignUpPage;
