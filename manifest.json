@@ -4,20 +4,15 @@
   "description": "Controle sua jornada de trabalho de motorista com facilidade.",
   "icons": [
     {
-      "src": "/assets/logo.png",
-      "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/assets/logo.png",
-      "type": "image/png",
-      "sizes": "512x512",
+      "src": "data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNTAgNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iI0Y4QzQwMCI+PHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0yNSA1MEMzOC44MDcxIDUwIDUwIDM4LjgwNzEgNTAgMjVDNTAgMTEuMTkyOSAzOC44MDcxIDAgMjUgMEMxMS4xOTI5IDAgMCAxMS4xOTI5IDAgMjVDMCAzOC44MDcxIDExLjE5MjkgNTAgMjUgNTBaTTI1IDQ1QzM2LjA0NTcgNDUgNDUgMzYuMDQ1NyA0NSAyNUM0NSAxMy45NTQzIDM2LjA0NTcgNSAyNSA1QzEzLjk1NDMgNSAyNSAxMy45NTQzIDUgMjVDNSAzNi4wNDU3IDEzLjk1NDMgNDUgMjUgNDVaIiAvPjxwYXRoIGQ9Ik0yMyAxMVYyNkgzOFYyMUgyOFYxMUgyM1oiIC8+PHBhdGggZD0iTTE4IDIzQzE5LjEwNDYgMjMgMjAgMjMuODk1NCAyMCAyNUMyMCAyNi4xMDQ2IDE5LjEwNDYgMjcgMTggMjdDMTYuODk1NCAyNyAxNiAyNi4xMDQ2IDE2IDI1QzE2IDIzLjg5NTQgMTYuODk1NCAyMyAxOCAyM1oiIC8+PHBhdGggZD0iTTE4LjgxNDMgMzNMMTMuNSA0NEgxOUwyMi4yNTcxIDM2LjVIMjcuNzQyOUwzMSA0NEgzNi41TDMxLjE4NTcgMzNIMTguODE0M1oiIC8+PHBhdGggZD0iTTIzLjUgMzdIMjYuNUwyNSA0MS41TDIzLjUgMzdaIiAvPjwvc3ZnPg==",
+      "type": "image/svg+xml",
+      "sizes": "any",
       "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
+  "scope": "/",
   "theme_color": "#1A2346",
   "background_color": "#F5F7FA"
 }

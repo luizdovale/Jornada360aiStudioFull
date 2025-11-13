@@ -1,10 +1,11 @@
-
 // service-worker.js
 const CACHE_NAME = 'jornada360-v1';
 // Lista de arquivos para o cache inicial do "app shell".
 const APP_SHELL_URLS = [
     '/',
-    '/index.html'
+    '/index.html',
+    '/index.tsx',
+    '/manifest.json'
 ];
 
 // Evento de instalação do Service Worker
