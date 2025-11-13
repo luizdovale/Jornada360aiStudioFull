@@ -1,14 +1,18 @@
-
 import React, { useState, useMemo } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getMonthSummary, calculateJourney, formatMinutesToHours } from '../lib/utils';
 import { FileDown } from 'lucide-react';
+import PdfPreviewModal from '../components/ui/PdfPreviewModal'; // Importando o novo modal
 
 const ReportsPage: React.FC = () => {
     const { journeys, settings } = useJourneys();
     const { user } = useAuth();
     
+    // Estados para o modal de pré-visualização
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');
+
     const getCurrentAccountingPeriod = () => {
         if (!settings) {
             const today = new Date();
@@ -47,7 +51,7 @@ const ReportsPage: React.FC = () => {
     }, [journeys, startDate, endDate]);
 
 
-    const generatePdf = () => {
+    const generateAndPreviewPdf = () => {
         if (!filteredJourneys.length || !settings) {
             alert('Não há dados no período selecionado para gerar o relatório.');
             return;
@@ -60,7 +64,7 @@ const ReportsPage: React.FC = () => {
         const userName = user?.user_metadata?.nome || 'Usuário';
         const period = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
 
-        // Cabeçalho ainda mais compacto
+        // Cabeçalho
         doc.setFontSize(14);
         doc.setTextColor("#0C2344");
         doc.text("Relatório de Jornada", 15, 15);
@@ -68,27 +72,24 @@ const ReportsPage: React.FC = () => {
         doc.setTextColor("#6B7280");
         doc.text(`${userName} | ${period}`, 15, 21);
 
-
-        // Resumo simplificado
+        // Resumo
         const summary = getMonthSummary(filteredJourneys, settings);
         doc.setFontSize(12);
         doc.setTextColor("#0C2344");
         doc.text("Resumo do Período", 15, 32);
-
         const summaryText = `
 - Dias Trabalhados: ${summary.totalDiasTrabalhados}
 - Horas Extras (50%): ${formatMinutesToHours(summary.horasExtras50)}
 - Horas Extras (100%): ${formatMinutesToHours(summary.horasExtras100)}
-- KM Rodados: ${summary.kmRodados.toFixed(1)} km
-        `;
+${settings.kmEnabled ? `- KM Rodados: ${summary.kmRodados.toFixed(1)} km` : ''}
+        `.trim();
         doc.setFontSize(10);
         doc.setTextColor("#374151");
-        doc.text(summaryText.trim(), 15, 39);
+        doc.text(summaryText, 15, 39);
 
-        // Tabela de Jornadas otimizada
+        // Tabela de Jornadas
         const tableColumn = ["Data", "Início", "Fim", "Total", "HE 50%", "HE 100%", "KM", "RV", "Observações"];
         const tableRows: (string | number)[][] = [];
-
         const sortedJourneys = [...filteredJourneys].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         sortedJourneys.forEach(journey => {
@@ -100,7 +101,7 @@ const ReportsPage: React.FC = () => {
                 formatMinutesToHours(calcs.totalTrabalhado),
                 formatMinutesToHours(calcs.horasExtras50),
                 formatMinutesToHours(calcs.horasExtras100),
-                calcs.kmRodados.toFixed(1),
+                settings.kmEnabled ? calcs.kmRodados.toFixed(1) : '-',
                 journey.rvNumber || '-',
                 journey.notes || '-',
             ];
@@ -115,9 +116,7 @@ const ReportsPage: React.FC = () => {
             theme: 'grid',
             headStyles: { fillColor: "#0C2344" },
             styles: { fontSize: 8 },
-            columnStyles: {
-                8: { cellWidth: 'auto' } // Coluna de Observações
-            }
+            columnStyles: { 8: { cellWidth: 'auto' } }
         });
 
         // Rodapé
@@ -130,7 +129,10 @@ const ReportsPage: React.FC = () => {
             doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 15, 287);
         }
 
-        doc.save(`relatorio_jornada360_${new Date().toISOString().split('T')[0]}.pdf`);
+        // Gera a Data URI e abre o modal
+        const pdfDataUri = doc.output('datauristring');
+        setPdfPreviewUrl(pdfDataUri);
+        setIsModalOpen(true);
     };
     
     const inputStyle = "w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition";
@@ -154,15 +156,23 @@ const ReportsPage: React.FC = () => {
                 </div>
                 <div className="text-center">
                     <button
-                        onClick={generatePdf}
+                        onClick={generateAndPreviewPdf}
                         disabled={!filteredJourneys.length}
                         className="inline-flex items-center gap-2 justify-center rounded-lg border border-transparent bg-primary py-3 px-6 text-base font-medium text-white shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:bg-opacity-50"
                     >
                         <FileDown className="w-5 h-5" />
-                        Baixar Relatório ({filteredJourneys.length} {filteredJourneys.length === 1 ? 'dia' : 'dias'})
+                        Gerar Relatório ({filteredJourneys.length} {filteredJourneys.length === 1 ? 'dia' : 'dias'})
                     </button>
                 </div>
             </div>
+
+            {/* Inclusão do modal de preview */}
+            <PdfPreviewModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                pdfUrl={pdfPreviewUrl}
+                fileName={`relatorio_${user?.user_metadata?.nome?.split(' ')[0].toLowerCase() || 'jornada360'}_${startDate}_a_${endDate}.pdf`}
+            />
         </div>
     );
 };
