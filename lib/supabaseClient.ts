@@ -63,7 +63,11 @@ if (isPlaceholder) {
 
         const mockQueryBuilder = (tableName) => ({
             select: function(columns = '*') {
-                this._query = { type: 'select', table: tableName, columns, filters: [] };
+                // CORREÇÃO: Esta função pode iniciar uma query OU especificar o retorno de um upsert/insert.
+                // Se uma query de modificação já foi definida, não sobrescrevemos seu tipo.
+                if (!this._query || this._query.type === 'select') {
+                    this._query = { type: 'select', table: tableName, columns, filters: [] };
+                }
                 return this;
             },
             insert: function(data) {
@@ -151,9 +155,9 @@ if (isPlaceholder) {
                                 resultData = updatedItem;
                             } else {
                                 // Insert
-                                const newItem = { ...this._query.data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
-                                db[this._query.table].push(newItem);
-                                resultData = newItem;
+                                const newItemUpsert = { ...this._query.data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+                                db[this._query.table].push(newItemUpsert);
+                                resultData = newItemUpsert;
                             }
                             saveDb(db);
                             break;

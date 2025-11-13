@@ -86,7 +86,7 @@ const ProfilePage: React.FC = () => {
                         />
                     </div>
                     <div className="text-right">
-                        <button type="submit" disabled={nameLoading} className="inline-flex justify-center rounded-md border border-transparent bg-accent text-primary-dark py-2 px-4 text-sm font-bold shadow-sm hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50">
+                        <button type="submit" disabled={nameLoading} className="inline-flex justify-center rounded-md border border-transparent bg-primary-medium text-primary-dark py-2 px-4 text-sm font-bold shadow-sm hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 transition-transform active:scale-[0.98]">
                             {nameLoading ? 'Salvando...' : 'Salvar Nome'}
                         </button>
                     </div>
@@ -119,7 +119,7 @@ const ProfilePage: React.FC = () => {
                         />
                     </div>
                      <div className="text-right">
-                        <button type="submit" disabled={passwordLoading} className="inline-flex justify-center rounded-md border border-transparent bg-accent text-primary-dark py-2 px-4 text-sm font-bold shadow-sm hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50">
+                        <button type="submit" disabled={passwordLoading} className="inline-flex justify-center rounded-md border border-transparent bg-primary-medium text-primary-dark py-2 px-4 text-sm font-bold shadow-sm hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 transition-transform active:scale-[0.98]">
                             {passwordLoading ? 'Alterando...' : 'Alterar Senha'}
                         </button>
                     </div>

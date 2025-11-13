@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Journey, Settings } from '../types';
@@ -17,7 +16,7 @@ interface JourneyContextType {
     addJourney: (journey: Omit<Journey, 'id' | 'user_id'>) => Promise<boolean>;
     updateJourney: (journey: Journey) => Promise<boolean>;
     deleteJourney: (id: string) => Promise<boolean>;
-    saveSettings: (settings: Omit<Settings, 'user_id'>) => Promise<boolean>;
+    saveSettings: (settings: Omit<Settings, 'user_id' | 'id'>) => Promise<boolean>;
 }
 
 const JourneyContext = createContext<JourneyContextType | undefined>(undefined);

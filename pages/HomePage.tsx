@@ -113,7 +113,7 @@ const HomePage: React.FC = () => {
                     ) : (
                         <div className="text-center py-8">
                             <p className="text-muted-foreground mb-4">Complete suas configurações para ver o resumo.</p>
-                            <button onClick={() => navigate('/settings')} className="bg-accent text-primary font-bold py-2 px-4 rounded-lg">Configurar agora</button>
+                            <button onClick={() => navigate('/settings')} className="bg-primary-medium text-primary-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform active:scale-[0.98]">Configurar agora</button>
                         </div>
                     )}
                 </OverlappingCard>

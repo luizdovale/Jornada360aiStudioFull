@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
@@ -153,7 +152,7 @@ const SettingsPage: React.FC = () => {
                     </div>
                     
                     <div className="pt-4 text-right">
-                        <button type="submit" disabled={loading} className="inline-flex justify-center rounded-md border border-transparent bg-accent text-primary-dark font-bold py-2 px-4 text-sm shadow-sm hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50">
+                        <button type="submit" disabled={loading} className="inline-flex justify-center rounded-md border border-transparent bg-primary-medium text-primary-dark font-bold py-2 px-4 text-sm shadow-sm hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 transition-transform active:scale-[0.98]">
                             {loading ? 'Salvando...' : 'Salvar Alterações'}
                         </button>
                     </div>

@@ -66,7 +66,7 @@ const LoginPage: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-accent text-primary-dark font-bold py-3 rounded-lg hover:bg-opacity-90 transition-colors disabled:bg-opacity-50 flex items-center justify-center"
+                            className="w-full bg-primary-medium text-primary-dark font-bold py-3 rounded-lg hover:brightness-95 transition-transform active:scale-[0.98] disabled:opacity-50 flex items-center justify-center"
                         >
                             {loading ? <div className="w-5 h-5 border-2 border-t-transparent border-primary-dark rounded-full animate-spin"></div> : 'Entrar'}
                         </button>
@@ -77,6 +77,11 @@ const LoginPage: React.FC = () => {
                     Não tem conta?{' '}
                     <Link to="/cadastro" className="text-accent font-semibold hover:underline">
                         Cadastre-se
+                    </Link>
+                </p>
+                 <p className="mt-2 text-center text-sm text-gray-400">
+                    <Link to="/recuperar-senha" className="text-gray-500 hover:underline">
+                        Esqueceu a senha?
                     </Link>
                 </p>
             </div>

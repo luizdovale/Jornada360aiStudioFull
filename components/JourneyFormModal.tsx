@@ -199,7 +199,7 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                 <div className="p-6 border-t mt-auto bg-gray-50 flex-shrink-0">
                     <div className="flex justify-end gap-3">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors">Cancelar</button>
-                        <button type="submit" form="journey-form" disabled={loading} className="px-4 py-2 bg-accent text-primary-dark font-bold rounded-lg disabled:bg-opacity-50 flex items-center justify-center min-w-[100px] hover:bg-opacity-90 transition-colors">
+                        <button type="submit" form="journey-form" disabled={loading} className="px-4 py-2 bg-primary-medium text-primary-dark font-bold rounded-lg disabled:opacity-50 flex items-center justify-center min-w-[100px] hover:brightness-95 transition-transform active:scale-[0.98]">
                             {loading ? <div className="w-5 h-5 border-2 border-t-transparent border-primary-dark rounded-full animate-spin"></div> : 'Salvar'}
                         </button>
                     </div>
