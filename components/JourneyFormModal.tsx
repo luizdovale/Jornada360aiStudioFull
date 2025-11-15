@@ -21,14 +21,14 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
     const { toast } = useToast();
     const [formData, setFormData] = useState<Omit<Journey, 'id' | 'user_id'>>({
         date: new Date().toISOString().split('T')[0],
-        startAt: '08:00',
-        endAt: '18:00',
-        mealDuration: 60,
-        restDuration: 0,
-        isFeriado: false,
-        kmStart: 0,
-        kmEnd: 0,
-        rvNumber: '',
+        start_at: '08:00',
+        end_at: '18:00',
+        meal_duration: 60,
+        rest_duration: 0,
+        is_feriado: false,
+        km_start: 0,
+        km_end: 0,
+        rv_number: '',
         notes: '',
     });
     const [loading, setLoading] = useState(false);
@@ -37,28 +37,28 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         if (journey) {
             setFormData({
                 date: journey.date,
-                startAt: journey.startAt,
-                endAt: journey.endAt,
-                mealDuration: journey.mealDuration,
-                restDuration: journey.restDuration || 0,
-                isFeriado: journey.isFeriado,
-                kmStart: journey.kmStart || 0,
-                kmEnd: journey.kmEnd || 0,
-                rvNumber: journey.rvNumber || '',
+                start_at: journey.start_at,
+                end_at: journey.end_at,
+                meal_duration: journey.meal_duration,
+                rest_duration: journey.rest_duration || 0,
+                is_feriado: journey.is_feriado,
+                km_start: journey.km_start || 0,
+                km_end: journey.km_end || 0,
+                rv_number: journey.rv_number || '',
                 notes: journey.notes || '',
             });
         } else {
              // Reseta o formulário para um novo registro
              setFormData({
                 date: new Date().toISOString().split('T')[0],
-                startAt: '08:00',
-                endAt: '18:00',
-                mealDuration: 60,
-                restDuration: 0,
-                isFeriado: false,
-                kmStart: 0,
-                kmEnd: 0,
-                rvNumber: '',
+                start_at: '08:00',
+                end_at: '18:00',
+                meal_duration: 60,
+                rest_duration: 0,
+                is_feriado: false,
+                km_start: 0,
+                km_end: 0,
+                rv_number: '',
                 notes: '',
             });
         }
@@ -75,8 +75,8 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
     };
 
     const validateForm = () => {
-        const startMinutes = timeToMinutes(formData.startAt);
-        const endMinutes = timeToMinutes(formData.endAt);
+        const startMinutes = timeToMinutes(formData.start_at);
+        const endMinutes = timeToMinutes(formData.end_at);
         
         // CORREÇÃO: A lógica anterior bloqueava incorretamente o caso em que a hora final
         // é EXATAMENTE IGUAL à hora inicial. Esta correção permite o registro de
@@ -90,8 +90,8 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         }
         
         if (settings?.km_enabled) {
-            const kmStart = Number(formData.kmStart) || 0;
-            const kmEnd = Number(formData.kmEnd) || 0;
+            const kmStart = Number(formData.km_start) || 0;
+            const kmEnd = Number(formData.km_end) || 0;
             if (kmEnd > 0 && kmEnd < kmStart) {
                 toast({ title: 'KM Inválido', description: 'A quilometragem final não pode ser menor que a inicial.', variant: 'destructive' });
                 return false;
@@ -108,10 +108,10 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         setLoading(true);
         const dataToSave = {
             ...formData,
-            mealDuration: Number(formData.mealDuration),
-            restDuration: Number(formData.restDuration),
-            kmStart: Number(formData.kmStart),
-            kmEnd: Number(formData.kmEnd),
+            meal_duration: Number(formData.meal_duration),
+            rest_duration: Number(formData.rest_duration),
+            km_start: Number(formData.km_start),
+            km_end: Number(formData.km_end),
         };
         
         let success;
@@ -150,46 +150,46 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                              <div>
                                 <label className="text-xs font-medium text-muted-foreground">Feriado?</label>
                                 <div className="mt-1 p-3 flex items-center h-[50px] bg-white border border-gray-200 rounded-lg">
-                                    <input type="checkbox" id="isFeriado" name="isFeriado" checked={formData.isFeriado} onChange={handleChange} className="h-5 w-5 rounded text-primary focus:ring-primary" />
-                                    <label htmlFor="isFeriado" className="ml-2 text-gray-700 text-sm">Sim, foi feriado</label>
+                                    <input type="checkbox" id="is_feriado" name="is_feriado" checked={formData.is_feriado} onChange={handleChange} className="h-5 w-5 rounded text-primary focus:ring-primary" />
+                                    <label htmlFor="is_feriado" className="ml-2 text-gray-700 text-sm">Sim, foi feriado</label>
                                 </div>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-xs font-medium text-muted-foreground">Início</label>
-                                <input type="time" name="startAt" value={formData.startAt} onChange={handleChange} required className={inputStyle} />
+                                <input type="time" name="start_at" value={formData.start_at} onChange={handleChange} required className={inputStyle} />
                             </div>
                             <div>
                                 <label className="text-xs font-medium text-muted-foreground">Fim</label>
-                                <input type="time" name="endAt" value={formData.endAt} onChange={handleChange} required className={inputStyle} />
+                                <input type="time" name="end_at" value={formData.end_at} onChange={handleChange} required className={inputStyle} />
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                              <div>
                                 <label className="text-xs font-medium text-muted-foreground">Refeição (min)</label>
-                                <input type="number" name="mealDuration" value={formData.mealDuration} onChange={handleChange} required className={inputStyle} />
+                                <input type="number" name="meal_duration" value={formData.meal_duration} onChange={handleChange} required className={inputStyle} />
                             </div>
                              <div>
                                 <label className="text-xs font-medium text-muted-foreground">Descanso (min)</label>
-                                <input type="number" name="restDuration" value={formData.restDuration} onChange={handleChange} className={inputStyle} />
+                                <input type="number" name="rest_duration" value={formData.rest_duration} onChange={handleChange} className={inputStyle} />
                             </div>
                         </div>
                         {settings?.km_enabled && (
                          <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-xs font-medium text-muted-foreground">KM Inicial</label>
-                                <input type="number" step="0.1" name="kmStart" value={formData.kmStart} onChange={handleChange} className={inputStyle} />
+                                <input type="number" step="0.1" name="km_start" value={formData.km_start} onChange={handleChange} className={inputStyle} />
                             </div>
                              <div>
                                 <label className="text-xs font-medium text-muted-foreground">KM Final</label>
-                                <input type="number" step="0.1" name="kmEnd" value={formData.kmEnd} onChange={handleChange} className={inputStyle} />
+                                <input type="number" step="0.1" name="km_end" value={formData.km_end} onChange={handleChange} className={inputStyle} />
                             </div>
                         </div>
                         )}
                         <div>
                             <label className="text-xs font-medium text-muted-foreground">Nº do RV (opcional)</label>
-                            <input type="text" name="rvNumber" value={formData.rvNumber} onChange={handleChange} className={inputStyle} />
+                            <input type="text" name="rv_number" value={formData.rv_number} onChange={handleChange} className={inputStyle} />
                         </div>
                         <div>
                             <label className="text-xs font-medium text-muted-foreground">Notas (opcional)</label>

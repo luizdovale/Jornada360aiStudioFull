@@ -18,8 +18,8 @@ const timeToMinutes = (timeString: string): number => {
  * @returns Um objeto com os totais calculados para a jornada
  */
 export const calculateJourney = (journey: Journey, settings: Settings): JourneyCalculations => {
-    const startMinutes = timeToMinutes(journey.startAt);
-    const endMinutes = timeToMinutes(journey.endAt);
+    const startMinutes = timeToMinutes(journey.start_at);
+    const endMinutes = timeToMinutes(journey.end_at);
 
     let diffMinutes = endMinutes - startMinutes;
     // Lida com jornadas que cruzam a meia-noite
@@ -27,19 +27,19 @@ export const calculateJourney = (journey: Journey, settings: Settings): JourneyC
         diffMinutes += 24 * 60;
     }
 
-    const totalTrabalhado = diffMinutes - (journey.mealDuration || 0) - (journey.restDuration || 0);
+    const totalTrabalhado = diffMinutes - (journey.meal_duration || 0) - (journey.rest_duration || 0);
     const jornadaBase = settings.jornada_base || 480; // Padrão de 8h se não configurado
     
     let horasExtras50 = 0;
     let horasExtras100 = 0;
 
-    if (journey.isFeriado) {
+    if (journey.is_feriado) {
         horasExtras100 = totalTrabalhado;
     } else if (totalTrabalhado > jornadaBase) {
         horasExtras50 = totalTrabalhado - jornadaBase;
     }
 
-    const kmRodados = (journey.kmEnd || 0) - (journey.kmStart || 0);
+    const kmRodados = (journey.km_end || 0) - (journey.km_start || 0);
 
     return {
         totalTrabalhado,

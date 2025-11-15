@@ -4,17 +4,17 @@ export interface Journey {
   id: string;
   user_id: string;
   date: string; // YYYY-MM-DD
-  startAt: string; // HH:mm
-  endAt: string; // HH:mm
-  mealDuration: number; // in minutes
-  restDuration?: number; // in minutes
-  isFeriado: boolean;
-  kmStart?: number;
-  kmEnd?: number;
-  rvNumber?: string;
+  start_at: string; // HH:mm
+  end_at: string; // HH:mm
+  meal_duration: number; // in minutes
+  rest_duration?: number; // in minutes
+  is_feriado: boolean;
+  km_start?: number;
+  km_end?: number;
+  rv_number?: string;
   notes?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Settings {

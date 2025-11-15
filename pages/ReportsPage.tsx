@@ -96,13 +96,13 @@ ${settings.km_enabled ? `- KM Rodados: ${summary.kmRodados.toFixed(1)} km` : ''}
             const calcs = calculateJourney(journey, settings);
             const journeyData = [
                 new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'),
-                journey.startAt,
-                journey.endAt,
+                journey.start_at,
+                journey.end_at,
                 formatMinutesToHours(calcs.totalTrabalhado),
                 formatMinutesToHours(calcs.horasExtras50),
                 formatMinutesToHours(calcs.horasExtras100),
                 settings.km_enabled ? calcs.kmRodados.toFixed(1) : '-',
-                journey.rvNumber || '-',
+                journey.rv_number || '-',
                 journey.notes || '-',
             ];
             tableRows.push(journeyData);

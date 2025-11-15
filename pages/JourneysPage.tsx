@@ -39,12 +39,12 @@ const JourneyItem: React.FC<{
                         <p className="text-xl font-bold text-primary-dark">{day}</p>
                     </div>
                     <div>
-                        <p className={`font-bold ${journey.isFeriado ? 'text-yellow-600' : 'text-primary-dark'}`}>
-                            {journey.isFeriado ? 'Feriado' : 'Dia Normal'}
+                        <p className={`font-bold ${journey.is_feriado ? 'text-yellow-600' : 'text-primary-dark'}`}>
+                            {journey.is_feriado ? 'Feriado' : 'Dia Normal'}
                         </p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Clock className="w-4 h-4" />
-                            <span>{journey.startAt} - {journey.endAt}</span>
+                            <span>{journey.start_at} - {journey.end_at}</span>
                         </div>
                     </div>
                 </div>
@@ -79,10 +79,10 @@ const JourneyItem: React.FC<{
                 </div>
 
                 <div className="space-y-2 text-sm text-muted-foreground">
-                    {(journey.rvNumber) && (
+                    {(journey.rv_number) && (
                          <div className="flex items-start gap-2">
                             <FileText className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
-                            <p><span className="font-semibold text-primary-dark">RV:</span> {journey.rvNumber}</p>
+                            <p><span className="font-semibold text-primary-dark">RV:</span> {journey.rv_number}</p>
                         </div>
                     )}
                      {(journey.notes) && (
