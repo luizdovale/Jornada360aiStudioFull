@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
-import { getMonthSummary, formatMinutesToHours, calculateJourney } from '../lib/utils';
+import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysForDisplayMonth } from '../lib/utils';
 import OverlappingCard from '../components/ui/OverlappingCard';
 import Skeleton from '../components/ui/Skeleton';
-import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks } from 'lucide-react';
+import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft } from 'lucide-react';
 import { MonthSummary, Journey } from '../types';
 
 const SummaryItem: React.FC<{ label: string; value: string; colorClass?: string }> = ({ label, value, colorClass = 'text-white' }) => (
@@ -88,6 +88,7 @@ const HomePageSkeleton: React.FC = () => (
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
     const { journeys, settings, loading } = useJourneys();
+    const [displayDate, setDisplayDate] = useState(new Date());
 
     const recentJourneys = React.useMemo(() => {
         return [...journeys]
@@ -97,24 +98,42 @@ const HomePage: React.FC = () => {
 
     const summary: MonthSummary = React.useMemo(() => {
         if (!settings) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0, totalDiasTrabalhados: 0 };
-        const now = new Date();
-        const startDay = settings.month_start_day || 1;
         
-        let startDate = new Date(now.getFullYear(), now.getMonth(), startDay);
-        if(now.getDate() < startDay) {
-            startDate = new Date(now.getFullYear(), now.getMonth() - 1, startDay);
-        }
-        
-        let endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDay -1);
-        
-        const currentMonthJourneys = journeys.filter(j => {
-            const journeyDate = new Date(j.date + 'T00:00:00');
-            return journeyDate >= startDate && journeyDate <= endDate;
-        });
+        // Usa a nova função utilitária para filtrar as jornadas para o mês exibido
+        const currentMonthJourneys = getJourneysForDisplayMonth(journeys, displayDate, settings);
         
         return getMonthSummary(currentMonthJourneys, settings);
-    }, [journeys, settings]);
+    }, [journeys, settings, displayDate]);
 
+    const handlePrevMonth = () => {
+        setDisplayDate(current => {
+            const newDate = new Date(current);
+            newDate.setMonth(newDate.getMonth() - 1);
+            return newDate;
+        });
+    };
+
+    const handleNextMonth = () => {
+        setDisplayDate(current => {
+            const newDate = new Date(current);
+            newDate.setMonth(newDate.getMonth() + 1);
+            return newDate;
+        });
+    };
+    
+    const isCurrentAccountingMonth = () => {
+        if (!settings) return false;
+        const now = new Date();
+        const startDay = settings.month_start_day || 1;
+        let currentMonthStartDate = new Date(now.getFullYear(), now.getMonth(), startDay);
+        if (now.getDate() < startDay) {
+            currentMonthStartDate.setMonth(currentMonthStartDate.getMonth() - 1);
+        }
+        return currentMonthStartDate.getFullYear() === displayDate.getFullYear() &&
+               currentMonthStartDate.getMonth() === displayDate.getMonth();
+    };
+    
+    const formattedMonth = displayDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
     return (
         <div className="-mt-16 space-y-5 pb-4">
@@ -123,9 +142,16 @@ const HomePage: React.FC = () => {
                 <OverlappingCard>
                     {settings ? (
                         <div className="space-y-4">
-                            <div className="text-center">
-                                <span className="text-card-label font-semibold text-accent uppercase">Resumo do Mês</span>
-                                <h2 className="text-title-lg text-white">Seu Desempenho</h2>
+                             <div className="flex items-center justify-between text-center">
+                                <button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-white/10 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
+                                <div className="flex-1">
+                                    <span className="text-card-label font-semibold text-accent uppercase">Resumo do Mês</span>
+                                    <h2 className="text-title-lg text-white capitalize flex items-center justify-center gap-2">
+                                        {formattedMonth}
+                                        {isCurrentAccountingMonth() && <span className="text-xs bg-accent text-primary-dark font-bold px-2 py-0.5 rounded-full">Atual</span>}
+                                    </h2>
+                                </div>
+                                <button onClick={handleNextMonth} className="p-2 rounded-full hover:bg-white/10 transition-colors"><ChevronRight className="w-5 h-5" /></button>
                             </div>
                             <div className="grid grid-cols-3 gap-2 pt-2">
                                 <SummaryItem label="Horas" value={formatMinutesToHours(summary.totalTrabalhado)} />
