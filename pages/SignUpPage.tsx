@@ -16,8 +16,7 @@ const SignUpPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // Primeiro, tenta cadastrar o usuário.
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
@@ -27,32 +26,28 @@ const SignUpPage: React.FC = () => {
             },
         });
 
-        if (signUpError) {
-            setLoading(false);
-            toast({ title: "Erro ao cadastrar", description: signUpError.message, variant: 'destructive' });
+        setLoading(false);
+
+        if (error) {
+            toast({ title: "Erro ao cadastrar", description: error.message, variant: 'destructive' });
             return;
         }
 
-        // Se o cadastro foi bem-sucedido, tenta fazer o login automaticamente.
-        if (signUpData.user) {
-             const { error: signInError } = await supabase.auth.signInWithPassword({
-                email,
-                password,
+        // O cadastro foi bem-sucedido, mas o usuário precisa confirmar o email.
+        // A sessão (data.session) será nula se a confirmação por email estiver ativada.
+        if (data.user && !data.session) {
+            toast({ 
+                title: "Cadastro quase completo!", 
+                description: "Enviamos um link de confirmação para o seu email. Por favor, verifique sua caixa de entrada para ativar sua conta." 
             });
-            
-            setLoading(false);
-
-            if (signInError) {
-                 // Caso o login automático falhe, informa o usuário e o redireciona para a tela de login.
-                toast({ title: "Cadastro realizado!", description: "Sua conta foi criada, mas o login automático falhou. Por favor, faça o login.", variant: 'destructive' });
-                navigate('/login');
-            } else {
-                // Se o login for bem-sucedido, redireciona para a home.
-                toast({ title: `Bem-vindo(a), ${nome.split(' ')[0]}!`, description: "Sua conta foi criada e você já está conectado." });
-                navigate('/');
-            }
+            // Redireciona para a página de login para que ele possa entrar após a confirmação.
+            navigate('/login');
+        } 
+        // Este caso ocorre se a confirmação de email estiver desativada no Supabase.
+        else if (data.user && data.session) {
+            toast({ title: `Bem-vindo(a), ${nome.split(' ')[0]}!`, description: "Sua conta foi criada e você já está conectado." });
+            navigate('/'); // Redireciona para a home, pois o login foi automático.
         } else {
-             setLoading(false);
              toast({ title: "Erro inesperado", description: "Não foi possível completar o cadastro. Tente novamente.", variant: 'destructive' });
         }
     };

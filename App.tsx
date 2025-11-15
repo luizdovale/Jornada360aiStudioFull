@@ -15,8 +15,9 @@ import SettingsPage from './pages/SettingsPage';
 import ReportsPage from './pages/ReportsPage';
 import OnboardingPage from './pages/OnboardingPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import UpdatePasswordPage from './pages/UpdatePasswordPage'; // Importa a nova página
 import ProfilePage from './pages/ProfilePage';
-import CalendarPage from './pages/CalendarPage'; // Importa a nova página
+import CalendarPage from './pages/CalendarPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { Toaster } from './components/ui/Toaster';
 
@@ -29,6 +30,7 @@ const App: React.FC = () => {
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/cadastro" element={<SignUpPage />} />
                         <Route path="/recuperar-senha" element={<ForgotPasswordPage />} />
+                        <Route path="/update-password" element={<UpdatePasswordPage />} />
 
                         <Route
                             path="/"

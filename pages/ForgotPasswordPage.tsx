@@ -16,7 +16,7 @@ const ForgotPasswordPage: React.FC = () => {
         setLoading(true);
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + '/#/', // Ajuste para o seu fluxo de redefinição
+            redirectTo: window.location.origin + '/#/update-password', // Aponta para a nova página
         });
 
         setLoading(false);
