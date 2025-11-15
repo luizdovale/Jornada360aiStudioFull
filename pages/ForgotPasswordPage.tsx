@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
@@ -15,9 +16,10 @@ const ForgotPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // CORREÇÃO: Aponta diretamente para a rota do app.
-        // O componente UpdatePasswordPage foi ajustado para lidar com o formato da URL do Supabase.
-        const redirectTo = 'https://jornada360ai-studio-full.vercel.app/#/update-password';
+        // CORREÇÃO: Aponta para a página intermediária `password-reset.html`.
+        // Esta página irá extrair o token do link de email e redirecionar corretamente
+        // para a rota `/update-password` dentro do HashRouter do React.
+        const redirectTo = `${window.location.origin}/password-reset.html`;
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: redirectTo,

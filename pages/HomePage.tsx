@@ -2,11 +2,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
-import { getMonthSummary, formatMinutesToHours } from '../lib/utils';
+import { getMonthSummary, formatMinutesToHours, calculateJourney } from '../lib/utils';
 import OverlappingCard from '../components/ui/OverlappingCard';
 import Skeleton from '../components/ui/Skeleton';
-import { Plus, BarChart, Settings, Route, CalendarDays } from 'lucide-react';
-import { MonthSummary } from '../types';
+import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks } from 'lucide-react';
+import { MonthSummary, Journey } from '../types';
 
 const SummaryItem: React.FC<{ label: string; value: string; colorClass?: string }> = ({ label, value, colorClass = 'text-white' }) => (
     <div className="flex flex-col items-center text-center">
@@ -24,6 +24,30 @@ const ActionCard: React.FC<{ icon: React.ElementType; title: string; subtitle: s
         <span className="text-[11px] text-muted-foreground">{subtitle}</span>
     </button>
 );
+
+const RecentJourneyItem: React.FC<{ journey: Journey }> = ({ journey }) => {
+    const { settings } = useJourneys();
+    if (!settings) return null;
+    const calcs = calculateJourney(journey, settings);
+    const date = new Date(journey.date + 'T00:00:00');
+    
+    return (
+        <div className="flex items-center justify-between p-3 bg-white rounded-xl shadow-soft">
+            <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-primary-light text-primary-dark">
+                    <span className="text-xs">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                    <span className="font-bold text-lg">{date.getDate()}</span>
+                </div>
+                <div>
+                    <p className="font-semibold text-sm text-primary-dark">{date.toLocaleDateString('pt-BR', { weekday: 'long' })}</p>
+                    <p className="text-xs text-muted-foreground">{formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas</p>
+                </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+        </div>
+    );
+};
+
 
 const HomePageSkeleton: React.FC = () => (
     <>
@@ -66,9 +90,14 @@ const HomePage: React.FC = () => {
     const navigate = useNavigate();
     const { journeys, settings, loading } = useJourneys();
 
+    const recentJourneys = React.useMemo(() => {
+        return [...journeys]
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 3);
+    }, [journeys]);
+
     const summary: MonthSummary = React.useMemo(() => {
         if (!settings) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0, totalDiasTrabalhados: 0 };
-        // Lógica para filtrar jornadas do mês contábil atual
         const now = new Date();
         const startDay = settings.monthStartDay || 1;
         
@@ -80,7 +109,7 @@ const HomePage: React.FC = () => {
         let endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDay -1);
         
         const currentMonthJourneys = journeys.filter(j => {
-            const journeyDate = new Date(j.date + 'T00:00:00'); // Evita problemas de fuso
+            const journeyDate = new Date(j.date + 'T00:00:00');
             return journeyDate >= startDate && journeyDate <= endDate;
         });
         
@@ -89,7 +118,7 @@ const HomePage: React.FC = () => {
 
 
     return (
-        <div className="-mt-16 space-y-5">
+        <div className="-mt-16 space-y-5 pb-4">
             {loading ? <HomePageSkeleton /> : (
             <>
                 <OverlappingCard>
@@ -117,6 +146,29 @@ const HomePage: React.FC = () => {
                         </div>
                     )}
                 </OverlappingCard>
+
+                 {/* Seção de Jornadas Recentes */}
+                <div className="pt-2 space-y-3">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-bold text-primary-dark">Últimas Jornadas</h3>
+                         {journeys.length > 3 && (
+                            <button onClick={() => navigate('/journeys')} className="text-sm font-semibold text-primary hover:underline">Ver Todas</button>
+                        )}
+                    </div>
+                    {recentJourneys.length > 0 ? (
+                        <div className="space-y-2">
+                            {recentJourneys.map(j => <RecentJourneyItem key={j.id} journey={j} />)}
+                        </div>
+                    ) : (
+                         <div className="text-center py-6 bg-white rounded-2xl shadow-soft flex flex-col items-center gap-3">
+                            <ListChecks className="w-10 h-10 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">Nenhuma jornada registrada ainda.</p>
+                            <button onClick={() => navigate('/journeys?new=true')} className="bg-accent text-primary-dark font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm">
+                                <Plus className="w-4 h-4" />Adicionar Jornada
+                            </button>
+                        </div>
+                    )}
+                </div>
 
                 <div className="pt-2">
                      <h3 className="text-lg font-bold text-primary-dark mb-3">Ações Rápidas</h3>

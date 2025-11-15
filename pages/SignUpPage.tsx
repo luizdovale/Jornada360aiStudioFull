@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
@@ -23,9 +24,9 @@ const SignUpPage: React.FC = () => {
                 data: {
                     nome: nome,
                 },
-                // CORREÇÃO: Especifica a URL de redirecionamento para o e-mail de confirmação.
-                // Isso garante que o Supabase construa o link corretamente para o ambiente de produção.
-                emailRedirectTo: 'https://jornada360ai-studio-full.vercel.app',
+                // CORREÇÃO: Usa o 'origin' da URL atual para o redirecionamento.
+                // Isso torna o link de confirmação funcional em qualquer ambiente (local, dev, prod).
+                emailRedirectTo: window.location.origin,
             },
         });
 

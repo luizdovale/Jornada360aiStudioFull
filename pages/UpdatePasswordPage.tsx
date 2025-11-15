@@ -16,21 +16,22 @@ const UpdatePasswordPage: React.FC = () => {
     const [isValidToken, setIsValidToken] = useState(false);
 
     useEffect(() => {
-        // O Supabase anexa os tokens como um fragmento (#) na URL de redirecionamento.
-        // Com o HashRouter, isso cria uma URL com dois # (ex: /#/update-password#token=...).
-        // A lógica abaixo extrai os tokens diretamente do hash da URL.
+        // O Supabase envia um link com um fragmento (#) contendo os tokens.
+        // O arquivo `password-reset.html` redireciona para esta página, convertendo o fragmento
+        // em parâmetros de busca dentro do hash do React Router (ex: #/update-password?access_token=...).
+        // Esta lógica extrai esses parâmetros para validar a sessão.
         const hash = window.location.hash;
-        const tokenHashIndex = hash.indexOf('#', 1); // Procura o segundo '#'
+        const queryIndex = hash.indexOf('?');
 
-        if (tokenHashIndex !== -1) {
-            const paramsStr = hash.substring(tokenHashIndex + 1);
+        if (queryIndex !== -1) {
+            const paramsStr = hash.substring(queryIndex + 1);
             const params = new URLSearchParams(paramsStr);
             const accessToken = params.get('access_token');
             const refreshToken = params.get('refresh_token');
             const type = params.get('type');
 
             if (type === 'recovery' && accessToken && refreshToken) {
-                // Limpa a URL para remover os tokens da barra de endereço
+                // Limpa os parâmetros da URL para segurança, removendo os tokens da barra de endereço.
                 navigate('/update-password', { replace: true });
 
                 supabase.auth.setSession({
@@ -45,11 +46,11 @@ const UpdatePasswordPage: React.FC = () => {
                     }
                     setIsVerifying(false);
                 });
-                return; // Sai do useEffect após iniciar a verificação
+                return; // Sai do useEffect para evitar a lógica de falha abaixo.
             }
         }
         
-        // Se não encontrou tokens no hash, a verificação falha.
+        // Se não encontrou os tokens esperados no hash da URL, a verificação falha.
         setIsVerifying(false);
         setIsValidToken(false);
         
