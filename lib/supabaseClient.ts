@@ -7,7 +7,9 @@ const supabaseUrl = 'https://id-do-seu-projeto.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTQ4OTg0MDAsImV4cCI6MTgwMjY0OTYwMH0.exemplo-de-chave-anonima-aqui'; 
 // =================================================================================
 
-const isPlaceholder = supabaseUrl.includes('SUA_URL') || supabaseUrl.includes('placeholder') || supabaseUrl.includes('id-do-seu-projeto');
+// CORREÇÃO: A lógica agora compara o valor EXATO dos placeholders.
+// Isso garante que o modo de simulação só será ativado se as chaves não forem alteradas.
+const isPlaceholder = supabaseUrl === 'https://id-do-seu-projeto.supabase.co' || supabaseAnonKey.includes('exemplo-de-chave-anonima-aqui');
 
 let supabase;
 
