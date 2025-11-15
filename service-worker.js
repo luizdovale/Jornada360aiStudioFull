@@ -4,7 +4,6 @@ const CACHE_NAME = 'jornada360-v1';
 const APP_SHELL_URLS = [
     '/',
     '/index.html',
-    '/index.tsx',
     '/manifest.json'
 ];
 
@@ -74,7 +73,7 @@ self.addEventListener('fetch', (event) => {
             }).catch(() => {
                 // Se a rede falhar, para requisições de navegação, retorna a página principal do cache
                 if (event.request.mode === 'navigate') {
-                    return caches.match('/');
+                    return caches.match('/index.html');
                 }
                 // Para outras requisições, a falha de rede será propagada
             });
