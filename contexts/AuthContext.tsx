@@ -28,37 +28,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
+        // Busca a sessão inicial para evitar a tela de login piscando.
+        supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
             setUser(session?.user ?? null);
             setLoading(false);
-        };
-        
-        fetchSession();
+        });
 
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-            async (event: AuthChangeEvent, session: Session | null) => {
+        // O onAuthStateChange é o listener em tempo real para eventos de autenticação.
+        // Ele lida com SIGNED_IN, SIGNED_OUT, e crucialmente, USER_UPDATED.
+        // Quando você atualiza os metadados do usuário em um dispositivo, o Supabase
+        // dispara o evento USER_UPDATED para todos os clientes logados, garantindo
+        // a sincronização em tempo real.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            (_event: AuthChangeEvent, session: Session | null) => {
                 setSession(session);
                 setUser(session?.user ?? null);
                 setLoading(false);
             }
         );
 
-        // **CORREÇÃO:** Adiciona um listener para verificar a sessão quando a aba/app se torna visível.
-        // Isso garante que os dados do usuário (como o nome) sejam atualizados se alterados em outro dispositivo.
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                fetchSession();
-            }
-        };
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        // Limpa os listeners quando o componente é desmontado
+        // Limpa o listener quando o componente é desmontado para evitar memory leaks.
         return () => {
-            authListener.subscription.unsubscribe();
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            subscription.unsubscribe();
         };
     }, []);
 
@@ -75,8 +67,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.error('Error updating user metadata:', error);
             throw error;
         }
+        // Atualiza o estado local imediatamente para uma resposta de UI mais rápida no
+        // dispositivo que fez a alteração. Os outros dispositivos serão atualizados
+        // pelo listener onAuthStateChange.
         if (updatedUser) {
-            // Atualiza o estado local para refletir a mudança imediatamente
             setUser(updatedUser);
         }
     };
