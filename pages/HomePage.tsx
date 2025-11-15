@@ -176,7 +176,7 @@ const HomePage: React.FC = () => {
                                 <button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-white/10 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
                                 <div className="flex-1">
                                     <span className="text-card-label font-semibold text-accent uppercase">Resumo do Mês</span>
-                                    <h2 className="text-title-lg text-white capitalize flex items-center justify-center gap-2">
+                                    <h2 className="text-lg font-bold text-white capitalize flex items-center justify-center gap-2 mt-1">
                                         {formattedMonth}
                                         {isCurrentAccountingMonth() && <span className="text-xs bg-accent text-primary-dark font-bold px-2 py-0.5 rounded-full">Atual</span>}
                                     </h2>
