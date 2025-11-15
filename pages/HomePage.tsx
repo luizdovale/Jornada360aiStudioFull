@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysForDisplayMonth } from '../lib/utils';
@@ -88,18 +88,37 @@ const HomePageSkeleton: React.FC = () => (
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
     const { journeys, settings, loading } = useJourneys();
-    const [displayDate, setDisplayDate] = useState(new Date());
+    // Inicia a data de exibição como nula. Ela será definida corretamente quando as configurações carregarem.
+    const [displayDate, setDisplayDate] = useState<Date | null>(null);
 
-    const recentJourneys = React.useMemo(() => {
+    // Efeito para calcular e definir a data do mês contábil inicial.
+    useEffect(() => {
+        if (settings) {
+            const now = new Date();
+            const startDay = settings.month_start_day || 1;
+            
+            // Cria uma data baseada no ano/mês atual para representar o período.
+            const initialDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            
+            // Se a data de hoje for anterior ao dia de início contábil,
+            // significa que o período contábil atual começou no mês anterior.
+            if (now.getDate() < startDay) {
+                initialDate.setMonth(initialDate.getMonth() - 1);
+            }
+            setDisplayDate(initialDate);
+        }
+    }, [settings]); // Roda o efeito quando as configurações estiverem disponíveis.
+
+    const recentJourneys = useMemo(() => {
         return [...journeys]
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
             .slice(0, 3);
     }, [journeys]);
 
-    const summary: MonthSummary = React.useMemo(() => {
-        if (!settings) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0, totalDiasTrabalhados: 0 };
+    const summary: MonthSummary = useMemo(() => {
+        // Proteção contra 'displayDate' nulo durante a renderização inicial
+        if (!settings || !displayDate) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0, totalDiasTrabalhados: 0 };
         
-        // Usa a nova função utilitária para filtrar as jornadas para o mês exibido
         const currentMonthJourneys = getJourneysForDisplayMonth(journeys, displayDate, settings);
         
         return getMonthSummary(currentMonthJourneys, settings);
@@ -107,6 +126,7 @@ const HomePage: React.FC = () => {
 
     const handlePrevMonth = () => {
         setDisplayDate(current => {
+            if (!current) return null; // Verificação de segurança
             const newDate = new Date(current);
             newDate.setMonth(newDate.getMonth() - 1);
             return newDate;
@@ -115,6 +135,7 @@ const HomePage: React.FC = () => {
 
     const handleNextMonth = () => {
         setDisplayDate(current => {
+            if (!current) return null; // Verificação de segurança
             const newDate = new Date(current);
             newDate.setMonth(newDate.getMonth() + 1);
             return newDate;
@@ -122,7 +143,7 @@ const HomePage: React.FC = () => {
     };
     
     const isCurrentAccountingMonth = () => {
-        if (!settings) return false;
+        if (!settings || !displayDate) return false;
         const now = new Date();
         const startDay = settings.month_start_day || 1;
         let currentMonthStartDate = new Date(now.getFullYear(), now.getMonth(), startDay);
@@ -133,11 +154,20 @@ const HomePage: React.FC = () => {
                currentMonthStartDate.getMonth() === displayDate.getMonth();
     };
     
+    // Condição de carregamento: mostra o esqueleto se o contexto estiver carregando OU se a data de exibição ainda não foi definida.
+    if (loading || !displayDate) {
+        return (
+            <div className="-mt-16 space-y-5 pb-4">
+                <HomePageSkeleton />
+            </div>
+        );
+    }
+    
+    // Após a proteção, podemos usar 'displayDate' com segurança.
     const formattedMonth = displayDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
     return (
         <div className="-mt-16 space-y-5 pb-4">
-            {loading ? <HomePageSkeleton /> : (
             <>
                 <OverlappingCard>
                     {settings ? (
@@ -214,7 +244,6 @@ const HomePage: React.FC = () => {
                     </div>
                 </div>
             </>
-            )}
         </div>
     );
 };
