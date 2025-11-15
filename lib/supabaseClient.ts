@@ -3,11 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 // =================================================================================
 // PASSO FINAL: Substitua as duas linhas abaixo pelas chaves do seu projeto Supabase
 // =================================================================================
-const supabaseUrl = 'SUA_URL_DO_SUPABASE_AQUI'; 
-const supabaseAnonKey = 'SUA_ANON_KEY_DO_SUPABASE_AQUI'; 
+const supabaseUrl = 'https://id-do-seu-projeto.supabase.co'; 
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTQ4OTg0MDAsImV4cCI6MTgwMjY0OTYwMH0.exemplo-de-chave-anonima-aqui'; 
 // =================================================================================
 
-const isPlaceholder = supabaseUrl.includes('SUA_URL') || supabaseUrl.includes('placeholder');
+const isPlaceholder = supabaseUrl.includes('SUA_URL') || supabaseUrl.includes('placeholder') || supabaseUrl.includes('id-do-seu-projeto');
 
 let supabase;
 
