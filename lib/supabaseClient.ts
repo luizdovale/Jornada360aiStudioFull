@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 // =================================================================================
 // PASSO FINAL: Substitua as duas linhas abaixo pelas chaves do seu projeto Supabase
 // =================================================================================
-const supabaseUrl = 'https://xfyfirbkhkzognbpfozk.supabase.co'; 
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmeWZpcmJraGt6b2duYnBmb3prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNzAxNTgsImV4cCI6MjA3ODc0NjE1OH0.j5bjiqRfYm0nnG2fBdItYmCNnfM22QfwQpVi6qjqltI'; 
+const supabaseUrl = 'https://id-do-seu-projeto.supabase.co'; 
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTQ4OTg0MDAsImV4cCI6MTgwMjY0OTYwMH0.exemplo-de-chave-anonima-aqui'; 
 // =================================================================================
 
 // CORREÇÃO: A lógica agora compara o valor EXATO dos placeholders.

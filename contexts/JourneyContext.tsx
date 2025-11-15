@@ -184,12 +184,16 @@ export const JourneyProvider: React.FC<{ children: ReactNode }> = ({ children })
         const settingsPayload = {
             ...newSettings,
             user_id: user.id,
-            id: settings?.id, // Passa o ID se já existir para o upsert
         };
         
+        // CORREÇÃO: O comando `upsert` no Supabase real precisa saber em qual coluna
+        // verificar o conflito para saber se deve INSERIR ou ATUALIZAR.
+        // A falta disso era o erro principal que impedia as configurações de serem salvas.
         const { data, error } = await supabase
             .from('settings')
-            .upsert(settingsPayload)
+            .upsert(settingsPayload, {
+                onConflict: 'user_id',
+            })
             .select()
             .single();
 

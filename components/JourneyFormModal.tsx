@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useToast } from '../hooks/useToast';
@@ -79,8 +78,10 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         const startMinutes = timeToMinutes(formData.startAt);
         const endMinutes = timeToMinutes(formData.endAt);
         
-        // Valida se a hora final é menor ou igual à inicial (exceto em casos de virada de dia)
-        if (endMinutes > 0 && startMinutes > 0 && endMinutes <= startMinutes) {
+        // CORREÇÃO: A lógica anterior bloqueava incorretamente o caso em que a hora final
+        // é EXATAMENTE IGUAL à hora inicial. Esta correção permite o registro de
+        // jornadas com duração zero, tratando apenas viradas de dia.
+        if (endMinutes > 0 && startMinutes > 0 && endMinutes < startMinutes) {
             const isNextDay = endMinutes < startMinutes;
             if(!isNextDay) {
                 toast({ title: 'Horário Inválido', description: 'A hora final deve ser posterior à hora inicial.', variant: 'destructive' });
