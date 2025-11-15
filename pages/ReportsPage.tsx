@@ -25,7 +25,7 @@ const ReportsPage: React.FC = () => {
         }
         
         const now = new Date();
-        const startDay = settings.monthStartDay || 1;
+        const startDay = settings.month_start_day || 1;
         let startDate = new Date(now.getFullYear(), now.getMonth(), startDay);
         if (now.getDate() < startDay) {
             startDate = new Date(now.getFullYear(), now.getMonth() - 1, startDay);
@@ -81,7 +81,7 @@ const ReportsPage: React.FC = () => {
 - Dias Trabalhados: ${summary.totalDiasTrabalhados}
 - Horas Extras (50%): ${formatMinutesToHours(summary.horasExtras50)}
 - Horas Extras (100%): ${formatMinutesToHours(summary.horasExtras100)}
-${settings.kmEnabled ? `- KM Rodados: ${summary.kmRodados.toFixed(1)} km` : ''}
+${settings.km_enabled ? `- KM Rodados: ${summary.kmRodados.toFixed(1)} km` : ''}
         `.trim();
         doc.setFontSize(10);
         doc.setTextColor("#374151");
@@ -101,7 +101,7 @@ ${settings.kmEnabled ? `- KM Rodados: ${summary.kmRodados.toFixed(1)} km` : ''}
                 formatMinutesToHours(calcs.totalTrabalhado),
                 formatMinutesToHours(calcs.horasExtras50),
                 formatMinutesToHours(calcs.horasExtras100),
-                settings.kmEnabled ? calcs.kmRodados.toFixed(1) : '-',
+                settings.km_enabled ? calcs.kmRodados.toFixed(1) : '-',
                 journey.rvNumber || '-',
                 journey.notes || '-',
             ];

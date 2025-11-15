@@ -9,22 +9,22 @@ const SettingsPage: React.FC = () => {
     const { settings, saveSettings, loading: contextLoading } = useJourneys();
     const { toast } = useToast();
     const [formData, setFormData] = useState<Omit<Settings, 'id' | 'user_id'>>({
-        jornadaBase: 480,
-        kmEnabled: true,
-        monthStartDay: 21,
-        escalaPattern: '6x1',
-        escalaStartDate: new Date().toISOString().split('T')[0],
+        jornada_base: 480,
+        km_enabled: true,
+        month_start_day: 21,
+        escala_pattern: '6x1',
+        escala_start_date: new Date().toISOString().split('T')[0],
     });
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (settings) {
             setFormData({
-                jornadaBase: settings.jornadaBase,
-                kmEnabled: settings.kmEnabled,
-                monthStartDay: settings.monthStartDay,
-                escalaPattern: settings.escalaPattern,
-                escalaStartDate: settings.escalaStartDate || new Date().toISOString().split('T')[0],
+                jornada_base: settings.jornada_base,
+                km_enabled: settings.km_enabled,
+                month_start_day: settings.month_start_day,
+                escala_pattern: settings.escala_pattern,
+                escala_start_date: settings.escala_start_date || new Date().toISOString().split('T')[0],
             });
         }
     }, [settings]);
@@ -41,15 +41,15 @@ const SettingsPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.escalaStartDate) {
+        if (!formData.escala_start_date) {
             toast({ title: "Campo obrigatório", description: "Por favor, informe o primeiro dia da sua escala.", variant: 'destructive' });
             return;
         }
         setLoading(true);
         const dataToSave = {
             ...formData,
-            jornadaBase: Number(formData.jornadaBase),
-            monthStartDay: Number(formData.monthStartDay),
+            jornada_base: Number(formData.jornada_base),
+            month_start_day: Number(formData.month_start_day),
         };
         const success = await saveSettings(dataToSave);
         if (success) {
@@ -79,11 +79,11 @@ const SettingsPage: React.FC = () => {
             <div className="bg-white p-6 rounded-2xl shadow-card">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label htmlFor="jornadaBase" className="block text-sm font-medium text-gray-700">Jornada Diária</label>
+                        <label htmlFor="jornada_base" className="block text-sm font-medium text-gray-700">Jornada Diária</label>
                         <select
-                            name="jornadaBase"
-                            id="jornadaBase"
-                            value={formData.jornadaBase}
+                            name="jornada_base"
+                            id="jornada_base"
+                            value={formData.jornada_base}
                             onChange={handleChange}
                              className={inputStyle}
                         >
@@ -92,24 +92,24 @@ const SettingsPage: React.FC = () => {
                         </select>
                     </div>
                      <div>
-                        <label htmlFor="monthStartDay" className="block text-sm font-medium text-gray-700">Primeiro dia contábil</label>
+                        <label htmlFor="month_start_day" className="block text-sm font-medium text-gray-700">Primeiro dia contábil</label>
                         <input
                             type="number"
-                            name="monthStartDay"
-                            id="monthStartDay"
+                            name="month_start_day"
+                            id="month_start_day"
                             min="1"
                             max="31"
-                            value={formData.monthStartDay}
+                            value={formData.month_start_day}
                             onChange={handleChange}
                             className={inputStyle}
                         />
                     </div>
                     <div>
-                        <label htmlFor="escalaPattern" className="block text-sm font-medium text-gray-700">Padrão de Escala</label>
+                        <label htmlFor="escala_pattern" className="block text-sm font-medium text-gray-700">Padrão de Escala</label>
                         <select
-                            name="escalaPattern"
-                            id="escalaPattern"
-                            value={formData.escalaPattern}
+                            name="escala_pattern"
+                            id="escala_pattern"
+                            value={formData.escala_pattern}
                             onChange={handleChange}
                              className={inputStyle}
                         >
@@ -120,12 +120,12 @@ const SettingsPage: React.FC = () => {
                         </select>
                     </div>
                      <div>
-                        <label htmlFor="escalaStartDate" className="block text-sm font-medium text-gray-700">Primeiro Dia da Escala</label>
+                        <label htmlFor="escala_start_date" className="block text-sm font-medium text-gray-700">Primeiro Dia da Escala</label>
                         <input
                             type="date"
-                            name="escalaStartDate"
-                            id="escalaStartDate"
-                            value={formData.escalaStartDate}
+                            name="escala_start_date"
+                            id="escala_start_date"
+                            value={formData.escala_start_date}
                             onChange={handleChange}
                             required
                             className={inputStyle}
@@ -137,16 +137,16 @@ const SettingsPage: React.FC = () => {
                     <div className="flex items-start pt-2">
                         <div className="flex h-5 items-center">
                             <input
-                                id="kmEnabled"
-                                name="kmEnabled"
+                                id="km_enabled"
+                                name="km_enabled"
                                 type="checkbox"
-                                checked={formData.kmEnabled}
+                                checked={formData.km_enabled}
                                 onChange={handleChange}
                                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                             />
                         </div>
                         <div className="ml-3 text-sm">
-                            <label htmlFor="kmEnabled" className="font-medium text-gray-700">Habilitar controle de KM</label>
+                            <label htmlFor="km_enabled" className="font-medium text-gray-700">Habilitar controle de KM</label>
                             <p className="text-gray-500">Permite registrar quilometragem inicial e final.</p>
                         </div>
                     </div>

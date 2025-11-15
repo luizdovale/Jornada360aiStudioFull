@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
@@ -71,7 +70,7 @@ const JourneyItem: React.FC<{
                         <p className="font-bold text-yellow-600">{formatMinutesToHours(calcs.horasExtras100)}</p>
                         <p className="text-muted-foreground">Extra 100%</p>
                     </div>
-                    {settings.kmEnabled && (
+                    {settings.km_enabled && (
                         <div>
                             <p className="font-bold text-primary-dark">{calcs.kmRodados.toFixed(1)} km</p>
                             <p className="text-muted-foreground">Rodados</p>
@@ -148,7 +147,7 @@ const JourneysPage: React.FC = () => {
         let filtered = [...journeys];
         const now = new Date();
         if (filterPeriod === 'current_month') {
-            const startDay = settings?.monthStartDay || 1;
+            const startDay = settings?.month_start_day || 1;
             let startDate = new Date(now.getFullYear(), now.getMonth(), startDay);
             if (now.getDate() < startDay) {
                 startDate = new Date(now.getFullYear(), now.getMonth() - 1, startDay);

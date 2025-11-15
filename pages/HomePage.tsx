@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
@@ -99,7 +98,7 @@ const HomePage: React.FC = () => {
     const summary: MonthSummary = React.useMemo(() => {
         if (!settings) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0, totalDiasTrabalhados: 0 };
         const now = new Date();
-        const startDay = settings.monthStartDay || 1;
+        const startDay = settings.month_start_day || 1;
         
         let startDate = new Date(now.getFullYear(), now.getMonth(), startDay);
         if(now.getDate() < startDay) {
@@ -133,7 +132,7 @@ const HomePage: React.FC = () => {
                                 <SummaryItem label="Extras 50%" value={formatMinutesToHours(summary.horasExtras50)} colorClass="text-green-400" />
                                 <SummaryItem label="Extras 100%" value={formatMinutesToHours(summary.horasExtras100)} colorClass="text-yellow-400" />
                             </div>
-                            {settings.kmEnabled && (
+                            {settings.km_enabled && (
                                 <div className="pt-2 text-center">
                                    <SummaryItem label="KM Rodados" value={`${summary.kmRodados.toFixed(1)} km`} />
                                 </div>

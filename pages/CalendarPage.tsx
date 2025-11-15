@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { getDayTypeForScale } from '../lib/utils';
@@ -29,7 +28,7 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
     
     const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
-    if (!settings || !settings.escalaStartDate) {
+    if (!settings || !settings.escala_start_date) {
         return (
             <div className="text-center p-4">
                 <p className="text-muted-foreground">Configure sua escala e o primeiro dia de trabalho para visualizar o calendário.</p>

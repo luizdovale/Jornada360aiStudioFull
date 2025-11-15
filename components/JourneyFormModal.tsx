@@ -89,7 +89,7 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
             }
         }
         
-        if (settings?.kmEnabled) {
+        if (settings?.km_enabled) {
             const kmStart = Number(formData.kmStart) || 0;
             const kmEnd = Number(formData.kmEnd) || 0;
             if (kmEnd > 0 && kmEnd < kmStart) {
@@ -175,7 +175,7 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                                 <input type="number" name="restDuration" value={formData.restDuration} onChange={handleChange} className={inputStyle} />
                             </div>
                         </div>
-                        {settings?.kmEnabled && (
+                        {settings?.km_enabled && (
                          <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-xs font-medium text-muted-foreground">KM Inicial</label>

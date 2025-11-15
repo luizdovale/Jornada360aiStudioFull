@@ -1,4 +1,3 @@
-
 // types.ts
 
 export interface Journey {
@@ -21,11 +20,11 @@ export interface Journey {
 export interface Settings {
   id?: string;
   user_id: string;
-  jornadaBase: number; // in minutes
-  kmEnabled: boolean;
-  monthStartDay: number; // 1-31
-  escalaPattern: string; // e.g., "6x2", "5x2"
-  escalaStartDate?: string; // YYYY-MM-DD
+  jornada_base: number; // in minutes
+  km_enabled: boolean;
+  month_start_day: number; // 1-31
+  escala_pattern: string; // e.g., "6x2", "5x2"
+  escala_start_date?: string; // YYYY-MM-DD
 }
 
 export interface JourneyCalculations {

@@ -1,4 +1,3 @@
-
 import { Journey, Settings, JourneyCalculations, MonthSummary } from '../types';
 
 /**
@@ -29,7 +28,7 @@ export const calculateJourney = (journey: Journey, settings: Settings): JourneyC
     }
 
     const totalTrabalhado = diffMinutes - (journey.mealDuration || 0) - (journey.restDuration || 0);
-    const jornadaBase = settings.jornadaBase || 480; // Padrão de 8h se não configurado
+    const jornadaBase = settings.jornada_base || 480; // Padrão de 8h se não configurado
     
     let horasExtras50 = 0;
     let horasExtras100 = 0;
@@ -97,17 +96,17 @@ export const getMonthSummary = (journeys: Journey[], settings: Settings | null):
  * @returns 'work', 'off', ou null se não for possível calcular
  */
 export const getDayTypeForScale = (date: Date, settings: Settings): 'work' | 'off' | null => {
-    if (!settings.escalaPattern || !settings.escalaStartDate) {
+    if (!settings.escala_pattern || !settings.escala_start_date) {
         return null;
     }
 
-    const [workDays, offDays] = settings.escalaPattern.split('x').map(Number);
+    const [workDays, offDays] = settings.escala_pattern.split('x').map(Number);
     if (isNaN(workDays) || isNaN(offDays)) return null;
 
     const cycleLength = workDays + offDays;
     
     // Zera a hora para evitar problemas de fuso horário na contagem de dias
-    const startDate = new Date(settings.escalaStartDate + 'T00:00:00');
+    const startDate = new Date(settings.escala_start_date + 'T00:00:00');
     const currentDate = new Date(date);
     currentDate.setHours(0, 0, 0, 0);
 
