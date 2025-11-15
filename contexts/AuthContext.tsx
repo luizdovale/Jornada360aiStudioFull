@@ -28,14 +28,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Pega a sessão inicial, se existir
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        const fetchSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
             setUser(session?.user ?? null);
             setLoading(false);
-        });
+        };
+        
+        fetchSession();
 
-        // Escuta por mudanças no estado de autenticação
         const { data: authListener } = supabase.auth.onAuthStateChange(
             async (event: AuthChangeEvent, session: Session | null) => {
                 setSession(session);
@@ -44,9 +45,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
         );
 
-        // Limpa o listener quando o componente é desmontado
+        // **CORREÇÃO:** Adiciona um listener para verificar a sessão quando a aba/app se torna visível.
+        // Isso garante que os dados do usuário (como o nome) sejam atualizados se alterados em outro dispositivo.
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                fetchSession();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        // Limpa os listeners quando o componente é desmontado
         return () => {
             authListener.subscription.unsubscribe();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, []);
 
