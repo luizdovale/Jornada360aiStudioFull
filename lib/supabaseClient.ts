@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 // =================================================================================
 // PASSO FINAL: Substitua as duas linhas abaixo pelas chaves do seu projeto Supabase
 // =================================================================================
-const supabaseUrl = 'https://xfyfirbkhkzognbpfozk.supabase.co'; 
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmeWZpcmJraGt6b2duYnBmb3prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNzAxNTgsImV4cCI6MjA3ODc0NjE1OH0.j5bjiqRfYm0nnG2fBdItYmCNnfM22QfwQpVi6qjqltI'; 
+const supabaseUrl = 'https://id-do-seu-projeto.supabase.co'; 
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTQ4OTg0MDAsImV4cCI6MTgwMjY0OTYwMH0.exemplo-de-chave-anonima-aqui'; 
 // =================================================================================
 
 // CORREÇÃO: A lógica agora compara o valor EXATO dos placeholders.
@@ -65,11 +65,17 @@ if (isPlaceholder) {
 
         const mockQueryBuilder = (tableName) => ({
             select: function(columns = '*') {
-                // CORREÇÃO: Esta função pode iniciar uma query OU especificar o retorno de um upsert/insert.
-                // Se uma query de modificação já foi definida, não sobrescrevemos seu tipo.
-                if (!this._query || this._query.type === 'select') {
-                    this._query = { type: 'select', table: tableName, columns, filters: [] };
+                // CORREÇÃO: Esta função pode iniciar uma nova query SELECT ou modificar
+                // uma query de mutação existente. A lógica foi ajustada para evitar
+                // sobrescrever uma query de 'insert' ou 'upsert' quando '.select()' é encadeado.
+                if (this._query && ['insert', 'update', 'upsert'].includes(this._query.type)) {
+                    // Para mutações, .select() apenas indica que queremos os dados de volta.
+                    // Nossa implementação mock já faz isso por padrão, então não precisamos
+                    // fazer nada aqui, apenas evitar que a query seja sobrescrita.
+                    return this;
                 }
+                // Se não houver query ou se já for um select, iniciamos uma nova query SELECT.
+                this._query = { type: 'select', table: tableName, columns, filters: [] };
                 return this;
             },
             insert: function(data) {
@@ -84,11 +90,13 @@ if (isPlaceholder) {
                 this._query = { type: 'delete', table: tableName, filters: [] };
                 return this;
             },
-            upsert: function(data) {
+            upsert: function(data, options) { // Adicionado 'options' para corresponder à API real
                 this._query = { type: 'upsert', table: tableName, data };
                 return this;
             },
             eq: function(column, value) {
+                if (!this._query) this._query = { filters: [] }; // Garante que _query exista para filtros
+                if (!this._query.filters) this._query.filters = [];
                 this._query.filters.push({ column, value });
                 return this;
             },

@@ -23,7 +23,11 @@ const LoginPage: React.FC = () => {
         setLoading(false);
 
         if (error) {
-            toast({ title: "Erro de autenticação", description: "Email ou senha incorretos. Por favor, tente novamente.", variant: 'destructive' });
+            toast({ 
+                title: "Erro de autenticação", 
+                description: "Email ou senha incorretos. Se você acabou de criar sua conta, verifique seu email para o link de confirmação.", 
+                variant: 'destructive' 
+            });
         } else {
             toast({ title: "Login bem-sucedido!", description: "Bem-vindo de volta." });
             navigate('/');
