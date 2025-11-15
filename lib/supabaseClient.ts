@@ -1,21 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
 // =================================================================================
-// PASSO FINAL: Substitua as duas linhas abaixo pelas chaves do seu projeto Supabase
+// 🔑 CONFIGURAÇÃO DO SUPABASE
+// As credenciais fornecidas foram integradas para conectar ao backend real.
 // =================================================================================
-const supabaseUrl = 'https://xfyfirbkhkzognbpfozk.supabase.co'; 
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmeWZpcmJraGt6b2duYnBmb3prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNzAxNTgsImV4cCI6MjA3ODc0NjE1OH0.j5bjiqRfYm0nnG2fBdItYmCNnfM22QfwQpVi6qjqltI'; 
+const supabaseUrl = "https://xfyfirbkhkzognbpfozk.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmeWZpcmJraGt6b2duYnBmb3prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNzAxNTgsImV4cCI6MjA3ODc0NjE1OH0.j5bjiqRfYm0nnG2fBdItYmCNnfM22QfwQpVi6qjqltI";
 // =================================================================================
 
-// CORREÇÃO: A lógica agora compara o valor EXATO dos placeholders.
-// Isso garante que o modo de simulação só será ativado se as chaves não forem alteradas.
-const isPlaceholder = supabaseUrl === 'https://id-do-seu-projeto.supabase.co' || supabaseAnonKey.includes('exemplo-de-chave-anonima-aqui');
+// Verificação robusta para determinar se o app deve rodar em modo de simulação.
+const isPlaceholder = !supabaseUrl || supabaseUrl.includes('id-do-seu-projeto') || !supabaseAnonKey || supabaseAnonKey.includes('exemplo-de-chave');
 
 let supabase;
 
 if (isPlaceholder) {
-    console.warn("!!! ATENÇÃO: O app está rodando em MODO DE SIMULAÇÃO COMPLETA. O backend é simulado via localStorage. Para conectar a um banco de dados real, insira suas chaves do Supabase no arquivo 'lib/supabaseClient.ts'. !!!");
+    console.warn("!!! ATENÇÃO: O app está rodando em MODO DE SIMULAÇÃO. O backend é simulado via localStorage. Para conectar a um banco de dados real, insira suas chaves do Supabase em 'lib/supabaseClient.ts'. !!!");
 
+    // =================================================================================
+    // MODO DE SIMULAÇÃO (MOCK) - Versão corrigida e completa
+    // =================================================================================
     const createFullMockClient = () => {
         const DB_KEY = 'jornada360_mock_db';
         const SESSION_KEY = 'jornada360_mock_session';
@@ -54,27 +57,24 @@ if (isPlaceholder) {
         }
 
         let session = getSessionFromStorage();
-        const listeners = new Set();
+        // FIX: Explicitly type the Set to avoid type inference issues with callbacks.
+        const listeners = new Set<Function>();
 
         const triggerAuthStateChange = (event, newSession) => {
             session = newSession;
             saveSessionToStorage(session);
-            // @ts-ignore
             listeners.forEach(listener => listener(event, session));
         };
 
         const mockQueryBuilder = (tableName) => ({
+            _query: null,
+            _single: false,
+
             select: function(columns = '*') {
-                // CORREÇÃO: Esta função pode iniciar uma nova query SELECT ou modificar
-                // uma query de mutação existente. A lógica foi ajustada para evitar
-                // sobrescrever uma query de 'insert' ou 'upsert' quando '.select()' é encadeado.
-                if (this._query && ['insert', 'update', 'upsert'].includes(this._query.type)) {
-                    // Para mutações, .select() apenas indica que queremos os dados de volta.
-                    // Nossa implementação mock já faz isso por padrão, então não precisamos
-                    // fazer nada aqui, apenas evitar que a query seja sobrescrita.
+                // CORREÇÃO: Previne que '.select()' sobrescreva uma query de mutação.
+                if (this._query && ['insert', 'update', 'upsert', 'delete'].includes(this._query.type)) {
                     return this;
                 }
-                // Se não houver query ou se já for um select, iniciamos uma nova query SELECT.
                 this._query = { type: 'select', table: tableName, columns, filters: [] };
                 return this;
             },
@@ -90,49 +90,52 @@ if (isPlaceholder) {
                 this._query = { type: 'delete', table: tableName, filters: [] };
                 return this;
             },
-            upsert: function(data, options) { // Adicionado 'options' para corresponder à API real
+            upsert: function(data, options) {
                 this._query = { type: 'upsert', table: tableName, data };
                 return this;
             },
             eq: function(column, value) {
-                if (!this._query) this._query = { filters: [] }; // Garante que _query exista para filtros
+                if (!this._query) this._query = { filters: [] };
                 if (!this._query.filters) this._query.filters = [];
                 this._query.filters.push({ column, value });
                 return this;
             },
-            order: function() { return this; }, // Simplificado
+            order: function() { return this; },
             single: function() {
                 this._single = true;
                 return this;
             },
             then: function(callback) {
                 const db = getDb();
-                let resultData = [];
+                let resultData = null;
                 let error = null;
 
                 try {
+                    const tableData = db[this._query.table] || [];
+
                     switch (this._query.type) {
                         case 'select':
-                            let tableData = db[this._query.table] || [];
-                            resultData = tableData.filter(item => 
+                            let filteredData = tableData.filter(item => 
                                 this._query.filters.every(f => item[f.column] === f.value)
                             );
                             if (this._single) {
-                                resultData = resultData.length > 0 ? resultData[0] : null;
+                                resultData = filteredData.length > 0 ? filteredData[0] : null;
                                 if (!resultData) error = { message: 'No rows found', code: 'PGRST116' };
+                            } else {
+                                resultData = filteredData;
                             }
                             break;
                         
                         case 'insert':
                             const newItem = { ...this._query.data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
-                            db[this._query.table].push(newItem);
+                            db[this._query.table] = [...tableData, newItem];
                             saveDb(db);
-                            resultData = newItem;
+                            resultData = this._single ? newItem : [newItem];
                             break;
 
                         case 'update':
                             let itemUpdated = false;
-                            db[this._query.table] = db[this._query.table].map(item => {
+                            db[this._query.table] = tableData.map(item => {
                                 if (this._query.filters.every(f => item[f.column] === f.value)) {
                                     itemUpdated = true;
                                     const updatedItem = { ...item, ...this._query.data, updatedAt: new Date().toISOString() };
@@ -146,8 +149,8 @@ if (isPlaceholder) {
                             break;
 
                         case 'delete':
-                            const initialLength = db[this._query.table].length;
-                            db[this._query.table] = db[this._query.table].filter(item => 
+                            const initialLength = tableData.length;
+                            db[this._query.table] = tableData.filter(item => 
                                 !this._query.filters.every(f => item[f.column] === f.value)
                             );
                             if (db[this._query.table].length === initialLength) {
@@ -157,14 +160,12 @@ if (isPlaceholder) {
                             break;
                         
                         case 'upsert':
-                            const existingIndex = db[this._query.table].findIndex(item => item.user_id === this._query.data.user_id);
+                            const existingIndex = tableData.findIndex(item => item.user_id === this._query.data.user_id);
                             if (existingIndex > -1) {
-                                // Update
-                                const updatedItem = { ...db[this._query.table][existingIndex], ...this._query.data, updatedAt: new Date().toISOString() };
+                                const updatedItem = { ...tableData[existingIndex], ...this._query.data, updatedAt: new Date().toISOString() };
                                 db[this._query.table][existingIndex] = updatedItem;
                                 resultData = updatedItem;
                             } else {
-                                // Insert
                                 const newItemUpsert = { ...this._query.data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
                                 db[this._query.table].push(newItemUpsert);
                                 resultData = newItemUpsert;
@@ -176,11 +177,7 @@ if (isPlaceholder) {
                     error = { message: e.message };
                 }
                 
-                if (this._single) {
-                    callback({ data: resultData, error });
-                } else {
-                    callback({ data: Array.isArray(resultData) ? resultData : [resultData], error });
-                }
+                callback({ data: resultData, error });
             }
         });
 
@@ -208,7 +205,7 @@ if (isPlaceholder) {
                     const newUser = {
                         id: crypto.randomUUID(),
                         email,
-                        password, // Em um app real, isso seria hasheado!
+                        password,
                         user_metadata: options.data
                     };
                     db.users.push(newUser);
@@ -220,7 +217,6 @@ if (isPlaceholder) {
                     return { error: null };
                 },
                 onAuthStateChange: (callback) => {
-                    // @ts-ignore
                     listeners.add(callback);
                     setTimeout(() => callback('INITIAL_SESSION', session), 0);
                     return { data: { subscription: { unsubscribe: () => listeners.delete(callback) } } };
