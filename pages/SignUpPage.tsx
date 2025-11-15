@@ -23,6 +23,9 @@ const SignUpPage: React.FC = () => {
                 data: {
                     nome: nome,
                 },
+                // CORREÇÃO: Especifica a URL de redirecionamento para o e-mail de confirmação.
+                // Isso garante que o Supabase construa o link corretamente para o ambiente de produção.
+                emailRedirectTo: 'https://jornada360ai-studio-full.vercel.app',
             },
         });
 

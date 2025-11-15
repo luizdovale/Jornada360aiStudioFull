@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
 import Jornada360Icon from '../components/ui/Jornada360Icon';
@@ -7,7 +7,6 @@ import { AlertTriangle } from 'lucide-react';
 
 const UpdatePasswordPage: React.FC = () => {
     const navigate = useNavigate();
-    const location = useLocation();
     const { toast } = useToast();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -17,31 +16,44 @@ const UpdatePasswordPage: React.FC = () => {
     const [isValidToken, setIsValidToken] = useState(false);
 
     useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-        const type = params.get('type');
+        // O Supabase anexa os tokens como um fragmento (#) na URL de redirecionamento.
+        // Com o HashRouter, isso cria uma URL com dois # (ex: /#/update-password#token=...).
+        // A lógica abaixo extrai os tokens diretamente do hash da URL.
+        const hash = window.location.hash;
+        const tokenHashIndex = hash.indexOf('#', 1); // Procura o segundo '#'
 
-        // Ocorre quando o componente é montado após o redirecionamento
-        if (type === 'recovery' && accessToken && refreshToken) {
-            supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken,
-            }).then(({ data, error }) => {
-                if (error) {
-                    toast({ title: 'Link inválido', description: 'O link de recuperação de senha é inválido ou expirou.', variant: 'destructive' });
-                    setIsValidToken(false);
-                } else if (data.session) {
-                    setIsValidToken(true);
-                }
-                setIsVerifying(false);
-            });
-        } else {
-            // Nenhum token encontrado na URL
-            setIsVerifying(false);
-            setIsValidToken(false);
+        if (tokenHashIndex !== -1) {
+            const paramsStr = hash.substring(tokenHashIndex + 1);
+            const params = new URLSearchParams(paramsStr);
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+            const type = params.get('type');
+
+            if (type === 'recovery' && accessToken && refreshToken) {
+                // Limpa a URL para remover os tokens da barra de endereço
+                navigate('/update-password', { replace: true });
+
+                supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken,
+                }).then(({ data, error }) => {
+                    if (error) {
+                        toast({ title: 'Link inválido', description: 'O link de recuperação de senha é inválido ou expirou.', variant: 'destructive' });
+                        setIsValidToken(false);
+                    } else if (data.session) {
+                        setIsValidToken(true);
+                    }
+                    setIsVerifying(false);
+                });
+                return; // Sai do useEffect após iniciar a verificação
+            }
         }
-    }, [location, navigate, toast]);
+        
+        // Se não encontrou tokens no hash, a verificação falha.
+        setIsVerifying(false);
+        setIsValidToken(false);
+        
+    }, [navigate, toast]);
     
     const handlePasswordUpdate = async (e: React.FormEvent) => {
         e.preventDefault();

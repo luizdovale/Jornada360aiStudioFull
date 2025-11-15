@@ -15,9 +15,9 @@ const ForgotPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // CORREÇÃO: Usa a URL de produção completa e exata.
-        // O Supabase exige a URL exata na lista de permissões para ambientes de produção.
-        const redirectTo = 'https://jornada360ai-studio-full.vercel.app/password-reset.html';
+        // CORREÇÃO: Aponta diretamente para a rota do app.
+        // O componente UpdatePasswordPage foi ajustado para lidar com o formato da URL do Supabase.
+        const redirectTo = 'https://jornada360ai-studio-full.vercel.app/#/update-password';
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: redirectTo,
