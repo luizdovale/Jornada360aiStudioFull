@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
+import { ArrowLeft } from 'lucide-react';
 import Jornada360Icon from '../components/ui/Jornada360Icon';
 
 const ForgotPasswordPage: React.FC = () => {
@@ -38,7 +39,7 @@ const ForgotPasswordPage: React.FC = () => {
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
                 <div className="mb-8 text-center flex flex-col items-center">
-                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
+                     <Jornada360Icon className="w-20 h-20 mb-4" />
                     <h1 className="text-2xl font-bold text-white">Recuperar Senha</h1>
                 </div>
 
@@ -78,6 +79,7 @@ const ForgotPasswordPage: React.FC = () => {
 
                 <p className="mt-6 text-center text-sm text-gray-400">
                     <Link to="/login" className="text-accent font-semibold hover:underline flex items-center justify-center gap-2">
+                        <ArrowLeft className="w-4 h-4" />
                         Voltar para o Login
                     </Link>
                 </p>

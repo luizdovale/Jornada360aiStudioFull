@@ -38,7 +38,7 @@ const Sidebar: React.FC<{ isOpen: boolean; setIsOpen: (isOpen: boolean) => void;
             >
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <Jornada360Icon className="w-8 h-8 text-accent" />
+                        <Jornada360Icon className="w-8 h-8" />
                         <span className="text-white font-bold text-lg">Jornada360</span>
                     </div>
                     <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-white">
