@@ -1,5 +1,5 @@
 {
-  "name": "Copy of Jornada360",
+  "name": "Jornada360",
   "description": "Jornada360 is a work journey control system for drivers, visually inspired by the Paytrack app. It allows users to register, manage, and analyze their workdays, including hours worked, breaks, and kilometers traveled, with data stored securely on Supabase.",
   "requestFramePermissions": []
 }

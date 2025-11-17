@@ -1,5 +1,5 @@
 {
-  "name": "copy-of-jornada360",
+  "name": "jornada360",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,8 +13,7 @@
     "react-router-dom": "^7.9.5",
     "react-dom": "^19.2.0",
     "lucide-react": "^0.553.0",
-    "react": "^19.2.0",
-    "react-swipeable": "7.0.1"
+    "react": "^19.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

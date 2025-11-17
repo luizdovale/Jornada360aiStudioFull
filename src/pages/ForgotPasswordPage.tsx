@@ -16,13 +16,8 @@ const ForgotPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // CORREÇÃO: Aponta para a página intermediária `password-reset.html`.
-        // Esta página irá extrair o token do link de email e redirecionar corretamente
-        // para a rota `/update-password` dentro do HashRouter do React.
-        const redirectTo = `${window.location.origin}/password-reset.html`;
-
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: redirectTo,
+            redirectTo: window.location.href.split('#')[0],
         });
 
         setLoading(false);
@@ -39,7 +34,7 @@ const ForgotPasswordPage: React.FC = () => {
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
                 <div className="mb-8 text-center flex flex-col items-center">
-                     <Jornada360Icon className="w-20 h-20 mb-4" />
+                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
                     <h1 className="text-2xl font-bold text-white">Recuperar Senha</h1>
                 </div>
 

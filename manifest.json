@@ -4,13 +4,13 @@
   "description": "Controle sua jornada de trabalho de motorista com facilidade.",
   "icons": [
     {
-      "src": "/assets/logo.svg",
-      "type": "image/svg+xml",
+      "src": "/assets/logo.png",
+      "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/assets/logo.svg",
-      "type": "image/svg+xml",
+      "src": "/assets/logo.png",
+      "type": "image/png",
       "sizes": "512x512"
     }
   ],

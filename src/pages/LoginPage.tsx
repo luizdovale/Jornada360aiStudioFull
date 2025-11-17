@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
-import Jornada360Icon from '../components/ui/Jornada360Icon';
-import { ArrowLeft } from 'lucide-react';
+import Jornada360Logo from '../components/ui/Jornada360Logo';
 
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
@@ -38,10 +37,7 @@ const LoginPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
-                <div className="mb-8 text-center flex flex-col items-center">
-                     <Jornada360Icon className="w-20 h-20 mb-4" />
-                    <h1 className="text-2xl font-bold text-white">Jornada360</h1>
-                </div>
+                <Jornada360Logo variant="pageHeader" />
 
                 <div className="bg-card rounded-3xl shadow-card p-6 space-y-5">
                     <h2 className="text-xl font-bold text-primary-dark">Entrar na sua conta</h2>
@@ -71,27 +67,4 @@ const LoginPage: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary-medium text-primary-dark font-bold py-3 rounded-lg hover:brightness-95 transition-transform active:scale-[0.98] disabled:opacity-50 flex items-center justify-center"
-                        >
-                            {loading ? <div className="w-5 h-5 border-2 border-t-transparent border-primary-dark rounded-full animate-spin"></div> : 'Entrar'}
-                        </button>
-                    </form>
-                </div>
-
-                <p className="mt-6 text-center text-sm text-gray-400">
-                    Não tem conta?{' '}
-                    <Link to="/cadastro" className="text-accent font-semibold hover:underline">
-                        Cadastre-se
-                    </Link>
-                </p>
-                 <p className="mt-2 text-center text-sm text-gray-400">
-                    <Link to="/recuperar-senha" className="text-gray-500 hover:underline">
-                        Esqueceu a senha?
-                    </Link>
-                </p>
-            </div>
-        </div>
-    );
-};
-
-export default LoginPage;
+                            className="w-full bg-primary-medium text-primary-dark font-bold py-3 rounded-lg hover:brightness-95 transition-transform active:scale-[0.98] disabled:opacity-50 flex items-center justify

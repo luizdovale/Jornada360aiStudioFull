@@ -1,28 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, TouchEvent, useRef } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { getDayTypeForScale } from '../lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useSwipeable } from 'react-swipeable';
 
 // Componente de conteúdo reutilizável para o widget e a página completa
 export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget = false }) => {
     const { settings } = useJourneys();
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [touchStartX, setTouchStartX] = useState<number | null>(null);
+    const [isSwiping, setIsSwiping] = useState(false);
+    const [translateX, setTranslateX] = useState(0);
+    const calendarRef = useRef<HTMLDivElement>(null);
 
     const changeMonth = (amount: number) => {
-        setCurrentDate(prev => {
-            const newDate = new Date(prev);
-            newDate.setMonth(newDate.getMonth() + amount);
-            return newDate;
-        });
+        const newDate = new Date(currentDate);
+        newDate.setMonth(newDate.getMonth() + amount);
+        setCurrentDate(newDate);
     };
 
-    const handlers = useSwipeable({
-        onSwipedLeft: () => changeMonth(1), // Próximo mês
-        onSwipedRight: () => changeMonth(-1), // Mês anterior
-        preventScrollOnSwipe: true,
-        trackMouse: true,
-    });
+    const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+        setTouchStartX(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+        if (touchStartX === null) return;
+        const currentX = e.targetTouches[0].clientX;
+        const diff = currentX - touchStartX;
+        setTranslateX(diff);
+        setIsSwiping(true);
+    };
+
+    const handleTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
+        if (touchStartX === null) return;
+
+        const touchEndX = e.changedTouches[0].clientX;
+        const diff = touchEndX - touchStartX;
+        const swipeThreshold = 50; // Distância mínima para um swipe
+
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) { // Swipe para a direita
+                changeMonth(-1);
+            } else { // Swipe para a esquerda
+                changeMonth(1);
+            }
+        }
+        
+        setTouchStartX(null);
+        setTranslateX(0); // Reseta a posição
+        setIsSwiping(false);
+    };
+
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -45,7 +72,12 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
     }
     
     return (
-         <div className="w-full" {...handlers}>
+         <div 
+            className="w-full"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
             <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold text-lg text-primary-dark capitalize">{monthName} <span className="text-muted-foreground font-normal">{year}</span></h3>
                 {!isWidget && (
@@ -57,8 +89,14 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
             </div>
             
             <div 
+                ref={calendarRef}
                 key={`${year}-${month}`} 
                 className="grid grid-cols-7 gap-y-2 text-center text-sm transition-opacity duration-300"
+                style={{
+                    transform: `translateX(${translateX}px)`,
+                    transition: isSwiping ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out',
+                    opacity: isSwiping ? (1 - Math.abs(translateX) / (calendarRef.current?.offsetWidth || 1)) : 1,
+                }}
             >
                 {weekDays.map((day, i) => <div key={i} className="font-bold text-muted-foreground">{day}</div>)}
                 
@@ -115,7 +153,7 @@ const CalendarPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <h1 className="text-title-lg text-primary-dark">Calendário de Escala</h1>
-            <div className="bg-white p-6 rounded-2xl shadow-soft">
+            <div className="bg-white p-6 rounded-2xl shadow-soft overflow-x-hidden">
                 <CalendarPageContent />
             </div>
         </div>
