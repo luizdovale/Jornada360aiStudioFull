@@ -3,7 +3,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Home, List, Settings, FileText, LogOut, X, User, CalendarDays } from 'lucide-react';
-// FIX: Corrected import from Jornada360Icon to Jornada360Logo to match its usage.
 import Jornada360Logo from '../ui/Jornada360Logo';
 
 const NavItem = ({ icon: Icon, label, path, onClick }: { icon: React.ElementType, label: string, path?: string, onClick?: () => void }) => {

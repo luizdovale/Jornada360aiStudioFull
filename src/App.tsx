@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -23,6 +24,7 @@ import { Toaster } from './components/ui/Toaster';
 
 const App: React.FC = () => {
     return (
+        // FIX: HashRouter must wrap AuthProvider so that hooks like useNavigate can be used within the AuthContext.
         <HashRouter>
             <AuthProvider>
                 <JourneyProvider>
