@@ -103,7 +103,7 @@ const App: React.FC = () => {
                         
                         <Route path="*" element={<NotFoundPage />} />
                     </Routes>
-                <Toaster />
+                    <Toaster />
                 </JourneyProvider>
             </AuthProvider>
         </HashRouter>

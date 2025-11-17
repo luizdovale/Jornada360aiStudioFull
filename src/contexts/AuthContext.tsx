@@ -38,15 +38,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
 
         // O onAuthStateChange é o listener em tempo real para eventos de autenticação.
-        // Ele lida com SIGNED_IN, SIGNED_OUT, e crucialmente, USER_UPDATED.
-        // Quando você atualiza os metadados do usuário em um dispositivo, o Supabase
-        // dispara o evento USER_UPDATED para todos os clientes logados, garantindo
-        // a sincronização em tempo real.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event: AuthChangeEvent, session: Session | null) => {
                 if (event === 'PASSWORD_RECOVERY') {
-                    // This event is fired when the user is redirected from the password recovery link.
-                    // The session is set, and we should navigate to the update password page.
+                    // Este evento é disparado quando o usuário clica no link de recuperação de senha.
+                    // O Supabase já terá processado o token da URL e criado uma sessão temporária.
+                    // Agora, podemos redirecionar o usuário para a página de atualização de senha.
                     navigate('/update-password', { replace: true });
                 }
                 setSession(session);

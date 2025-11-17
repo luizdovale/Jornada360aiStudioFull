@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
@@ -17,7 +16,10 @@ const ForgotPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // FIX: Use window.location.origin for a more robust redirect URL that works across environments.
+        // A URL de redirecionamento aponta para a raiz do aplicativo.
+        // O Supabase irá adicionar os tokens de recuperação como um fragmento de hash (#).
+        // O AuthProvider está configurado para ouvir o evento 'PASSWORD_RECOVERY' e
+        // redirecionar para a página /update-password.
         const redirectTo = window.location.origin;
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {

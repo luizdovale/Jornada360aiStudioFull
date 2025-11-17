@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
 import { useAuth } from '../contexts/AuthContext';
-import Jornada360Icon from '../components/ui/Jornada360Icon';
+import Jornada360Logo from '../components/ui/Jornada360Logo';
 import { AlertTriangle } from 'lucide-react';
 
 const UpdatePasswordPage: React.FC = () => {
@@ -15,9 +15,9 @@ const UpdatePasswordPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        // This effect runs when the component mounts or when auth state changes.
-        // If auth has finished loading and there's no user, it means the recovery
-        // link was invalid or has expired. In that case, we redirect the user.
+        // Este efeito é executado quando o componente é montado ou quando o estado de autenticação muda.
+        // Se a verificação de autenticação terminou e não há usuário, significa que o
+        // link de recuperação era inválido ou expirou. Nesse caso, redirecionamos o usuário.
         if (!authLoading && !user) {
             toast({
                 title: 'Link inválido ou expirado',
@@ -53,7 +53,7 @@ const UpdatePasswordPage: React.FC = () => {
         }
     };
 
-    // Show a loading indicator while the AuthContext is processing the session from the URL.
+    // Mostra um indicador de carregamento enquanto o AuthContext está processando a sessão da URL.
     if (authLoading || !user) {
         return (
              <div className="min-h-screen bg-primary flex flex-col justify-center items-center text-white p-4">
@@ -68,11 +68,7 @@ const UpdatePasswordPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
-                <div className="mb-8 text-center flex flex-col items-center">
-                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
-                    <h1 className="text-2xl font-bold text-white">Definir Nova Senha</h1>
-                </div>
-
+                <Jornada360Logo variant="pageHeader" title="Definir Nova Senha" />
                 <div className="bg-card rounded-3xl shadow-card p-6 space-y-5">
                     <h2 className="text-xl font-bold text-primary-dark">Crie uma nova senha</h2>
                     <form onSubmit={handlePasswordUpdate} className="space-y-4">
