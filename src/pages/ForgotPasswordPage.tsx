@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
@@ -16,11 +17,10 @@ const ForgotPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // A URL de redirecionamento aponta para a raiz do aplicativo.
-        // O Supabase irá adicionar os tokens de recuperação como um fragmento de hash (#).
-        // O AuthProvider está configurado para ouvir o evento 'PASSWORD_RECOVERY' e
-        // redirecionar para a página /update-password.
-        const redirectTo = window.location.origin;
+        // CORREÇÃO: Aponta para a página intermediária `password-reset.html`.
+        // Esta página irá extrair o token do link de email e redirecionar corretamente
+        // para a rota `/update-password` dentro do HashRouter do React.
+        const redirectTo = `${window.location.origin}/password-reset.html`;
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: redirectTo,
@@ -62,7 +62,7 @@ const ForgotPasswordPage: React.FC = () => {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
-                                        className="w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition"
+                                        className="w-full mt-1 p-3 bg-gray-100 border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition"
                                         placeholder="seu@email.com"
                                     />
                                 </div>

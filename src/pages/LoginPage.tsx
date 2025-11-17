@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
-import Jornada360Logo from '../components/ui/Jornada360Logo';
+import Jornada360Icon from '../components/ui/Jornada360Icon';
 
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
@@ -37,7 +37,10 @@ const LoginPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
-                <Jornada360Logo variant="pageHeader" />
+                <div className="mb-8 text-center flex flex-col items-center">
+                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
+                    <h1 className="text-2xl font-bold text-white">Jornada360</h1>
+                </div>
 
                 <div className="bg-card rounded-3xl shadow-card p-6 space-y-5">
                     <h2 className="text-xl font-bold text-primary-dark">Entrar na sua conta</h2>
@@ -49,7 +52,7 @@ const LoginPage: React.FC = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition"
+                                className="w-full mt-1 p-3 bg-gray-100 border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition"
                                 placeholder="seu@email.com"
                             />
                         </div>
@@ -60,7 +63,7 @@ const LoginPage: React.FC = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition"
+                                className="w-full mt-1 p-3 bg-gray-100 border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition"
                                 placeholder="********"
                             />
                         </div>
