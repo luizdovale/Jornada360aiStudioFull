@@ -1,10 +1,11 @@
 
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
 import { ArrowLeft } from 'lucide-react';
-import Jornada360Icon from '../components/ui/Jornada360Icon';
+import Jornada360Logo from '../components/ui/Jornada360Logo';
 
 const ForgotPasswordPage: React.FC = () => {
     const { toast } = useToast();
@@ -16,8 +17,11 @@ const ForgotPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
+        // FIX: Use window.location.origin for a more robust redirect URL that works across environments.
+        const redirectTo = window.location.origin;
+
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.href.split('#')[0],
+            redirectTo: redirectTo,
         });
 
         setLoading(false);
@@ -33,10 +37,7 @@ const ForgotPasswordPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
-                <div className="mb-8 text-center flex flex-col items-center">
-                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
-                    <h1 className="text-2xl font-bold text-white">Recuperar Senha</h1>
-                </div>
+                <Jornada360Logo variant="pageHeader" title="Recuperar Senha" />
 
                 <div className="bg-card rounded-3xl shadow-card p-6 space-y-5">
                     {sent ? (
