@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
 import { useAuth } from '../contexts/AuthContext';
-import Jornada360Logo from '../components/ui/Jornada360Logo';
-import { AlertTriangle } from 'lucide-react';
+import Jornada360Icon from '../components/ui/Jornada360Icon';
+import { Link } from 'react-router-dom';
 
 const UpdatePasswordPage: React.FC = () => {
     const navigate = useNavigate();
@@ -15,16 +16,13 @@ const UpdatePasswordPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        // Este efeito é executado quando o componente é montado ou quando o estado de autenticação muda.
-        // Se a verificação de autenticação terminou e não há usuário, significa que o
-        // link de recuperação era inválido ou expirou. Nesse caso, redirecionamos o usuário.
         if (!authLoading && !user) {
             toast({
                 title: 'Link inválido ou expirado',
                 description: 'Por favor, solicite um novo link de redefinição de senha.',
                 variant: 'destructive',
             });
-            navigate('/recuperar-senha');
+            navigate('/recuperar-senha', { replace: true });
         }
     }, [authLoading, user, navigate, toast]);
 
@@ -47,13 +45,12 @@ const UpdatePasswordPage: React.FC = () => {
         if (error) {
             toast({ title: 'Erro ao atualizar senha', description: error.message, variant: 'destructive' });
         } else {
-            toast({ title: 'Sucesso!', description: 'Sua senha foi alterada com sucesso. Você já pode fazer o login.' });
+            toast({ title: 'Sucesso!', description: 'Sua senha foi alterada. Por favor, faça o login novamente.' });
             await supabase.auth.signOut();
             navigate('/login');
         }
     };
 
-    // Mostra um indicador de carregamento enquanto o AuthContext está processando a sessão da URL.
     if (authLoading || !user) {
         return (
              <div className="min-h-screen bg-primary flex flex-col justify-center items-center text-white p-4">
@@ -68,7 +65,11 @@ const UpdatePasswordPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
-                <Jornada360Logo variant="pageHeader" title="Definir Nova Senha" />
+                <div className="mb-8 text-center flex flex-col items-center">
+                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
+                    <h1 className="text-2xl font-bold text-white">Definir Nova Senha</h1>
+                </div>
+
                 <div className="bg-card rounded-3xl shadow-card p-6 space-y-5">
                     <h2 className="text-xl font-bold text-primary-dark">Crie uma nova senha</h2>
                     <form onSubmit={handlePasswordUpdate} className="space-y-4">
@@ -104,6 +105,12 @@ const UpdatePasswordPage: React.FC = () => {
                         </button>
                     </form>
                 </div>
+                 <p className="mt-6 text-center text-sm text-gray-400">
+                    Lembrou a senha?{' '}
+                    <Link to="/login" className="text-accent font-semibold hover:underline">
+                        Fazer login
+                    </Link>
+                </p>
             </div>
         </div>
     );
