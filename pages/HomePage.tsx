@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
@@ -26,12 +27,20 @@ const ActionCard: React.FC<{ icon: React.ElementType; title: string; subtitle: s
 
 const RecentJourneyItem: React.FC<{ journey: Journey }> = ({ journey }) => {
     const { settings } = useJourneys();
+    const navigate = useNavigate();
     if (!settings) return null;
     const calcs = calculateJourney(journey, settings);
     const date = new Date(journey.date + 'T00:00:00');
     
+    const handleItemClick = () => {
+        navigate(`/journeys?edit=${journey.id}`);
+    };
+
     return (
-        <div className="flex items-center justify-between p-3 bg-white rounded-xl shadow-soft">
+        <button 
+            onClick={handleItemClick}
+            className="w-full text-left flex items-center justify-between p-3 bg-white rounded-xl shadow-soft hover:shadow-md transition-all duration-200"
+        >
             <div className="flex items-center gap-3">
                 <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-primary-light text-primary-dark">
                     <span className="text-xs">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
@@ -39,14 +48,17 @@ const RecentJourneyItem: React.FC<{ journey: Journey }> = ({ journey }) => {
                 </div>
                 <div>
                     <p className="font-semibold text-sm text-primary-dark">{date.toLocaleDateString('pt-BR', { weekday: 'long' })}</p>
-                    <p className="text-xs text-muted-foreground">{formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas</p>
+                    {journey.is_day_off ? (
+                        <p className="text-xs text-red-600 font-bold">FOLGA</p>
+                    ) : (
+                        <p className="text-xs text-muted-foreground">{formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas</p>
+                    )}
                 </div>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
-        </div>
+        </button>
     );
 };
-
 
 const HomePageSkeleton: React.FC = () => (
     <>
@@ -84,30 +96,22 @@ const HomePageSkeleton: React.FC = () => (
     </>
 );
 
-
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
     const { journeys, settings, loading } = useJourneys();
-    // Inicia a data de exibição como nula. Ela será definida corretamente quando as configurações carregarem.
     const [displayDate, setDisplayDate] = useState<Date | null>(null);
 
-    // Efeito para calcular e definir a data do mês contábil inicial.
     useEffect(() => {
         if (settings) {
             const now = new Date();
             const startDay = settings.month_start_day || 1;
-            
-            // Cria uma data baseada no ano/mês atual para representar o período.
             const initialDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            
-            // Se a data de hoje for anterior ao dia de início contábil,
-            // significa que o período contábil atual começou no mês anterior.
             if (now.getDate() < startDay) {
                 initialDate.setMonth(initialDate.getMonth() - 1);
             }
             setDisplayDate(initialDate);
         }
-    }, [settings]); // Roda o efeito quando as configurações estiverem disponíveis.
+    }, [settings]);
 
     const recentJourneys = useMemo(() => {
         return [...journeys]
@@ -116,17 +120,14 @@ const HomePage: React.FC = () => {
     }, [journeys]);
 
     const summary: MonthSummary = useMemo(() => {
-        // Proteção contra 'displayDate' nulo durante a renderização inicial
         if (!settings || !displayDate) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0, totalDiasTrabalhados: 0 };
-        
         const currentMonthJourneys = getJourneysForDisplayMonth(journeys, displayDate, settings);
-        
         return getMonthSummary(currentMonthJourneys, settings);
     }, [journeys, settings, displayDate]);
 
     const handlePrevMonth = () => {
         setDisplayDate(current => {
-            if (!current) return null; // Verificação de segurança
+            if (!current) return null;
             const newDate = new Date(current);
             newDate.setMonth(newDate.getMonth() - 1);
             return newDate;
@@ -135,7 +136,7 @@ const HomePage: React.FC = () => {
 
     const handleNextMonth = () => {
         setDisplayDate(current => {
-            if (!current) return null; // Verificação de segurança
+            if (!current) return null;
             const newDate = new Date(current);
             newDate.setMonth(newDate.getMonth() + 1);
             return newDate;
@@ -154,7 +155,6 @@ const HomePage: React.FC = () => {
                currentMonthStartDate.getMonth() === displayDate.getMonth();
     };
     
-    // Condição de carregamento: mostra o esqueleto se o contexto estiver carregando OU se a data de exibição ainda não foi definida.
     if (loading || !displayDate) {
         return (
             <div className="-mt-16 space-y-5 pb-4">
@@ -163,7 +163,6 @@ const HomePage: React.FC = () => {
         );
     }
     
-    // Após a proteção, podemos usar 'displayDate' com segurança.
     const formattedMonth = displayDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
     return (
