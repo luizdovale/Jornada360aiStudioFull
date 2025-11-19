@@ -49,7 +49,7 @@ const RecentJourneyItem: React.FC<{ journey: Journey }> = ({ journey }) => {
                 <div>
                     <p className="font-semibold text-sm text-primary-dark">{date.toLocaleDateString('pt-BR', { weekday: 'long' })}</p>
                     {journey.is_day_off ? (
-                        <p className="text-xs text-red-500 font-semibold">Folga</p>
+                        <p className="text-xs text-red-600 font-bold">FOLGA</p>
                     ) : (
                         <p className="text-xs text-muted-foreground">{formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas</p>
                     )}
