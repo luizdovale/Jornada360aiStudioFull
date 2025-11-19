@@ -4,13 +4,12 @@ import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getMonthSummary, calculateJourney, formatMinutesToHours } from '../lib/utils';
 import { FileDown } from 'lucide-react';
-import PdfPreviewModal from '../components/ui/PdfPreviewModal'; // Importando o novo modal
+import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
 const ReportsPage: React.FC = () => {
     const { journeys, settings } = useJourneys();
     const { user } = useAuth();
     
-    // Estados para o modal de pré-visualização
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');
 
@@ -82,6 +81,7 @@ const ReportsPage: React.FC = () => {
             let he50Text = formatMinutesToHours(calcs.horasExtras50);
             let he100Text = formatMinutesToHours(calcs.horasExtras100);
 
+            // Lógica de exibição para Dia de Folga no PDF
             if (journey.is_day_off) {
                 startText = "FOLGA";
                 endText = "-";
@@ -116,18 +116,18 @@ const ReportsPage: React.FC = () => {
                 // --- CABEÇALHO (em todas as páginas) ---
                 doc.setFontSize(18);
                 doc.setFont('helvetica', 'bold');
-                doc.setTextColor("#1A2346"); // Cor 'primary'
+                doc.setTextColor("#1A2346");
                 doc.text("Jornada360", pageMargin, 18);
         
                 doc.setFontSize(9);
                 doc.setFont('helvetica', 'normal');
-                doc.setTextColor("#6B7280"); // Cor 'muted-foreground'
+                doc.setTextColor("#6B7280");
                 doc.text("Relatório de Jornada", pageWidth - pageMargin, 12, { align: 'right' });
                 doc.text(`Período: ${period}`, pageWidth - pageMargin, 17, { align: 'right' });
                 doc.text(`Motorista: ${userName}`, pageWidth - pageMargin, 22, { align: 'right' });
         
                 // Linha separadora
-                doc.setDrawColor("#E8EEF7"); // primary-light
+                doc.setDrawColor("#E8EEF7");
                 doc.setLineWidth(0.5);
                 doc.line(pageMargin, 28, pageWidth - pageMargin, 28);
 
@@ -160,7 +160,7 @@ const ReportsPage: React.FC = () => {
                 // --- RODAPÉ (em todas as páginas) ---
                 const pageCount = doc.internal.getNumberOfPages();
                 doc.setFontSize(8);
-                doc.setTextColor("#BDC6D1"); // muted color
+                doc.setTextColor("#BDC6D1");
                 
                 doc.text(`Página ${data.pageNumber} de ${pageCount}`, doc.internal.pageSize.getWidth() / 2, 287, { align: 'center' });
                 doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, pageMargin, 287);
@@ -168,7 +168,6 @@ const ReportsPage: React.FC = () => {
             },
         });
         
-        // Finalize PDF and open modal
         const pdfDataUri = doc.output('datauristring');
         setPdfPreviewUrl(pdfDataUri);
         setIsModalOpen(true);
@@ -205,7 +204,6 @@ const ReportsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Inclusão do modal de preview */}
             <PdfPreviewModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}

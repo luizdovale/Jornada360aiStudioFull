@@ -19,9 +19,10 @@ const timeToMinutes = (timeString: string): number => {
  * @returns Um objeto com os totais calculados para a jornada
  */
 export const calculateJourney = (journey: Journey, settings: Settings): JourneyCalculations => {
-    // Calculate KM first as it applies to both work days and days off
+    // Calcula KM primeiro, pois aplica-se tanto a dias trabalhados quanto folgas
     const kmRodados = (journey.km_end || 0) - (journey.km_start || 0);
 
+    // Se for dia de folga, zera as horas mas mantém o KM (se houver deslocamento)
     if (journey.is_day_off) {
         return {
             totalTrabalhado: 0,
@@ -47,8 +48,10 @@ export const calculateJourney = (journey: Journey, settings: Settings): JourneyC
     let horasExtras100 = 0;
 
     if (journey.is_feriado) {
+        // Em feriados, todas as horas trabalhadas contam como 100%
         horasExtras100 = totalTrabalhado > 0 ? totalTrabalhado : 0;
     } else if (totalTrabalhado > jornadaBase) {
+        // Em dias normais, o excedente da jornada base é 50%
         horasExtras50 = totalTrabalhado - jornadaBase;
     }
 
@@ -117,7 +120,8 @@ export const getMonthSummary = (journeys: Journey[], settings: Settings | null):
     return journeys.reduce((acc, journey) => {
         const calcs = calculateJourney(journey, settings);
         
-        // Only count as a working day if not a day off
+        // Apenas conta como dia trabalhado se não for folga e tiver horas lançadas (ou for feriado trabalhado)
+        // Se for day_off=true, não incrementa dias trabalhados (a menos que a lógica de negócio mude, mas geralmente folga = 0 dias)
         if (!journey.is_day_off) {
              acc.totalDiasTrabalhados += 1;
         }
