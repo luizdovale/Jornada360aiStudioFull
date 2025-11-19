@@ -48,12 +48,12 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         date: getTodayString(),
         start_at: '08:00',
         end_at: '18:00',
-        meal_duration: 61, // Valor padrão solicitado: 61 minutos
-        rest_duration: '', // Inicia vazio para não mostrar "0"
+        meal_duration: 61, 
+        rest_duration: '',
         is_feriado: false,
         is_day_off: false,
-        km_start: '', // Inicia vazio
-        km_end: '',   // Inicia vazio
+        km_start: '',
+        km_end: '',
         rv_number: '',
         notes: '',
     });
@@ -75,17 +75,17 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                 notes: journey.notes || '',
             });
         } else {
-             // Reseta o formulário para um novo registro com os novos padrões de UX
+             // Reseta o formulário para um novo registro
              setFormData({
                 date: getTodayString(),
                 start_at: '08:00',
                 end_at: '18:00',
-                meal_duration: 61, // Padrão 61
-                rest_duration: '', // Vazio
+                meal_duration: 61,
+                rest_duration: '',
                 is_feriado: false,
                 is_day_off: false,
-                km_start: '', // Vazio
-                km_end: '', // Vazio
+                km_start: '',
+                km_end: '',
                 rv_number: '',
                 notes: '',
             });
@@ -105,15 +105,9 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
     const validateForm = () => {
         // Se for dia de folga, não valida horários
         if (formData.is_day_off) return true;
-
-        const startMinutes = timeToMinutes(formData.start_at);
-        const endMinutes = timeToMinutes(formData.end_at);
         
-        // Permite virada de noite (ex: 22:00 as 05:00), mas bloqueia se for igual
-        if (endMinutes > 0 && startMinutes > 0 && endMinutes < startMinutes) {
-            const isNextDay = endMinutes < startMinutes;
-            // Lógica simples: se fim < inicio, assume dia seguinte.
-        }
+        // A validação de horário foi removida para permitir jornadas que cruzam a meia-noite (ex: 22:00 às 05:00).
+        // O cálculo em utils.ts já lida com isso corretamente.
         
         if (settings?.km_enabled) {
             const kmStart = Number(formData.km_start) || 0;
@@ -166,7 +160,6 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
     
     if (!isOpen) return null;
     
-    // Estilo atualizado: Bordas mais visíveis (gray-400) e sombra
     const inputStyle = "w-full mt-1 p-3 bg-white border border-gray-400 rounded-lg shadow-sm text-primary-dark font-medium focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition placeholder-gray-400";
 
     return (
@@ -220,7 +213,6 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                         {/* CAMPOS DE HORÁRIO (Escondidos se for folga) */}
                         {!formData.is_day_off && (
                             <>
-                                {/* Espaçamento aumentado para gap-8 (32px) para separar os botões */}
                                 <div className="grid grid-cols-2 gap-8 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <div>
                                         <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Início</label>
