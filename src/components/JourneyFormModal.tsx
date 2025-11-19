@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useToast } from '../hooks/useToast';
 import { Journey } from '../types';
-import { X } from 'lucide-react';
+import { X, CalendarOff } from 'lucide-react';
 
 const getTodayString = () => {
     const today = new Date();
@@ -24,18 +25,35 @@ interface JourneyFormModalProps {
     journey?: Journey;
 }
 
+// Interface local para o estado do formulário, permitindo strings vazias nos campos numéricos
+interface JourneyFormData {
+    date: string;
+    start_at: string;
+    end_at: string;
+    meal_duration: number | string;
+    rest_duration: number | string;
+    is_feriado: boolean;
+    is_day_off: boolean;
+    km_start: number | string;
+    km_end: number | string;
+    rv_number: string;
+    notes: string;
+}
+
 const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, journey }) => {
     const { addJourney, updateJourney, settings } = useJourneys();
     const { toast } = useToast();
-    const [formData, setFormData] = useState<Omit<Journey, 'id' | 'user_id'>>({
+    
+    const [formData, setFormData] = useState<JourneyFormData>({
         date: getTodayString(),
         start_at: '08:00',
         end_at: '18:00',
-        meal_duration: 60,
-        rest_duration: 0,
+        meal_duration: 61, // Padrão alterado para 61 minutos
+        rest_duration: '', // Inicia vazio
         is_feriado: false,
-        km_start: 0,
-        km_end: 0,
+        is_day_off: false,
+        km_start: '', // Inicia vazio
+        km_end: '',   // Inicia vazio
         rv_number: '',
         notes: '',
     });
@@ -48,24 +66,26 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                 start_at: journey.start_at,
                 end_at: journey.end_at,
                 meal_duration: journey.meal_duration,
-                rest_duration: journey.rest_duration || 0,
+                rest_duration: journey.rest_duration || '', // Se for 0 ou undefined, mostra vazio ou o valor
                 is_feriado: journey.is_feriado,
-                km_start: journey.km_start || 0,
-                km_end: journey.km_end || 0,
+                is_day_off: journey.is_day_off || false,
+                km_start: journey.km_start !== undefined ? journey.km_start : '',
+                km_end: journey.km_end !== undefined ? journey.km_end : '',
                 rv_number: journey.rv_number || '',
                 notes: journey.notes || '',
             });
         } else {
-             // Reseta o formulário para um novo registro
+             // Reseta o formulário para um novo registro com os novos padrões de UX
              setFormData({
                 date: getTodayString(),
                 start_at: '08:00',
                 end_at: '18:00',
-                meal_duration: 60,
-                rest_duration: 0,
+                meal_duration: 61, 
+                rest_duration: '', 
                 is_feriado: false,
-                km_start: 0,
-                km_end: 0,
+                is_day_off: false,
+                km_start: '',
+                km_end: '',
                 rv_number: '',
                 notes: '',
             });
@@ -83,12 +103,12 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
     };
 
     const validateForm = () => {
+        // Se for dia de folga, não valida horários
+        if (formData.is_day_off) return true;
+
         const startMinutes = timeToMinutes(formData.start_at);
         const endMinutes = timeToMinutes(formData.end_at);
         
-        // CORREÇÃO: A lógica anterior bloqueava incorretamente o caso em que a hora final
-        // é EXATAMENTE IGUAL à hora inicial. Esta correção permite o registro de
-        // jornadas com duração zero, tratando apenas viradas de dia.
         if (endMinutes > 0 && startMinutes > 0 && endMinutes < startMinutes) {
             const isNextDay = endMinutes < startMinutes;
             if(!isNextDay) {
@@ -114,12 +134,23 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         if (!validateForm()) return;
         
         setLoading(true);
-        const dataToSave = {
+        
+        // Se for dia de folga, zera os horários e durações para envio
+        const finalFormData = formData.is_day_off ? {
             ...formData,
-            meal_duration: Number(formData.meal_duration),
-            rest_duration: Number(formData.rest_duration),
-            km_start: Number(formData.km_start),
-            km_end: Number(formData.km_end),
+            start_at: '00:00',
+            end_at: '00:00',
+            meal_duration: 0,
+            rest_duration: 0,
+        } : formData;
+
+        // Converte strings vazias para 0 antes de enviar para a API/Contexto
+        const dataToSave = {
+            ...finalFormData,
+            meal_duration: Number(finalFormData.meal_duration) || 0,
+            rest_duration: Number(finalFormData.rest_duration) || 0,
+            km_start: Number(finalFormData.km_start) || 0,
+            km_end: Number(finalFormData.km_end) || 0,
         };
         
         let success;
@@ -137,7 +168,8 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
     
     if (!isOpen) return null;
     
-    const inputStyle = "w-full mt-1 p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition";
+    // Estilo atualizado: bordas mais escuras (border-gray-300), sombra suave (shadow-sm) e foco mais nítido
+    const inputStyle = "w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition placeholder-gray-400 text-primary-dark font-medium";
 
     return (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in-0" onClick={onClose}>
@@ -148,67 +180,123 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                         <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X /></button>
                     </div>
                 </div>
-                <div className="p-6 space-y-4 overflow-y-auto">
+                <div className="p-6 space-y-5 overflow-y-auto">
                     <form id="journey-form" onSubmit={handleSubmit}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="mb-5 p-4 bg-gray-50 rounded-xl border border-gray-300 shadow-sm">
+                            <div className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id="is_day_off"
+                                    name="is_day_off"
+                                    checked={formData.is_day_off}
+                                    onChange={handleChange}
+                                    className="h-5 w-5 rounded text-primary focus:ring-primary cursor-pointer border-gray-400"
+                                />
+                                <label htmlFor="is_day_off" className="ml-3 text-gray-900 font-semibold cursor-pointer flex items-center gap-2">
+                                    <CalendarOff className="w-5 h-5 text-gray-600" />
+                                    Dia de Folga
+                                </label>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2 ml-8">Marque esta opção se você não trabalhou neste dia.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                             <div>
-                                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Data</label>
                                 <input type="date" name="date" value={formData.date} onChange={handleChange} required className={inputStyle} />
                             </div>
                              <div>
-                                <label className="text-xs font-medium text-muted-foreground">Feriado?</label>
-                                <div className="mt-1 p-3 flex items-center h-[50px] bg-white border border-gray-200 rounded-lg">
-                                    <input type="checkbox" id="is_feriado" name="is_feriado" checked={formData.is_feriado} onChange={handleChange} className="h-5 w-5 rounded text-primary focus:ring-primary" />
-                                    <label htmlFor="is_feriado" className="ml-2 text-gray-700 text-sm">Sim, foi feriado</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Feriado?</label>
+                                <div className="mt-1 p-3 flex items-center h-[50px] bg-white border border-gray-300 rounded-lg shadow-sm">
+                                    <input type="checkbox" id="is_feriado" name="is_feriado" checked={formData.is_feriado} onChange={handleChange} className="h-5 w-5 rounded text-primary focus:ring-primary border-gray-400" />
+                                    <label htmlFor="is_feriado" className="ml-2 text-gray-700 text-sm font-medium">Sim, feriado</label>
                                 </div>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs font-medium text-muted-foreground">Início</label>
-                                <input type="time" name="start_at" value={formData.start_at} onChange={handleChange} required className={inputStyle} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-medium text-muted-foreground">Fim</label>
-                                <input type="time" name="end_at" value={formData.end_at} onChange={handleChange} required className={inputStyle} />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                             <div>
-                                <label className="text-xs font-medium text-muted-foreground">Refeição (min)</label>
-                                <input type="number" name="meal_duration" value={formData.meal_duration} onChange={handleChange} required className={inputStyle} />
-                            </div>
-                             <div>
-                                <label className="text-xs font-medium text-muted-foreground">Descanso (min)</label>
-                                <input type="number" name="rest_duration" value={formData.rest_duration} onChange={handleChange} className={inputStyle} />
-                            </div>
-                        </div>
+
+                        {!formData.is_day_off && (
+                            <>
+                                {/* Aumentado o gap para gap-8 para separar bem os botões de hora em telas pequenas */}
+                                <div className="grid grid-cols-2 gap-8 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div>
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Início</label>
+                                        <input type="time" name="start_at" value={formData.start_at} onChange={handleChange} required className={inputStyle} />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Fim</label>
+                                        <input type="time" name="end_at" value={formData.end_at} onChange={handleChange} required className={inputStyle} />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-6 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                     <div>
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Refeição (min)</label>
+                                        <input 
+                                            type="number" 
+                                            name="meal_duration" 
+                                            value={formData.meal_duration} 
+                                            onChange={handleChange} 
+                                            required 
+                                            className={inputStyle} 
+                                            placeholder="61"
+                                        />
+                                    </div>
+                                     <div>
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descanso (min)</label>
+                                        <input 
+                                            type="number" 
+                                            name="rest_duration" 
+                                            value={formData.rest_duration} 
+                                            onChange={handleChange} 
+                                            className={inputStyle}
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
                         {settings?.km_enabled && (
-                         <div className="grid grid-cols-2 gap-4">
+                         <div className="grid grid-cols-2 gap-6 mb-4">
                             <div>
-                                <label className="text-xs font-medium text-muted-foreground">KM Inicial</label>
-                                <input type="number" step="0.1" name="km_start" value={formData.km_start} onChange={handleChange} className={inputStyle} />
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">KM Inicial</label>
+                                <input 
+                                    type="number" 
+                                    step="0.1" 
+                                    name="km_start" 
+                                    value={formData.km_start} 
+                                    onChange={handleChange} 
+                                    className={inputStyle}
+                                    placeholder="0"
+                                />
                             </div>
                              <div>
-                                <label className="text-xs font-medium text-muted-foreground">KM Final</label>
-                                <input type="number" step="0.1" name="km_end" value={formData.km_end} onChange={handleChange} className={inputStyle} />
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">KM Final</label>
+                                <input 
+                                    type="number" 
+                                    step="0.1" 
+                                    name="km_end" 
+                                    value={formData.km_end} 
+                                    onChange={handleChange} 
+                                    className={inputStyle}
+                                    placeholder="0"
+                                />
                             </div>
                         </div>
                         )}
-                        <div>
-                            <label className="text-xs font-medium text-muted-foreground">Nº do RV (opcional)</label>
-                            <input type="text" name="rv_number" value={formData.rv_number} onChange={handleChange} className={inputStyle} />
+                        <div className="mb-4">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nº do RV (opcional)</label>
+                            <input type="text" name="rv_number" value={formData.rv_number} onChange={handleChange} className={inputStyle} placeholder="Ex: 12345" />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-muted-foreground">Notas (opcional)</label>
-                            <textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} className={`${inputStyle} h-auto`}></textarea>
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notas (opcional)</label>
+                            <textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} className={`${inputStyle} h-auto`} placeholder="Observações adicionais..."></textarea>
                         </div>
                     </form>
                 </div>
                 <div className="p-6 border-t mt-auto bg-gray-50 flex-shrink-0">
                     <div className="flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors">Cancelar</button>
-                        <button type="submit" form="journey-form" disabled={loading} className="px-4 py-2 bg-primary-medium text-primary-dark font-bold rounded-lg disabled:opacity-50 flex items-center justify-center min-w-[100px] hover:brightness-95 transition-transform active:scale-[0.98]">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-sm">Cancelar</button>
+                        <button type="submit" form="journey-form" disabled={loading} className="px-6 py-2 bg-primary-medium text-primary-dark font-bold rounded-lg disabled:opacity-50 flex items-center justify-center min-w-[120px] hover:brightness-95 transition-transform active:scale-[0.98] shadow-md border border-transparent">
                             {loading ? <div className="w-5 h-5 border-2 border-t-transparent border-primary-dark rounded-full animate-spin"></div> : 'Salvar'}
                         </button>
                     </div>

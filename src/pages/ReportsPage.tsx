@@ -74,17 +74,35 @@ const ReportsPage: React.FC = () => {
         
         sortedJourneys.forEach(journey => {
             const calcs = calculateJourney(journey, settings);
-            const journeyData = [
-                new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'),
-                journey.start_at,
-                journey.end_at,
-                formatMinutesToHours(calcs.totalTrabalhado),
-                formatMinutesToHours(calcs.horasExtras50),
-                formatMinutesToHours(calcs.horasExtras100),
-                settings.km_enabled ? calcs.kmRodados.toFixed(1) : '-',
-                journey.rv_number || '-',
-                journey.notes || '-',
-            ];
+            
+            let journeyData;
+            
+            if (journey.is_day_off) {
+                journeyData = [
+                    new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'),
+                    "FOLGA",
+                    "FOLGA",
+                    "-",
+                    "-",
+                    "-",
+                    settings.km_enabled ? calcs.kmRodados.toFixed(1) : '-',
+                    journey.rv_number || '-',
+                    journey.notes || '-',
+                ];
+            } else {
+                journeyData = [
+                    new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'),
+                    journey.start_at,
+                    journey.end_at,
+                    formatMinutesToHours(calcs.totalTrabalhado),
+                    formatMinutesToHours(calcs.horasExtras50),
+                    formatMinutesToHours(calcs.horasExtras100),
+                    settings.km_enabled ? calcs.kmRodados.toFixed(1) : '-',
+                    journey.rv_number || '-',
+                    journey.notes || '-',
+                ];
+            }
+            
             tableRows.push(journeyData);
         });
         
