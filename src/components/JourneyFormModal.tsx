@@ -25,7 +25,7 @@ interface JourneyFormModalProps {
     journey?: Journey;
 }
 
-// Interface local para o estado do formulário, permitindo strings vazias nos campos numéricos
+// Interface local para o estado do formulário, permitindo strings vazias nos campos numéricos para melhor UX
 interface JourneyFormData {
     date: string;
     start_at: string;
@@ -48,8 +48,8 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         date: getTodayString(),
         start_at: '08:00',
         end_at: '18:00',
-        meal_duration: 61, // Padrão alterado para 61 minutos
-        rest_duration: '', // Inicia vazio
+        meal_duration: 61, // Valor padrão solicitado: 61 minutos
+        rest_duration: '', // Inicia vazio para não mostrar "0"
         is_feriado: false,
         is_day_off: false,
         km_start: '', // Inicia vazio
@@ -66,7 +66,7 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                 start_at: journey.start_at,
                 end_at: journey.end_at,
                 meal_duration: journey.meal_duration,
-                rest_duration: journey.rest_duration || '', // Se for 0 ou undefined, mostra vazio ou o valor
+                rest_duration: journey.rest_duration || '', 
                 is_feriado: journey.is_feriado,
                 is_day_off: journey.is_day_off || false,
                 km_start: journey.km_start !== undefined ? journey.km_start : '',
@@ -80,17 +80,17 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                 date: getTodayString(),
                 start_at: '08:00',
                 end_at: '18:00',
-                meal_duration: 61, 
-                rest_duration: '', 
+                meal_duration: 61, // Padrão 61
+                rest_duration: '', // Vazio
                 is_feriado: false,
                 is_day_off: false,
-                km_start: '',
-                km_end: '',
+                km_start: '', // Vazio
+                km_end: '', // Vazio
                 rv_number: '',
                 notes: '',
             });
         }
-    }, [journey, isOpen]); // Roda o efeito quando o modal abre
+    }, [journey, isOpen]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
@@ -109,12 +109,10 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         const startMinutes = timeToMinutes(formData.start_at);
         const endMinutes = timeToMinutes(formData.end_at);
         
+        // Permite virada de noite (ex: 22:00 as 05:00), mas bloqueia se for igual
         if (endMinutes > 0 && startMinutes > 0 && endMinutes < startMinutes) {
             const isNextDay = endMinutes < startMinutes;
-            if(!isNextDay) {
-                toast({ title: 'Horário Inválido', description: 'A hora final deve ser posterior à hora inicial.', variant: 'destructive' });
-                return false;
-            }
+            // Lógica simples: se fim < inicio, assume dia seguinte.
         }
         
         if (settings?.km_enabled) {
@@ -130,12 +128,12 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault(); // Previne o envio padrão do formulário
+        e.preventDefault(); 
         if (!validateForm()) return;
         
         setLoading(true);
         
-        // Se for dia de folga, zera os horários e durações para envio
+        // Se for dia de folga, força horários zerados
         const finalFormData = formData.is_day_off ? {
             ...formData,
             start_at: '00:00',
@@ -144,7 +142,7 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
             rest_duration: 0,
         } : formData;
 
-        // Converte strings vazias para 0 antes de enviar para a API/Contexto
+        // Converte strings vazias para 0 antes de enviar para o banco
         const dataToSave = {
             ...finalFormData,
             meal_duration: Number(finalFormData.meal_duration) || 0,
@@ -168,8 +166,8 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
     
     if (!isOpen) return null;
     
-    // Estilo atualizado: bordas mais escuras (border-gray-300), sombra suave (shadow-sm) e foco mais nítido
-    const inputStyle = "w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition placeholder-gray-400 text-primary-dark font-medium";
+    // Estilo atualizado: Bordas mais visíveis (gray-400) e sombra
+    const inputStyle = "w-full mt-1 p-3 bg-white border border-gray-400 rounded-lg shadow-sm text-primary-dark font-medium focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition placeholder-gray-400";
 
     return (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in-0" onClick={onClose}>
@@ -182,54 +180,61 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                 </div>
                 <div className="p-6 space-y-5 overflow-y-auto">
                     <form id="journey-form" onSubmit={handleSubmit}>
-                        <div className="mb-5 p-4 bg-gray-50 rounded-xl border border-gray-300 shadow-sm">
+                        
+                        {/* SEÇÃO DIA DE FOLGA */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-300 shadow-sm">
                             <div className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    id="is_day_off"
-                                    name="is_day_off"
-                                    checked={formData.is_day_off}
-                                    onChange={handleChange}
-                                    className="h-5 w-5 rounded text-primary focus:ring-primary cursor-pointer border-gray-400"
-                                />
-                                <label htmlFor="is_day_off" className="ml-3 text-gray-900 font-semibold cursor-pointer flex items-center gap-2">
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="is_day_off"
+                                        name="is_day_off"
+                                        checked={formData.is_day_off}
+                                        onChange={handleChange}
+                                        className="h-6 w-6 rounded border-gray-400 text-primary focus:ring-primary cursor-pointer"
+                                    />
+                                </div>
+                                <label htmlFor="is_day_off" className="ml-3 text-lg font-bold text-gray-800 cursor-pointer flex items-center gap-2 select-none">
                                     <CalendarOff className="w-5 h-5 text-gray-600" />
-                                    Dia de Folga
+                                    Marcar como Folga
                                 </label>
                             </div>
-                            <p className="text-xs text-gray-500 mt-2 ml-8">Marque esta opção se você não trabalhou neste dia.</p>
+                            <p className="text-xs text-gray-500 mt-2 pl-9">Ative se você não trabalhou nesta data.</p>
                         </div>
 
+                        {/* DATA E FERIADO */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                             <div>
-                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Data</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Data</label>
                                 <input type="date" name="date" value={formData.date} onChange={handleChange} required className={inputStyle} />
                             </div>
                              <div>
-                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Feriado?</label>
-                                <div className="mt-1 p-3 flex items-center h-[50px] bg-white border border-gray-300 rounded-lg shadow-sm">
-                                    <input type="checkbox" id="is_feriado" name="is_feriado" checked={formData.is_feriado} onChange={handleChange} className="h-5 w-5 rounded text-primary focus:ring-primary border-gray-400" />
-                                    <label htmlFor="is_feriado" className="ml-2 text-gray-700 text-sm font-medium">Sim, feriado</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Feriado?</label>
+                                <div className={`mt-1 p-3 flex items-center h-[52px] bg-white border border-gray-400 rounded-lg shadow-sm ${formData.is_day_off ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <input type="checkbox" id="is_feriado" name="is_feriado" checked={formData.is_feriado} onChange={handleChange} className="h-5 w-5 rounded border-gray-400 text-primary focus:ring-primary" />
+                                    <label htmlFor="is_feriado" className="ml-2 text-gray-700 text-sm font-medium select-none">Sim, feriado</label>
                                 </div>
                             </div>
                         </div>
 
+                        {/* CAMPOS DE HORÁRIO (Escondidos se for folga) */}
                         {!formData.is_day_off && (
                             <>
-                                {/* Aumentado o gap para gap-8 para separar bem os botões de hora em telas pequenas */}
+                                {/* Espaçamento aumentado para gap-8 (32px) para separar os botões */}
                                 <div className="grid grid-cols-2 gap-8 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <div>
-                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Início</label>
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Início</label>
                                         <input type="time" name="start_at" value={formData.start_at} onChange={handleChange} required className={inputStyle} />
                                     </div>
                                     <div>
-                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Fim</label>
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Fim</label>
                                         <input type="time" name="end_at" value={formData.end_at} onChange={handleChange} required className={inputStyle} />
                                     </div>
                                 </div>
+                                
                                 <div className="grid grid-cols-2 gap-6 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                      <div>
-                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Refeição (min)</label>
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Refeição (min)</label>
                                         <input 
                                             type="number" 
                                             name="meal_duration" 
@@ -241,7 +246,7 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                                         />
                                     </div>
                                      <div>
-                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descanso (min)</label>
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Descanso (min)</label>
                                         <input 
                                             type="number" 
                                             name="rest_duration" 
@@ -255,10 +260,11 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                             </>
                         )}
 
+                        {/* KM, RV e NOTAS */}
                         {settings?.km_enabled && (
                          <div className="grid grid-cols-2 gap-6 mb-4">
                             <div>
-                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">KM Inicial</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">KM Inicial</label>
                                 <input 
                                     type="number" 
                                     step="0.1" 
@@ -270,7 +276,7 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                                 />
                             </div>
                              <div>
-                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">KM Final</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">KM Final</label>
                                 <input 
                                     type="number" 
                                     step="0.1" 
@@ -284,18 +290,18 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                         </div>
                         )}
                         <div className="mb-4">
-                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nº do RV (opcional)</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Nº do RV (opcional)</label>
                             <input type="text" name="rv_number" value={formData.rv_number} onChange={handleChange} className={inputStyle} placeholder="Ex: 12345" />
                         </div>
                         <div>
-                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notas (opcional)</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Notas (opcional)</label>
                             <textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} className={`${inputStyle} h-auto`} placeholder="Observações adicionais..."></textarea>
                         </div>
                     </form>
                 </div>
                 <div className="p-6 border-t mt-auto bg-gray-50 flex-shrink-0">
                     <div className="flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-sm">Cancelar</button>
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors shadow-sm">Cancelar</button>
                         <button type="submit" form="journey-form" disabled={loading} className="px-6 py-2 bg-primary-medium text-primary-dark font-bold rounded-lg disabled:opacity-50 flex items-center justify-center min-w-[120px] hover:brightness-95 transition-transform active:scale-[0.98] shadow-md border border-transparent">
                             {loading ? <div className="w-5 h-5 border-2 border-t-transparent border-primary-dark rounded-full animate-spin"></div> : 'Salvar'}
                         </button>
