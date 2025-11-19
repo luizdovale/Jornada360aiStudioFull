@@ -10,7 +10,7 @@ export interface Journey {
   meal_duration: number; // in minutes
   rest_duration?: number; // in minutes
   is_feriado: boolean;
-  is_day_off?: boolean; // Novo campo para indicar folga
+  is_day_off?: boolean;
   km_start?: number;
   km_end?: number;
   rv_number?: string;

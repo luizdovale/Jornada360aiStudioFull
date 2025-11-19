@@ -21,13 +21,12 @@ const timeToMinutes = (timeString: string): number => {
 export const calculateJourney = (journey: Journey, settings: Settings): JourneyCalculations => {
     const kmRodados = (journey.km_end || 0) - (journey.km_start || 0);
 
-    // Se for dia de folga, zera as horas trabalhadas e extras, mas mantém KM se houver
     if (journey.is_day_off) {
         return {
             totalTrabalhado: 0,
             horasExtras50: 0,
             horasExtras100: 0,
-            kmRodados: kmRodados > 0 ? kmRodados : 0,
+            kmRodados: (journey.km_end || 0) - (journey.km_start || 0),
         };
     }
 

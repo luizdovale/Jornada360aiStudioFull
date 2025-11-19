@@ -24,11 +24,6 @@ const JourneyItem: React.FC<{
     const dayOfWeek = journeyDate.toLocaleDateString('pt-BR', { weekday: 'short' });
     const day = journeyDate.getDate();
     
-    // Define classes de estilo baseadas se é folga ou não
-    const cardClasses = journey.is_day_off 
-        ? "bg-red-50 border border-red-100 rounded-2xl shadow-sm p-4 flex flex-col gap-3 cursor-pointer transition-all hover:shadow-md"
-        : "bg-white rounded-2xl shadow-soft p-4 flex flex-col gap-3 cursor-pointer transition-all hover:shadow-md";
-
     // Previne que o card expanda/retraia ao clicar nos botões de ação
     const handleActionClick = (e: React.MouseEvent, action: () => void) => {
         e.stopPropagation();
@@ -36,7 +31,10 @@ const JourneyItem: React.FC<{
     };
 
     return (
-        <div onClick={onToggleExpand} className={cardClasses}>
+        <div onClick={onToggleExpand} className={journey.is_day_off
+ ? "bg-red-50 border border-red-300 p-4 rounded-xl"
+ : "bg-white rounded-2xl shadow-soft p-4 flex flex-col gap-3 cursor-pointer transition-all hover:shadow-md"
+}>
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <div className={`text-center w-12 flex-shrink-0 ${journey.is_day_off ? 'text-red-800' : ''}`}>
@@ -49,10 +47,7 @@ const JourneyItem: React.FC<{
                         </p>
                         <div className={`flex items-center gap-2 text-sm ${journey.is_day_off ? 'text-red-600' : 'text-muted-foreground'}`}>
                             {journey.is_day_off ? (
-                                <>
-                                    <CalendarOff className="w-4 h-4" />
-                                    <span className="font-bold tracking-wider">FOLGA</span>
-                                </>
+                                <span className="text-red-600 font-bold">FOLGA</span>
                             ) : (
                                 <>
                                     <Clock className="w-4 h-4" />
@@ -71,7 +66,11 @@ const JourneyItem: React.FC<{
             
             {/* Detalhes expandidos */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 pt-3 mt-3 border-t' : 'max-h-0 pt-0 mt-0'}`}>
-                 {!journey.is_day_off && (
+                 {journey.is_day_off ? (
+    <div className="text-red-700 font-semibold">
+        Dia de folga — sem cálculos de horas.
+    </div>
+) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs bg-primary-light/50 p-2 rounded-lg mb-3">
                         <div>
                             <p className="font-bold text-primary-dark">{formatMinutesToHours(calcs.totalTrabalhado)}</p>

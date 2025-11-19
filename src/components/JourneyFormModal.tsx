@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useToast } from '../hooks/useToast';
 import { Journey } from '../types';
-import { X, CalendarOff } from 'lucide-react';
+import { X } from 'lucide-react';
 
 const getTodayString = () => {
     const today = new Date();
@@ -128,21 +128,14 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         setLoading(true);
         
         // Se for dia de folga, força horários zerados
-        const finalFormData = formData.is_day_off ? {
-            ...formData,
-            start_at: '00:00',
-            end_at: '00:00',
-            meal_duration: 0,
-            rest_duration: 0,
-        } : formData;
-
-        // Converte strings vazias para 0 antes de enviar para o banco
         const dataToSave = {
-            ...finalFormData,
-            meal_duration: Number(finalFormData.meal_duration) || 0,
-            rest_duration: Number(finalFormData.rest_duration) || 0,
-            km_start: Number(finalFormData.km_start) || 0,
-            km_end: Number(finalFormData.km_end) || 0,
+            ...formData,
+            start_at: formData.is_day_off ? "00:00" : formData.start_at,
+            end_at: formData.is_day_off ? "00:00" : formData.end_at,
+            meal_duration: formData.is_day_off ? 0 : Number(formData.meal_duration),
+            rest_duration: formData.is_day_off ? 0 : Number(formData.rest_duration),
+            km_start: Number(formData.km_start),
+            km_end: Number(formData.km_end),
         };
         
         let success;
@@ -174,25 +167,15 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                 <div className="p-6 space-y-5 overflow-y-auto">
                     <form id="journey-form" onSubmit={handleSubmit}>
                         
-                        {/* SEÇÃO DIA DE FOLGA */}
-                        <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-300 shadow-sm">
-                            <div className="flex items-center">
-                                <div className="relative flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        id="is_day_off"
-                                        name="is_day_off"
-                                        checked={formData.is_day_off}
-                                        onChange={handleChange}
-                                        className="h-6 w-6 rounded border-gray-400 text-primary focus:ring-primary cursor-pointer"
-                                    />
-                                </div>
-                                <label htmlFor="is_day_off" className="ml-3 text-lg font-bold text-gray-800 cursor-pointer flex items-center gap-2 select-none">
-                                    <CalendarOff className="w-5 h-5 text-gray-600" />
-                                    Marcar como Folga
-                                </label>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-2 pl-9">Ative se você não trabalhou nesta data.</p>
+                        <div className="flex items-center gap-2 mb-4">
+                            <input
+                                type="checkbox"
+                                name="is_day_off"
+                                checked={formData.is_day_off}
+                                onChange={handleChange}
+                                className="h-5 w-5 text-red-600"
+                            />
+                            <label className="text-sm font-bold text-red-600">Dia de Folga</label>
                         </div>
 
                         {/* DATA E FERIADO */}
@@ -210,47 +193,45 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                             </div>
                         </div>
 
-                        {/* CAMPOS DE HORÁRIO (Escondidos se for folga) */}
-                        {!formData.is_day_off && (
-                            <>
-                                <div className="grid grid-cols-2 gap-8 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                    <div>
-                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Início</label>
-                                        <input type="time" name="start_at" value={formData.start_at} onChange={handleChange} required className={inputStyle} />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Fim</label>
-                                        <input type="time" name="end_at" value={formData.end_at} onChange={handleChange} required className={inputStyle} />
-                                    </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-6 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                     <div>
-                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Refeição (min)</label>
-                                        <input 
-                                            type="number" 
-                                            name="meal_duration" 
-                                            value={formData.meal_duration} 
-                                            onChange={handleChange} 
-                                            required 
-                                            className={inputStyle} 
-                                            placeholder="61"
-                                        />
-                                    </div>
-                                     <div>
-                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Descanso (min)</label>
-                                        <input 
-                                            type="number" 
-                                            name="rest_duration" 
-                                            value={formData.rest_duration} 
-                                            onChange={handleChange} 
-                                            className={inputStyle}
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                </div>
-                            </>
-                        )}
+                        {/* CAMPOS DE HORÁRIO */}
+                        <div className="grid grid-cols-2 gap-8 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div>
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Início</label>
+                                <input type="time" name="start_at" value={formData.start_at} onChange={handleChange} required className={inputStyle} disabled={formData.is_day_off} />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Fim</label>
+                                <input type="time" name="end_at" value={formData.end_at} onChange={handleChange} required className={inputStyle} disabled={formData.is_day_off} />
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-6 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div>
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Refeição (min)</label>
+                                <input 
+                                    type="number" 
+                                    name="meal_duration" 
+                                    value={formData.meal_duration} 
+                                    onChange={handleChange} 
+                                    required 
+                                    className={inputStyle} 
+                                    placeholder="61"
+                                    disabled={formData.is_day_off}
+                                />
+                            </div>
+                                <div>
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Descanso (min)</label>
+                                <input 
+                                    type="number" 
+                                    name="rest_duration" 
+                                    value={formData.rest_duration} 
+                                    onChange={handleChange} 
+                                    className={inputStyle}
+                                    placeholder="0"
+                                    disabled={formData.is_day_off}
+                                />
+                            </div>
+                        </div>
 
                         {/* KM, RV e NOTAS */}
                         {settings?.km_enabled && (
