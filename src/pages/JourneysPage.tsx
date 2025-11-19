@@ -7,7 +7,7 @@ import { calculateJourney, formatMinutesToHours } from '../lib/utils';
 import Skeleton from '../components/ui/Skeleton';
 import JourneyFormModal from '../components/JourneyFormModal';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import { Plus, Edit2, Trash2, Filter, ArrowDownUp, Clock, ListX, ChevronDown, FileText, StickyNote, CalendarOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, Filter, ArrowDownUp, Clock, ListX, ChevronDown, FileText, StickyNote } from 'lucide-react';
 
 const JourneyItem: React.FC<{ 
     journey: Journey, 
@@ -23,36 +23,46 @@ const JourneyItem: React.FC<{
     const journeyDate = new Date(journey.date + 'T00:00:00');
     const dayOfWeek = journeyDate.toLocaleDateString('pt-BR', { weekday: 'short' });
     const day = journeyDate.getDate();
-    
+    const fullDate = journeyDate.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
+
     // Previne que o card expanda/retraia ao clicar nos botões de ação
     const handleActionClick = (e: React.MouseEvent, action: () => void) => {
         e.stopPropagation();
         action();
     };
 
+    // Define styles based on status (Day Off, Holiday, or Regular)
+    let statusLabel = 'Dia Normal';
+    let statusColorClass = 'text-primary-dark';
+    let cardBorderClass = 'border-transparent';
+
+    if (journey.is_day_off) {
+        statusLabel = 'FOLGA';
+        statusColorClass = 'text-red-600';
+        cardBorderClass = 'border-red-100';
+    } else if (journey.is_feriado) {
+        statusLabel = 'Feriado';
+        statusColorClass = 'text-yellow-600';
+    }
+
     return (
-        <div onClick={onToggleExpand} className={journey.is_day_off
- ? "bg-red-50 border border-red-300 p-4 rounded-xl"
- : "bg-white rounded-2xl shadow-soft p-4 flex flex-col gap-3 cursor-pointer transition-all hover:shadow-md"
-}>
+        <div onClick={onToggleExpand} className={`bg-white rounded-2xl shadow-soft p-4 flex flex-col gap-3 cursor-pointer transition-all hover:shadow-md border ${cardBorderClass}`}>
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
-                    <div className={`text-center w-12 flex-shrink-0 ${journey.is_day_off ? 'text-red-800' : ''}`}>
-                        <p className={`text-xs ${journey.is_day_off ? 'text-red-600' : 'text-muted-foreground'}`}>{dayOfWeek}</p>
-                        <p className={`text-xl font-bold ${journey.is_day_off ? 'text-red-700' : 'text-primary-dark'}`}>{day}</p>
+                    <div className="text-center w-12 flex-shrink-0">
+                        <p className="text-xs text-muted-foreground">{dayOfWeek}</p>
+                        <p className="text-xl font-bold text-primary-dark">{day}</p>
                     </div>
                     <div>
-                        <p className={`font-bold ${journey.is_day_off ? 'text-red-700' : journey.is_feriado ? 'text-yellow-600' : 'text-primary-dark'}`}>
-                            {journey.is_day_off ? 'Dia de Folga' : journey.is_feriado ? 'Feriado' : 'Dia Normal'}
+                        <p className={`font-bold ${statusColorClass}`}>
+                            {statusLabel}
                         </p>
-                        <div className={`flex items-center gap-2 text-sm ${journey.is_day_off ? 'text-red-600' : 'text-muted-foreground'}`}>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="w-4 h-4" />
                             {journey.is_day_off ? (
-                                <span className="text-red-600 font-bold">FOLGA</span>
+                                <span>Dia Livre</span>
                             ) : (
-                                <>
-                                    <Clock className="w-4 h-4" />
-                                    <span>{journey.start_at} - {journey.end_at}</span>
-                                </>
+                                <span>{journey.start_at} - {journey.end_at}</span>
                             )}
                         </div>
                     </div>
@@ -66,12 +76,9 @@ const JourneyItem: React.FC<{
             
             {/* Detalhes expandidos */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 pt-3 mt-3 border-t' : 'max-h-0 pt-0 mt-0'}`}>
-                 {journey.is_day_off ? (
-    <div className="text-red-700 font-semibold">
-        Dia de folga — sem cálculos de horas.
-    </div>
-) : (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs bg-primary-light/50 p-2 rounded-lg mb-3">
+                 {/* Hide calculation grid if it's a day off, show only KM if relevant */}
+                 {!journey.is_day_off ? (
+                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs bg-primary-light/50 p-2 rounded-lg mb-3">
                         <div>
                             <p className="font-bold text-primary-dark">{formatMinutesToHours(calcs.totalTrabalhado)}</p>
                             <p className="text-muted-foreground">Trabalhado</p>
@@ -91,15 +98,18 @@ const JourneyItem: React.FC<{
                             </div>
                         )}
                     </div>
+                 ) : (
+                    // If it's a day off, but KM is enabled and > 0, show it.
+                     settings.km_enabled && calcs.kmRodados > 0 && (
+                        <div className="grid grid-cols-1 gap-3 text-center text-xs bg-primary-light/50 p-2 rounded-lg mb-3">
+                            <div>
+                                <p className="font-bold text-primary-dark">{calcs.kmRodados.toFixed(1)} km</p>
+                                <p className="text-muted-foreground">Rodados no Dia de Folga</p>
+                            </div>
+                        </div>
+                     )
                  )}
-                 
-                 {/* Exibe KM no card de folga se houver */}
-                 {journey.is_day_off && settings.km_enabled && calcs.kmRodados > 0 && (
-                     <div className="mb-3 p-2 bg-red-100 rounded-lg text-center text-xs text-red-800">
-                         <p className="font-bold">{calcs.kmRodados.toFixed(1)} km</p>
-                         <p className="text-red-600/80">Rodados na folga</p>
-                     </div>
-                 )}
+
 
                 <div className="space-y-2 text-sm text-muted-foreground">
                     {(journey.rv_number) && (

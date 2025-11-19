@@ -19,6 +19,7 @@ const timeToMinutes = (timeString: string): number => {
  * @returns Um objeto com os totais calculados para a jornada
  */
 export const calculateJourney = (journey: Journey, settings: Settings): JourneyCalculations => {
+    // Calculate KM first as it applies to both work days and days off
     const kmRodados = (journey.km_end || 0) - (journey.km_start || 0);
 
     if (journey.is_day_off) {
@@ -26,7 +27,7 @@ export const calculateJourney = (journey: Journey, settings: Settings): JourneyC
             totalTrabalhado: 0,
             horasExtras50: 0,
             horasExtras100: 0,
-            kmRodados: (journey.km_end || 0) - (journey.km_start || 0),
+            kmRodados: kmRodados > 0 ? kmRodados : 0,
         };
     }
 
@@ -46,15 +47,15 @@ export const calculateJourney = (journey: Journey, settings: Settings): JourneyC
     let horasExtras100 = 0;
 
     if (journey.is_feriado) {
-        horasExtras100 = totalTrabalhado;
+        horasExtras100 = totalTrabalhado > 0 ? totalTrabalhado : 0;
     } else if (totalTrabalhado > jornadaBase) {
         horasExtras50 = totalTrabalhado - jornadaBase;
     }
 
     return {
         totalTrabalhado: totalTrabalhado > 0 ? totalTrabalhado : 0,
-        horasExtras50,
-        horasExtras100,
+        horasExtras50: horasExtras50 > 0 ? horasExtras50 : 0,
+        horasExtras100: horasExtras100 > 0 ? horasExtras100 : 0,
         kmRodados: kmRodados > 0 ? kmRodados : 0,
     };
 };
@@ -108,7 +109,7 @@ export const getMonthSummary = (journeys: Journey[], settings: Settings | null):
         horasExtras50: 0,
         horasExtras100: 0,
         kmRodados: 0,
-        totalDiasTrabalhados: 0, // Inicializa com 0
+        totalDiasTrabalhados: 0,
     };
     
     if (!settings) return summary;
@@ -116,9 +117,7 @@ export const getMonthSummary = (journeys: Journey[], settings: Settings | null):
     return journeys.reduce((acc, journey) => {
         const calcs = calculateJourney(journey, settings);
         
-        // Só conta como dia trabalhado se não for folga e tiver horas trabalhadas > 0
-        // ou se você considerar que folga não entra na contagem.
-        // Geralmente "Dias Trabalhados" exclui folgas.
+        // Only count as a working day if not a day off
         if (!journey.is_day_off) {
              acc.totalDiasTrabalhados += 1;
         }

@@ -76,34 +76,31 @@ const ReportsPage: React.FC = () => {
         sortedJourneys.forEach(journey => {
             const calcs = calculateJourney(journey, settings);
             
-            let journeyData;
-            
+            let startText = journey.start_at;
+            let endText = journey.end_at;
+            let totalText = formatMinutesToHours(calcs.totalTrabalhado);
+            let he50Text = formatMinutesToHours(calcs.horasExtras50);
+            let he100Text = formatMinutesToHours(calcs.horasExtras100);
+
             if (journey.is_day_off) {
-                journeyData = [
-                    new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'),
-                    "FOLGA",
-                    "FOLGA",
-                    "-",
-                    "-",
-                    "-",
-                    settings.km_enabled ? calcs.kmRodados.toFixed(1) : '-',
-                    journey.rv_number || '-',
-                    journey.notes || '-',
-                ];
-            } else {
-                journeyData = [
-                    new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'),
-                    journey.start_at,
-                    journey.end_at,
-                    formatMinutesToHours(calcs.totalTrabalhado),
-                    formatMinutesToHours(calcs.horasExtras50),
-                    formatMinutesToHours(calcs.horasExtras100),
-                    settings.km_enabled ? calcs.kmRodados.toFixed(1) : '-',
-                    journey.rv_number || '-',
-                    journey.notes || '-',
-                ];
+                startText = "FOLGA";
+                endText = "-";
+                totalText = "-";
+                he50Text = "-";
+                he100Text = "-";
             }
-            
+
+            const journeyData = [
+                new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'),
+                startText,
+                endText,
+                totalText,
+                he50Text,
+                he100Text,
+                settings.km_enabled ? calcs.kmRodados.toFixed(1) : '-',
+                journey.rv_number || '-',
+                journey.notes || '-',
+            ];
             tableRows.push(journeyData);
         });
         
