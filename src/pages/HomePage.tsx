@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
@@ -41,13 +42,17 @@ const RecentJourneyItem: React.FC<{ journey: Journey }> = ({ journey }) => {
             className="w-full text-left flex items-center justify-between p-3 bg-white rounded-xl shadow-soft transition-transform hover:scale-[1.02]"
         >
             <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-primary-light text-primary-dark">
+                <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg ${journey.is_day_off ? 'bg-red-100 text-red-800' : 'bg-primary-light text-primary-dark'}`}>
                     <span className="text-xs">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
                     <span className="font-bold text-lg">{date.getDate()}</span>
                 </div>
                 <div>
-                    <p className="font-semibold text-sm text-primary-dark">{date.toLocaleDateString('pt-BR', { weekday: 'long' })}</p>
-                    <p className="text-xs text-muted-foreground">{formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas</p>
+                    <p className={`font-semibold text-sm ${journey.is_day_off ? 'text-red-700' : 'text-primary-dark'}`}>
+                        {date.toLocaleDateString('pt-BR', { weekday: 'long' })}
+                    </p>
+                    <p className={`text-xs ${journey.is_day_off ? 'text-red-600' : 'text-muted-foreground'}`}>
+                        {journey.is_day_off ? 'Dia de Folga' : `${formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas`}
+                    </p>
                 </div>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
