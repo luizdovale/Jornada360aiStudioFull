@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
@@ -22,63 +23,96 @@ const JourneyItem: React.FC<{
     const journeyDate = new Date(journey.date + 'T00:00:00');
     const dayOfWeek = journeyDate.toLocaleDateString('pt-BR', { weekday: 'short' });
     const day = journeyDate.getDate();
-    const fullDate = journeyDate.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
-
+    
     // Previne que o card expanda/retraia ao clicar nos botões de ação
     const handleActionClick = (e: React.MouseEvent, action: () => void) => {
         e.stopPropagation();
         action();
     };
 
+    // Define estilos baseados no status (Folga, Feriado ou Normal)
+    let statusLabel = 'Dia Normal';
+    let statusColorClass = 'text-primary-dark';
+    let cardBorderClass = 'border-transparent';
+    let bgColorClass = 'bg-white';
+
+    if (journey.is_day_off) {
+        statusLabel = 'FOLGA';
+        statusColorClass = 'text-red-600 font-bold';
+        cardBorderClass = 'border-red-200';
+        bgColorClass = 'bg-red-50/30'; // Fundo levemente avermelhado
+    } else if (journey.is_feriado) {
+        statusLabel = 'Feriado';
+        statusColorClass = 'text-yellow-600 font-bold';
+    }
+
     return (
-        <div onClick={onToggleExpand} className="bg-white rounded-2xl shadow-soft p-4 flex flex-col gap-3 cursor-pointer transition-all hover:shadow-md">
+        <div 
+            onClick={onToggleExpand} 
+            className={`${bgColorClass} rounded-2xl shadow-soft p-4 flex flex-col gap-3 cursor-pointer transition-all hover:shadow-md border ${cardBorderClass}`}
+        >
             <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                     <div className="text-center w-12 flex-shrink-0">
-                        <p className="text-xs text-muted-foreground">{dayOfWeek}</p>
+                        <p className="text-xs text-muted-foreground uppercase">{dayOfWeek}</p>
                         <p className="text-xl font-bold text-primary-dark">{day}</p>
                     </div>
                     <div>
-                        <p className={`font-bold ${journey.is_feriado ? 'text-yellow-600' : 'text-primary-dark'}`}>
-                            {journey.is_feriado ? 'Feriado' : 'Dia Normal'}
+                        <p className={`text-sm ${statusColorClass}`}>
+                            {statusLabel}
                         </p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
                             <Clock className="w-4 h-4" />
-                            <span>{journey.start_at} - {journey.end_at}</span>
+                            {journey.is_day_off ? (
+                                <span className="font-medium">-- : --</span>
+                            ) : (
+                                <span>{journey.start_at} - {journey.end_at}</span>
+                            )}
                         </div>
                     </div>
                 </div>
                  <div className="flex items-center gap-2">
-                    <button onClick={(e) => handleActionClick(e, () => onEdit(journey))} className="text-blue-500 hover:text-blue-700 p-1"><Edit2 className="w-4 h-4"/></button>
-                    <button onClick={(e) => handleActionClick(e, () => onDelete(journey.id))} className="text-red-500 hover:text-red-700 p-1"><Trash2 className="w-4 h-4"/></button>
+                    <button onClick={(e) => handleActionClick(e, () => onEdit(journey))} className="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50 transition-colors"><Edit2 className="w-4 h-4"/></button>
+                    <button onClick={(e) => handleActionClick(e, () => onDelete(journey.id))} className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"><Trash2 className="w-4 h-4"/></button>
                     <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>
             </div>
             
             {/* Detalhes expandidos */}
-            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 pt-3 mt-3 border-t' : 'max-h-0 pt-0 mt-0'}`}>
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs bg-primary-light/50 p-2 rounded-lg mb-3">
-                    <div>
-                        <p className="font-bold text-primary-dark">{formatMinutesToHours(calcs.totalTrabalhado)}</p>
-                        <p className="text-muted-foreground">Trabalhado</p>
-                    </div>
-                    <div>
-                        <p className="font-bold text-green-600">{formatMinutesToHours(calcs.horasExtras50)}</p>
-                        <p className="text-muted-foreground">Extra 50%</p>
-                    </div>
-                    <div>
-                        <p className="font-bold text-yellow-600">{formatMinutesToHours(calcs.horasExtras100)}</p>
-                        <p className="text-muted-foreground">Extra 100%</p>
-                    </div>
-                    {settings.km_enabled && (
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 pt-3 mt-3 border-t border-gray-100' : 'max-h-0 pt-0 mt-0'}`}>
+                 {/* Se não for folga, mostra o grid de cálculos */}
+                 {!journey.is_day_off ? (
+                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs bg-primary-light/40 p-3 rounded-xl mb-3">
                         <div>
-                            <p className="font-bold text-primary-dark">{calcs.kmRodados.toFixed(1)} km</p>
-                            <p className="text-muted-foreground">Rodados</p>
+                            <p className="font-bold text-primary-dark text-sm">{formatMinutesToHours(calcs.totalTrabalhado)}</p>
+                            <p className="text-muted-foreground">Trabalhado</p>
                         </div>
-                    )}
-                </div>
+                        <div>
+                            <p className="font-bold text-green-600 text-sm">{formatMinutesToHours(calcs.horasExtras50)}</p>
+                            <p className="text-muted-foreground">Extra 50%</p>
+                        </div>
+                        <div>
+                            <p className="font-bold text-yellow-600 text-sm">{formatMinutesToHours(calcs.horasExtras100)}</p>
+                            <p className="text-muted-foreground">Extra 100%</p>
+                        </div>
+                        {settings.km_enabled && (
+                            <div>
+                                <p className="font-bold text-primary-dark text-sm">{calcs.kmRodados.toFixed(1)} km</p>
+                                <p className="text-muted-foreground">Rodados</p>
+                            </div>
+                        )}
+                    </div>
+                 ) : (
+                    // Se for folga, mas tiver KM (ex: deslocamento), mostra apenas o KM
+                     settings.km_enabled && calcs.kmRodados > 0 && (
+                        <div className="bg-primary-light/40 p-3 rounded-xl mb-3 text-center">
+                            <p className="font-bold text-primary-dark text-sm">{calcs.kmRodados.toFixed(1)} km</p>
+                            <p className="text-xs text-muted-foreground">KM Rodados (Folga)</p>
+                        </div>
+                     )
+                 )}
 
-                <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="space-y-2 text-sm text-muted-foreground px-1">
                     {(journey.rv_number) && (
                          <div className="flex items-start gap-2">
                             <FileText className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
@@ -88,8 +122,11 @@ const JourneyItem: React.FC<{
                      {(journey.notes) && (
                          <div className="flex items-start gap-2">
                             <StickyNote className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
-                            <p><span className="font-semibold text-primary-dark">Notas:</span> {journey.notes}</p>
+                            <p className="break-words">{journey.notes}</p>
                         </div>
+                    )}
+                    {(!journey.rv_number && !journey.notes) && (
+                        <p className="text-xs italic text-gray-400">Sem observações adicionais.</p>
                     )}
                 </div>
             </div>
@@ -133,13 +170,24 @@ const JourneysPage: React.FC = () => {
     const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'total_hours_desc' | 'extra_hours_desc'>('date_desc');
 
     useEffect(() => {
+        if (loading) return;
+
         const params = new URLSearchParams(location.search);
-        if (params.get('new') === 'true') {
-            setEditingJourney(undefined);
-            setIsFormOpen(true);
+        const newJourney = params.get('new');
+        const editJourneyId = params.get('edit');
+        
+        if (newJourney === 'true') {
+            handleAddNew();
+            navigate(location.pathname, { replace: true });
+        } else if (editJourneyId) {
+            const journeyToEdit = journeys.find(j => j.id === editJourneyId);
+            if (journeyToEdit) {
+                handleEdit(journeyToEdit);
+                setExpandedJourneyId(editJourneyId);
+            }
             navigate(location.pathname, { replace: true });
         }
-    }, [location, navigate]);
+    }, [location.search, navigate, journeys, loading]);
 
     const filteredAndSortedJourneys = useMemo(() => {
         if (!settings) return [];
@@ -238,7 +286,7 @@ const JourneysPage: React.FC = () => {
             ) : filteredAndSortedJourneys.length === 0 ? (
                 <div className="text-center py-10 bg-white rounded-2xl shadow-soft"><p className="text-muted-foreground">Nenhuma jornada encontrada para os filtros selecionados.</p></div>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 pb-20">
                     {filteredAndSortedJourneys.map(j => (
                        <JourneyItem key={j.id} journey={j} onEdit={handleEdit} onDelete={handleDeleteRequest} isExpanded={expandedJourneyId === j.id} onToggleExpand={() => handleToggleExpand(j.id)} />
                     ))}
