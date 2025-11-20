@@ -25,6 +25,7 @@ const ReportsPage: React.FC = () => {
         
         const now = new Date();
         const startDay = settings.month_start_day || 1;
+
         let startDate = new Date(now.getFullYear(), now.getMonth(), startDay);
 
         if (now.getDate() < startDay) {
@@ -64,9 +65,9 @@ const ReportsPage: React.FC = () => {
         const doc = new jsPDF();
 
         const userName = user?.user_metadata?.nome || 'Usuário';
-        const period = `${new Date(startDate).toLocaleDateString('pt-BR')} a ${new Date(endDate).toLocaleDateString('pt-BR')}`;
+        const period = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
 
-        // 📌 CABEÇALHO ATUALIZADO
+        // CABEÇALHO
         doc.setFont("helvetica", "bold"); 
         doc.setFontSize(14);
         doc.setTextColor("#0C2344");
@@ -76,6 +77,7 @@ const ReportsPage: React.FC = () => {
         doc.setTextColor("#9CA3AF");
         doc.text("by luizdovaletech", doc.internal.pageSize.getWidth() - 14, 15, { align: "right" });
 
+        doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.setTextColor("#6B7280");
         doc.text(`${userName} | ${period}`, 14, 21);
@@ -99,17 +101,18 @@ const ReportsPage: React.FC = () => {
         const tableColumn = ["Data", "Início", "Fim", "Total", "HE 50%", "HE 100%", "KM", "RV", "Observações"];
         const tableRows: any[] = [];
 
-        const sortedJourneys = [...filteredJourneys].sort((a, b) =>
-            new Date(a.date).getTime() - new Date(b.date).getTime()
+        const sortedJourneys = [...filteredJourneys].sort(
+            (a, b) => new Date(a.date + "T00:00:00").getTime() - new Date(b.date + "T00:00:00").getTime()
         );
 
         sortedJourneys.forEach(journey => {
             const calcs = calculateJourney(journey, settings);
+            const dateFormatted = new Date(journey.date + "T00:00:00").toLocaleDateString('pt-BR');
 
             if (journey.is_day_off) {
-                const style = { textColor: [220, 38, 38], fontStyle: 'bold', fontSize: 7 };
+                const style = { textColor: [220, 38, 38], fontStyle: "bold", fontSize: 7 };
                 tableRows.push([
-                    { content: new Date(journey.date).toLocaleDateString('pt-BR'), styles: style },
+                    { content: dateFormatted, styles: style },
                     { content: "FOLGA", styles: style },
                     { content: "FOLGA", styles: style },
                     { content: "", styles: style },
@@ -117,13 +120,13 @@ const ReportsPage: React.FC = () => {
                     { content: "-", styles: style },
                     { content: settings.km_enabled ? calcs.kmRodados.toFixed(1) : "-", styles: {} },
                     { content: journey.rv_number || "-", styles: {} },
-                    { content: journey.notes || "-", styles: {} },
+                    { content: journey.notes || "-", styles: {} }
                 ]);
             } else {
                 tableRows.push([
-                    new Date(journey.date).toLocaleDateString('pt-BR'),
-                    journey.start_at ? journey.start_at.slice(0, 5) : "-",
-                    journey.end_at ? journey.end_at.slice(0, 5) : "-",
+                    dateFormatted,
+                    journey.start_at?.slice(0, 5) || "-",
+                    journey.end_at?.slice(0, 5) || "-",
                     formatMinutesToHours(calcs.totalTrabalhado),
                     formatMinutesToHours(calcs.horasExtras50),
                     formatMinutesToHours(calcs.horasExtras100),
@@ -139,12 +142,10 @@ const ReportsPage: React.FC = () => {
             head: [tableColumn],
             body: tableRows,
             startY: 38,
-            theme: 'grid',
+            theme: "grid",
             headStyles: { fillColor: "#0C2344", fontSize: 8 },
             styles: { fontSize: 8, cellPadding: 2, halign: "center" },
-            columnStyles: { 
-                8: { halign: "left", cellWidth: "auto" }
-            },
+            columnStyles: { 8: { halign: "left", cellWidth: "auto" } }
         });
 
         // RODAPÉ
@@ -163,6 +164,7 @@ const ReportsPage: React.FC = () => {
         setIsModalOpen(true);
     };
 
+
     const inputStyle =
         "w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition";
 
@@ -178,12 +180,22 @@ const ReportsPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div>
                         <label className="text-sm font-medium">Data de Início</label>
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputStyle} />
+                        <input 
+                            type="date" 
+                            value={startDate} 
+                            onChange={e => setStartDate(e.target.value)} 
+                            className={inputStyle} 
+                        />
                     </div>
 
                     <div>
                         <label className="text-sm font-medium">Data Final</label>
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputStyle} />
+                        <input 
+                            type="date" 
+                            value={endDate} 
+                            onChange={e => setEndDate(e.target.value)} 
+                            className={inputStyle} 
+                        />
                     </div>
                 </div>
 
