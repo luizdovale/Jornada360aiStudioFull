@@ -109,8 +109,8 @@ const ReportsPage: React.FC = () => {
                 
                 rowData = [
                     { content: new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'), styles: folgaStyle },
-                    { content: "FOLGA", styles: folgaStyle },
-                    { content: "FOLGA", styles: folgaStyle },
+                    { content: "folga", styles: folgaStyle },
+                    { content: "folga", styles: folgaStyle },
                     { content: "", styles: folgaStyle }, // Total removido
                     { content: "-", styles: folgaStyle }, // HE 50%
                     { content: "-", styles: folgaStyle }, // HE 100%
