@@ -64,59 +64,106 @@ const ReportsPage: React.FC = () => {
         const userName = user?.user_metadata?.nome || 'Usuário';
         const period = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
 
-        // Cabeçalho
-        doc.setFontSize(14);
+        // Cabeçalho - Ajustado para ocupar menos espaço
+        doc.setFontSize(16); // Reduzido de 18 (padrão aproximado)
         doc.setTextColor("#0C2344");
-        doc.text("Relatório de Jornada", 15, 15);
-        doc.setFontSize(9);
+        doc.text("Relatório de Jornada", 14, 15);
+        
+        doc.setFontSize(10);
         doc.setTextColor("#6B7280");
-        doc.text(`${userName} | ${period}`, 15, 21);
+        doc.text(`${userName} | ${period}`, 14, 20);
 
-        // Resumo
+        // Resumo - Compactado
         const summary = getMonthSummary(filteredJourneys, settings);
-        doc.setFontSize(12);
-        doc.setTextColor("#0C2344");
-        doc.text("Resumo do Período", 15, 32);
-        const summaryText = `
-- Dias Trabalhados: ${summary.totalDiasTrabalhados}
-- Horas Extras (50%): ${formatMinutesToHours(summary.horasExtras50)}
-- Horas Extras (100%): ${formatMinutesToHours(summary.horasExtras100)}
-${settings.km_enabled ? `- KM Rodados: ${summary.kmRodados.toFixed(1)} km` : ''}
-        `.trim();
+        
+        // Posicionando o resumo à direita ou em uma linha compacta
         doc.setFontSize(10);
         doc.setTextColor("#374151");
-        doc.text(summaryText, 15, 39);
+        
+        const summaryY = 28;
+        doc.text(`Dias Trabalhados: ${summary.totalDiasTrabalhados}`, 14, summaryY);
+        doc.text(`Extras 50%: ${formatMinutesToHours(summary.horasExtras50)}`, 60, summaryY);
+        doc.text(`Extras 100%: ${formatMinutesToHours(summary.horasExtras100)}`, 110, summaryY);
+        if (settings.km_enabled) {
+            doc.text(`KM: ${summary.kmRodados.toFixed(1)}`, 160, summaryY);
+        }
 
         // Tabela de Jornadas
         const tableColumn = ["Data", "Início", "Fim", "Total", "HE 50%", "HE 100%", "KM", "RV", "Observações"];
-        const tableRows: (string | number)[][] = [];
+        const tableRows: (string | number | { content: string, styles: any })[][] = [];
         const sortedJourneys = [...filteredJourneys].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         sortedJourneys.forEach(journey => {
             const calcs = calculateJourney(journey, settings);
-            const journeyData = [
-                new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'),
-                journey.start_at,
-                journey.end_at,
-                formatMinutesToHours(calcs.totalTrabalhado),
-                formatMinutesToHours(calcs.horasExtras50),
-                formatMinutesToHours(calcs.horasExtras100),
-                settings.km_enabled ? calcs.kmRodados.toFixed(1) : '-',
-                journey.rv_number || '-',
-                journey.notes || '-',
-            ];
-            tableRows.push(journeyData);
+            
+            let rowData;
+            
+            if (journey.is_day_off) {
+                // Estilo para linhas de folga: Texto vermelho e "FOLGA" nos campos de tempo
+                const folgaStyle = { textColor: [220, 38, 38], fontStyle: 'bold' };
+                
+                rowData = [
+                    { content: new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'), styles: folgaStyle },
+                    { content: "FOLGA", styles: folgaStyle },
+                    { content: "FOLGA", styles: folgaStyle },
+                    { content: "-", styles: folgaStyle }, // Total
+                    { content: "-", styles: folgaStyle }, // HE 50%
+                    { content: "-", styles: folgaStyle }, // HE 100%
+                    { content: settings.km_enabled ? (calcs.kmRodados > 0 ? calcs.kmRodados.toFixed(1) : '-') : '-', styles: {} }, // KM mantém cor normal se houver
+                    { content: journey.rv_number || '-', styles: {} },
+                    { content: journey.notes || '-', styles: {} },
+                ];
+            } else {
+                // Linha normal
+                rowData = [
+                    new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'),
+                    journey.start_at,
+                    journey.end_at,
+                    formatMinutesToHours(calcs.totalTrabalhado),
+                    formatMinutesToHours(calcs.horasExtras50),
+                    formatMinutesToHours(calcs.horasExtras100),
+                    settings.km_enabled ? calcs.kmRodados.toFixed(1) : '-',
+                    journey.rv_number || '-',
+                    journey.notes || '-',
+                ];
+            }
+            
+            tableRows.push(rowData);
         });
         
         // @ts-ignore
         doc.autoTable({
             head: [tableColumn],
             body: tableRows,
-            startY: 62,
+            startY: 35, // Subiu a tabela
             theme: 'grid',
-            headStyles: { fillColor: "#0C2344" },
-            styles: { fontSize: 8 },
-            columnStyles: { 8: { cellWidth: 'auto' } }
+            headStyles: { 
+                fillColor: "#0C2344",
+                fontSize: 8,
+                halign: 'center'
+            },
+            styles: { 
+                fontSize: 8,
+                cellPadding: 2,
+                halign: 'center'
+            },
+            columnStyles: { 
+                0: { cellWidth: 18 }, // Data
+                1: { cellWidth: 12 }, // Início
+                2: { cellWidth: 12 }, // Fim
+                3: { cellWidth: 15 }, // Total
+                4: { cellWidth: 15 }, // HE 50
+                5: { cellWidth: 15 }, // HE 100
+                6: { cellWidth: 15 }, // KM
+                7: { cellWidth: 20 }, // RV
+                8: { cellWidth: 'auto', halign: 'left' } // Obs
+            },
+            didParseCell: function(data: any) {
+                // Opcional: Adicionar fundo vermelho claro para linhas de folga
+                if (data.row.raw && data.row.raw[1] && data.row.raw[1].content === 'FOLGA') {
+                   data.cell.styles.fillColor = [255, 235, 235];
+                }
+            }
         });
 
         // Rodapé
@@ -126,7 +173,7 @@ ${settings.km_enabled ? `- KM Rodados: ${summary.kmRodados.toFixed(1)} km` : ''}
             doc.setFontSize(8);
             doc.setTextColor("#BDC6D1");
             doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.getWidth() / 2, 287, { align: 'center' });
-            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 15, 287);
+            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 287);
         }
 
         // Gera a Data URI e abre o modal
