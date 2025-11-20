@@ -3,7 +3,7 @@ import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getMonthSummary, calculateJourney, formatMinutesToHours } from '../lib/utils';
 import { FileDown } from 'lucide-react';
-import PdfPreviewModal from '../components/ui/PdfPreviewModal'; // Importando o novo modal
+import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
 const ReportsPage: React.FC = () => {
     const { journeys, settings } = useJourneys();
@@ -65,10 +65,15 @@ const ReportsPage: React.FC = () => {
         const period = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
 
         // Cabeçalho - Ajustado para ocupar menos espaço
-        doc.setFontSize(16); // Reduzido de 18 (padrão aproximado)
+        doc.setFontSize(16);
         doc.setTextColor("#0C2344");
         doc.text("Relatório de Jornada", 14, 15);
         
+        // Adicionando nome do desenvolvedor
+        doc.setFontSize(8);
+        doc.setTextColor("#9CA3AF"); // Cor cinza claro
+        doc.text("by luizdovaletech", 70, 15); // Posicionado ao lado do título
+
         doc.setFontSize(10);
         doc.setTextColor("#6B7280");
         doc.text(`${userName} | ${period}`, 14, 20);
@@ -99,14 +104,14 @@ const ReportsPage: React.FC = () => {
             let rowData;
             
             if (journey.is_day_off) {
-                // Estilo para linhas de folga: Texto vermelho e "FOLGA" nos campos de tempo
-                const folgaStyle = { textColor: [220, 38, 38], fontStyle: 'bold' };
+                // Estilo para linhas de folga: Texto vermelho e "FOLGA" nos campos de tempo com fonte menor
+                const folgaStyle = { textColor: [220, 38, 38], fontStyle: 'bold', fontSize: 7 }; // Fonte diminuída para 7
                 
                 rowData = [
                     { content: new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'), styles: folgaStyle },
                     { content: "FOLGA", styles: folgaStyle },
                     { content: "FOLGA", styles: folgaStyle },
-                    { content: "-", styles: folgaStyle }, // Total
+                    { content: "", styles: folgaStyle }, // Total removido
                     { content: "-", styles: folgaStyle }, // HE 50%
                     { content: "-", styles: folgaStyle }, // HE 100%
                     { content: settings.km_enabled ? (calcs.kmRodados > 0 ? calcs.kmRodados.toFixed(1) : '-') : '-', styles: {} }, // KM mantém cor normal se houver
@@ -115,10 +120,14 @@ const ReportsPage: React.FC = () => {
                 ];
             } else {
                 // Linha normal
+                // Remove os segundos do horário (HH:mm:ss -> HH:mm)
+                const startAt = journey.start_at ? journey.start_at.slice(0, 5) : '-';
+                const endAt = journey.end_at ? journey.end_at.slice(0, 5) : '-';
+
                 rowData = [
                     new Date(journey.date + 'T00:00:00').toLocaleDateString('pt-BR'),
-                    journey.start_at,
-                    journey.end_at,
+                    startAt,
+                    endAt,
                     formatMinutesToHours(calcs.totalTrabalhado),
                     formatMinutesToHours(calcs.horasExtras50),
                     formatMinutesToHours(calcs.horasExtras100),
@@ -135,7 +144,7 @@ const ReportsPage: React.FC = () => {
         doc.autoTable({
             head: [tableColumn],
             body: tableRows,
-            startY: 35, // Subiu a tabela
+            startY: 35,
             theme: 'grid',
             headStyles: { 
                 fillColor: "#0C2344",
@@ -159,7 +168,6 @@ const ReportsPage: React.FC = () => {
                 8: { cellWidth: 'auto', halign: 'left' } // Obs
             },
             didParseCell: function(data: any) {
-                // Opcional: Adicionar fundo vermelho claro para linhas de folga
                 if (data.row.raw && data.row.raw[1] && data.row.raw[1].content === 'FOLGA') {
                    data.cell.styles.fillColor = [255, 235, 235];
                 }
