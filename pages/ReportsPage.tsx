@@ -67,6 +67,7 @@ const ReportsPage: React.FC = () => {
         const period = `${new Date(startDate).toLocaleDateString('pt-BR')} a ${new Date(endDate).toLocaleDateString('pt-BR')}`;
 
         // 📌 CABEÇALHO ATUALIZADO
+        doc.setFont("helvetica", "bold"); 
         doc.setFontSize(14);
         doc.setTextColor("#0C2344");
         doc.text("Jornada 360 — Relatório de Jornada", 14, 15);
