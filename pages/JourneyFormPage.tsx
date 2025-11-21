@@ -178,11 +178,13 @@ const JourneyFormPage: React.FC = () => {
 
     const handleCancel = () => navigate('/journeys');
 
-    // Styles
-    // w-full e max-w-full garantem que o input não estoure o container
-    const inputContainerStyle = "relative w-full";
+    // Styles Corrigidos para Mobile
+    const inputContainerStyle = "relative w-full min-w-0"; // min-w-0 permite encolher
     const inputIconStyle = "absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none";
-    const inputStyle = "w-full max-w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none text-base text-gray-800 placeholder-gray-400 shadow-sm box-border";
+    
+    // box-border e w-full são cruciais. min-w-0 em flex items previne overflow.
+    const inputStyle = "w-full min-w-0 pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none text-base text-gray-800 placeholder-gray-400 shadow-sm box-border appearance-none";
+    
     const labelStyle = "text-sm font-semibold text-gray-600 mb-2 ml-1 block";
 
     const toggleLabel = (active: boolean, color: string) =>
@@ -193,22 +195,22 @@ const JourneyFormPage: React.FC = () => {
     if (journeysLoading) return <div className="p-6 text-center">Carregando...</div>;
 
     return (
-        // pb-32 para garantir que o conteúdo não fique escondido atrás do footer fixo
-        // w-full e max-w-full para evitar overflow horizontal no container principal
-        <div className="pb-32 w-full max-w-full space-y-6">
+        // overflow-hidden no eixo X para garantir que nada saia da tela
+        <div className="pb-32 w-full max-w-full overflow-x-hidden">
 
             {/* HEADER */}
-            <div className="flex items-center gap-3 mt-4 px-1">
-                <button onClick={handleCancel} className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-600">
+            <div className="flex items-center gap-3 mt-2 mb-6 px-1">
+                <button onClick={handleCancel} className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-600 flex-shrink-0">
                     <ArrowLeft className="w-6 h-6" />
                 </button>
-                <h1 className="text-2xl font-bold text-primary-dark truncate">
+                <h1 className="text-xl sm:text-2xl font-bold text-primary-dark truncate">
                     {isEditing ? 'Editar Jornada' : 'Nova Jornada'}
                 </h1>
             </div>
 
-            {/* FORM */}
-            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-soft w-full">
+            {/* FORM CONTAINER */}
+            {/* Removido padding lateral extra que poderia somar com o do MainLayout */}
+            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-soft w-full box-border">
                 <form id="journey-form" onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
 
                     {/* Feriado / Folga */}
@@ -216,13 +218,13 @@ const JourneyFormPage: React.FC = () => {
                         <label className={toggleLabel(formData.is_feriado, "border-yellow-500 text-yellow-700")}>
                             <input type="checkbox" name="is_feriado" checked={formData.is_feriado} onChange={handleChange} className="hidden" />
                             {formData.is_feriado && <Check className="w-4 h-4 mr-2" />}
-                            Feriado
+                            <span className="whitespace-nowrap">Feriado</span>
                         </label>
 
                         <label className={toggleLabel(formData.is_day_off, "border-red-500 text-red-700")}>
                             <input type="checkbox" name="is_day_off" checked={formData.is_day_off} onChange={handleChange} className="hidden" />
                             {formData.is_day_off && <Check className="w-4 h-4 mr-2" />}
-                            Dia de Folga
+                            <span className="whitespace-nowrap">Dia de Folga</span>
                         </label>
                     </div>
 
@@ -235,13 +237,14 @@ const JourneyFormPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Horários */}
+                    {/* Horários - Grid Responsivo */}
                     {!formData.is_day_off && (
                         <div className="space-y-6 w-full">
                             
+                            {/* Jornada */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                                 <div className={inputContainerStyle}>
-                                    <label className={labelStyle}>Início</label>
+                                    <label className={labelStyle}>Início Jornada</label>
                                     <div className="relative w-full">
                                         <Clock className={inputIconStyle} />
                                         <input type="time" name="start_at" value={formData.start_at} onChange={handleChange} required className={inputStyle} />
@@ -249,7 +252,7 @@ const JourneyFormPage: React.FC = () => {
                                 </div>
 
                                 <div className={inputContainerStyle}>
-                                    <label className={labelStyle}>Fim</label>
+                                    <label className={labelStyle}>Fim Jornada</label>
                                     <div className="relative w-full">
                                         <Clock className={inputIconStyle} />
                                         <input type="time" name="end_at" value={formData.end_at} onChange={handleChange} required className={inputStyle} />
@@ -257,6 +260,7 @@ const JourneyFormPage: React.FC = () => {
                                 </div>
                             </div>
 
+                            {/* Refeição */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                                 <div className={inputContainerStyle}>
                                     <label className={labelStyle}>Início Refeição</label>
@@ -275,6 +279,7 @@ const JourneyFormPage: React.FC = () => {
                                 </div>
                             </div>
 
+                            {/* Descanso */}
                             <div className={inputContainerStyle}>
                                 <label className={labelStyle}>Descanso Adicional (min)</label>
                                 <div className="relative w-full">
@@ -334,12 +339,12 @@ const JourneyFormPage: React.FC = () => {
             </div>
 
             {/* FOOTER FIXO RESPONSIVO */}
-            <div className="fixed bottom-0 left-0 w-full bg-white border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
-                <div className="max-w-2xl mx-auto px-4 py-4 flex gap-3 w-full">
+            <div className="fixed bottom-0 left-0 w-full bg-white border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 px-4 py-4 box-border">
+                <div className="w-full max-w-2xl mx-auto flex gap-3">
                     <button
                         type="button"
                         onClick={handleCancel}
-                        className="flex-1 py-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-base sm:text-lg"
+                        className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm sm:text-base"
                     >
                         Cancelar
                     </button>
@@ -348,7 +353,7 @@ const JourneyFormPage: React.FC = () => {
                         type="submit"
                         form="journey-form"
                         disabled={loading}
-                        className="flex-1 py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-primary-dark transition active:scale-95 disabled:opacity-70 text-base sm:text-lg"
+                        className="flex-1 py-3 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-primary-dark transition active:scale-95 disabled:opacity-70 text-sm sm:text-base"
                     >
                         {loading ? 'Salvando...' : 'Salvar'}
                     </button>
