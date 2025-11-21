@@ -113,12 +113,12 @@ const ReportsPage: React.FC = () => {
             const dateFormatted = new Date(journey.date + "T00:00:00").toLocaleDateString('pt-BR');
 
             if (journey.is_day_off) {
-                const style = { textColor: [220, 38, 38], fontStyle: "bold", fontSize: 7 };
+                const style = { textColor: [220, 38, 38], fontStyle: "bold", fontSize: 6 };
                 tableRows.push([
                     { content: dateFormatted, styles: style },
-                    { content: "FOLGA", styles: style },
-                    { content: "FOLGA", styles: style },
-                    { content: "FOLGA", styles: style }, // Refeição vira FOLGA
+                    { content: "Folga", styles: style },
+                    { content: "Folga", styles: style },
+                    { content: "Folga", styles: style }, // Refeição vira Folga
                     { content: "-", styles: style }, // HE 50
                     { content: "-", styles: style }, // HE 100
                     { content: settings.km_enabled ? (calcs.kmRodados > 0 ? calcs.kmRodados.toFixed(1) : "-") : "-", styles: {} },
@@ -166,7 +166,7 @@ const ReportsPage: React.FC = () => {
                 8: { halign: "left", cellWidth: "auto" } // Obs
             },
             didParseCell: function(data: any) {
-                if (data.row.raw && data.row.raw[1] && data.row.raw[1].content === 'FOLGA') {
+                if (data.row.raw && data.row.raw[1] && data.row.raw[1].content === 'Folga') {
                    data.cell.styles.fillColor = [255, 235, 235];
                 }
             }

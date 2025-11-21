@@ -6,9 +6,12 @@ export interface Journey {
   date: string; // YYYY-MM-DD
   start_at: string; // HH:mm
   end_at: string; // HH:mm
+  meal_start?: string; // HH:mm
+  meal_end?: string;   // HH:mm
   meal_duration: number; // in minutes
   rest_duration?: number; // in minutes
   is_feriado: boolean;
+  is_day_off?: boolean;
   km_start?: number;
   km_end?: number;
   rv_number?: string;
