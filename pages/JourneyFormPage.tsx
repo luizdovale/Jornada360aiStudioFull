@@ -55,9 +55,6 @@ const JourneyFormPage: React.FC = () => {
 
     const [loading, setLoading] = useState(false);
 
-    // ------------------------------
-    // Responsivo + carregamento
-    // ------------------------------
     useEffect(() => {
         if (isEditing && existingJourney) {
             setFormData({
@@ -85,13 +82,8 @@ const JourneyFormPage: React.FC = () => {
         }
     }, [isEditing, existingJourney, journeysLoading, navigate, toast]);
 
-
-    // ------------------------------
-    // Handlers
-    // ------------------------------
     const handleChange = (e: any) => {
         const { name, value, type, checked } = e.target;
-
         setFormData(prev => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value
@@ -186,42 +178,41 @@ const JourneyFormPage: React.FC = () => {
 
     const handleCancel = () => navigate('/journeys');
 
-
-    // ------------------------------
     // Styles
-    // ------------------------------
+    // w-full e max-w-full garantem que o input não estoure o container
     const inputContainerStyle = "relative w-full";
-    const inputIconStyle = "absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5";
-    const inputStyle = "w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none text-base text-gray-800 placeholder-gray-400 shadow-sm";
+    const inputIconStyle = "absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none";
+    const inputStyle = "w-full max-w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none text-base text-gray-800 placeholder-gray-400 shadow-sm box-border";
     const labelStyle = "text-sm font-semibold text-gray-600 mb-2 ml-1 block";
 
     const toggleLabel = (active: boolean, color: string) =>
-        `flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all 
+        `flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all w-full
          ${active ? `${color} bg-opacity-20` : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}
         `;
 
     if (journeysLoading) return <div className="p-6 text-center">Carregando...</div>;
 
     return (
-        <div className="pb-32 px-4 max-w-xl mx-auto w-full space-y-6">
+        // pb-32 para garantir que o conteúdo não fique escondido atrás do footer fixo
+        // w-full e max-w-full para evitar overflow horizontal no container principal
+        <div className="pb-32 w-full max-w-full space-y-6">
 
             {/* HEADER */}
-            <div className="flex items-center gap-3 mt-4">
-                <button onClick={handleCancel} className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+            <div className="flex items-center gap-3 mt-4 px-1">
+                <button onClick={handleCancel} className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-600">
                     <ArrowLeft className="w-6 h-6" />
                 </button>
-                <h1 className="text-2xl font-bold text-primary-dark">
+                <h1 className="text-2xl font-bold text-primary-dark truncate">
                     {isEditing ? 'Editar Jornada' : 'Nova Jornada'}
                 </h1>
             </div>
 
             {/* FORM */}
-            <div className="bg-white p-5 rounded-2xl shadow-soft">
-                <form id="journey-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-soft w-full">
+                <form id="journey-form" onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
 
                     {/* Feriado / Folga */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                         <label className={toggleLabel(formData.is_feriado, "border-yellow-500 text-yellow-700")}>
                             <input type="checkbox" name="is_feriado" checked={formData.is_feriado} onChange={handleChange} className="hidden" />
                             {formData.is_feriado && <Check className="w-4 h-4 mr-2" />}
@@ -238,7 +229,7 @@ const JourneyFormPage: React.FC = () => {
                     {/* Data */}
                     <div className={inputContainerStyle}>
                         <label className={labelStyle}>Data</label>
-                        <div className="relative">
+                        <div className="relative w-full">
                             <Calendar className={inputIconStyle} />
                             <input type="date" name="date" value={formData.date} onChange={handleChange} required className={inputStyle} />
                         </div>
@@ -246,13 +237,12 @@ const JourneyFormPage: React.FC = () => {
 
                     {/* Horários */}
                     {!formData.is_day_off && (
-                        <div className="space-y-6">
+                        <div className="space-y-6 w-full">
                             
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                                 <div className={inputContainerStyle}>
                                     <label className={labelStyle}>Início</label>
-                                    <div className="relative">
+                                    <div className="relative w-full">
                                         <Clock className={inputIconStyle} />
                                         <input type="time" name="start_at" value={formData.start_at} onChange={handleChange} required className={inputStyle} />
                                     </div>
@@ -260,18 +250,17 @@ const JourneyFormPage: React.FC = () => {
 
                                 <div className={inputContainerStyle}>
                                     <label className={labelStyle}>Fim</label>
-                                    <div className="relative">
+                                    <div className="relative w-full">
                                         <Clock className={inputIconStyle} />
                                         <input type="time" name="end_at" value={formData.end_at} onChange={handleChange} required className={inputStyle} />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                                 <div className={inputContainerStyle}>
                                     <label className={labelStyle}>Início Refeição</label>
-                                    <div className="relative">
+                                    <div className="relative w-full">
                                         <Coffee className={inputIconStyle} />
                                         <input type="time" name="meal_start" value={formData.meal_start} onChange={handleChange} required className={inputStyle} />
                                     </div>
@@ -279,7 +268,7 @@ const JourneyFormPage: React.FC = () => {
 
                                 <div className={inputContainerStyle}>
                                     <label className={labelStyle}>Fim Refeição</label>
-                                    <div className="relative">
+                                    <div className="relative w-full">
                                         <Coffee className={inputIconStyle} />
                                         <input type="time" name="meal_end" value={formData.meal_end} onChange={handleChange} required className={inputStyle} />
                                     </div>
@@ -288,7 +277,7 @@ const JourneyFormPage: React.FC = () => {
 
                             <div className={inputContainerStyle}>
                                 <label className={labelStyle}>Descanso Adicional (min)</label>
-                                <div className="relative">
+                                <div className="relative w-full">
                                     <Coffee className={inputIconStyle} />
                                     <input type="number" name="rest_duration" value={formData.rest_duration} onChange={handleChange} className={inputStyle} placeholder="Opcional" />
                                 </div>
@@ -299,11 +288,10 @@ const JourneyFormPage: React.FC = () => {
 
                     {/* KM */}
                     {settings?.km_enabled && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                             <div className={inputContainerStyle}>
                                 <label className={labelStyle}>KM Inicial</label>
-                                <div className="relative">
+                                <div className="relative w-full">
                                     <Map className={inputIconStyle} />
                                     <input type="number" step="0.1" name="km_start" value={formData.km_start} onChange={handleChange} className={inputStyle} placeholder="Opcional" />
                                 </div>
@@ -311,20 +299,19 @@ const JourneyFormPage: React.FC = () => {
 
                             <div className={inputContainerStyle}>
                                 <label className={labelStyle}>KM Final</label>
-                                <div className="relative">
+                                <div className="relative w-full">
                                     <Map className={inputIconStyle} />
                                     <input type="number" step="0.1" name="km_end" value={formData.km_end} onChange={handleChange} className={inputStyle} placeholder="Opcional" />
                                 </div>
                             </div>
-
                         </div>
                     )}
 
                     {/* RV / Notas */}
-                    <div className="space-y-6">
+                    <div className="space-y-6 w-full">
                         <div className={inputContainerStyle}>
                             <label className={labelStyle}>Nº do RV (opcional)</label>
-                            <div className="relative">
+                            <div className="relative w-full">
                                 <FileText className={inputIconStyle} />
                                 <input type="text" name="rv_number" value={formData.rv_number} onChange={handleChange} className={inputStyle} placeholder="Ex: 12345" />
                             </div>
@@ -346,14 +333,13 @@ const JourneyFormPage: React.FC = () => {
                 </form>
             </div>
 
-
             {/* FOOTER FIXO RESPONSIVO */}
-            <div className="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-40">
-                <div className="max-w-xl mx-auto flex gap-3">
+            <div className="fixed bottom-0 left-0 w-full bg-white border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
+                <div className="max-w-2xl mx-auto px-4 py-4 flex gap-3 w-full">
                     <button
                         type="button"
                         onClick={handleCancel}
-                        className="flex-1 py-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-lg"
+                        className="flex-1 py-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-base sm:text-lg"
                     >
                         Cancelar
                     </button>
@@ -362,7 +348,7 @@ const JourneyFormPage: React.FC = () => {
                         type="submit"
                         form="journey-form"
                         disabled={loading}
-                        className="flex-1 py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-primary-dark transition active:scale-95 disabled:opacity-70 text-lg"
+                        className="flex-1 py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-primary-dark transition active:scale-95 disabled:opacity-70 text-base sm:text-lg"
                     >
                         {loading ? 'Salvando...' : 'Salvar'}
                     </button>
