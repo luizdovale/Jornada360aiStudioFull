@@ -213,18 +213,18 @@ const JourneyFormPage: React.FC = () => {
             <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-soft w-full box-border">
                 <form id="journey-form" onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
 
-                    {/* Feriado / Folga */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                    {/* Feriado / Folga - Lado a Lado (grid-cols-2 forçado) */}
+                    <div className="grid grid-cols-2 gap-4 w-full">
                         <label className={toggleLabel(formData.is_feriado, "border-yellow-500 text-yellow-700")}>
                             <input type="checkbox" name="is_feriado" checked={formData.is_feriado} onChange={handleChange} className="hidden" />
-                            {formData.is_feriado && <Check className="w-4 h-4 mr-2" />}
-                            <span className="whitespace-nowrap">Feriado</span>
+                            {formData.is_feriado && <Check className="w-4 h-4 mr-2 flex-shrink-0" />}
+                            <span className="whitespace-nowrap text-sm sm:text-base">Feriado</span>
                         </label>
 
                         <label className={toggleLabel(formData.is_day_off, "border-red-500 text-red-700")}>
                             <input type="checkbox" name="is_day_off" checked={formData.is_day_off} onChange={handleChange} className="hidden" />
-                            {formData.is_day_off && <Check className="w-4 h-4 mr-2" />}
-                            <span className="whitespace-nowrap">Dia de Folga</span>
+                            {formData.is_day_off && <Check className="w-4 h-4 mr-2 flex-shrink-0" />}
+                            <span className="whitespace-nowrap text-sm sm:text-base">Folga</span>
                         </label>
                     </div>
 
