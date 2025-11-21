@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
@@ -175,12 +176,12 @@ const JourneyFormPage: React.FC = () => {
     };
 
     // Estilos
-    const inputContainerStyle = "relative";
+    const inputContainerStyle = "relative w-full";
     const inputIconStyle = "absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5";
     const inputStyle = "w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-base text-gray-800 placeholder-gray-400 shadow-sm";
     const labelStyle = "text-sm font-semibold text-gray-600 mb-2 block ml-1";
     const toggleLabelStyle = (checked: boolean, colorClass: string = "border-primary bg-primary/5 text-primary") => `
-        relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 shadow-sm
+        relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 shadow-sm w-full
         ${checked ? colorClass : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}
     `;
 
@@ -189,18 +190,19 @@ const JourneyFormPage: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6 pb-24"> {/* pb-24 para dar espaço ao footer fixo */}
-             <div className="flex items-center gap-3">
+        <div className="space-y-6 pb-32"> {/* pb-32 garante espaço suficiente para o footer não cobrir conteúdo */}
+             <div className="flex items-center gap-3 px-1">
                 <button onClick={handleCancel} className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-600">
                     <ArrowLeft className="w-6 h-6" />
                 </button>
                 <h1 className="text-title-lg text-primary-dark">{isEditing ? 'Editar Jornada' : 'Nova Jornada'}</h1>
             </div>
             
-            <div className="bg-white p-6 rounded-2xl shadow-soft">
-                <form id="journey-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-soft w-full">
+                <form id="journey-form" onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* Grid responsivo para os toggles: 1 coluna no mobile, 2 em telas maiores */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                             <label className={toggleLabelStyle(formData.is_feriado, "border-yellow-500 bg-yellow-50 text-yellow-700")}>
                             <input 
                                 type="checkbox" 
@@ -228,7 +230,7 @@ const JourneyFormPage: React.FC = () => {
 
                     <div className={inputContainerStyle}>
                         <label className={labelStyle}>Data</label>
-                        <div className="relative">
+                        <div className="relative w-full">
                             <Calendar className={inputIconStyle} />
                             <input 
                                 type="date" 
@@ -242,11 +244,12 @@ const JourneyFormPage: React.FC = () => {
                     </div>
 
                     {!formData.is_day_off && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="grid grid-cols-2 gap-5">
+                        <div className="space-y-6 w-full">
+                            {/* Grid responsivo para horários: 1 coluna mobile, 2 colunas sm+ */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                                 <div className={inputContainerStyle}>
                                     <label className={labelStyle}>Início Jornada</label>
-                                    <div className="relative">
+                                    <div className="relative w-full">
                                         <Clock className={inputIconStyle} />
                                         <input 
                                             type="time" 
@@ -260,7 +263,7 @@ const JourneyFormPage: React.FC = () => {
                                 </div>
                                 <div className={inputContainerStyle}>
                                     <label className={labelStyle}>Fim Jornada</label>
-                                    <div className="relative">
+                                    <div className="relative w-full">
                                         <Clock className={inputIconStyle} />
                                         <input 
                                             type="time" 
@@ -274,10 +277,10 @@ const JourneyFormPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                                     <div className={inputContainerStyle}>
                                     <label className={labelStyle}>Início Refeição</label>
-                                    <div className="relative">
+                                    <div className="relative w-full">
                                         <Coffee className={inputIconStyle} />
                                         <input 
                                             type="time" 
@@ -291,7 +294,7 @@ const JourneyFormPage: React.FC = () => {
                                 </div>
                                     <div className={inputContainerStyle}>
                                     <label className={labelStyle}>Fim Refeição</label>
-                                    <div className="relative">
+                                    <div className="relative w-full">
                                         <Coffee className={inputIconStyle} />
                                         <input 
                                             type="time" 
@@ -307,7 +310,7 @@ const JourneyFormPage: React.FC = () => {
 
                             <div className={inputContainerStyle}>
                                 <label className={labelStyle}>Descanso Adicional (min)</label>
-                                <div className="relative">
+                                <div className="relative w-full">
                                     <Coffee className={inputIconStyle} />
                                     <input 
                                         type="number" 
@@ -323,10 +326,10 @@ const JourneyFormPage: React.FC = () => {
                     )}
 
                     {settings?.km_enabled && (
-                        <div className="grid grid-cols-2 gap-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                         <div className={inputContainerStyle}>
                             <label className={labelStyle}>KM Inicial</label>
-                            <div className="relative">
+                            <div className="relative w-full">
                                 <Map className={inputIconStyle} />
                                 <input 
                                     type="number" 
@@ -341,7 +344,7 @@ const JourneyFormPage: React.FC = () => {
                         </div>
                             <div className={inputContainerStyle}>
                             <label className={labelStyle}>KM Final</label>
-                            <div className="relative">
+                            <div className="relative w-full">
                                 <Map className={inputIconStyle} />
                                 <input 
                                     type="number" 
@@ -357,10 +360,10 @@ const JourneyFormPage: React.FC = () => {
                     </div>
                     )}
 
-                    <div className="space-y-6">
+                    <div className="space-y-6 w-full">
                         <div className={inputContainerStyle}>
                             <label className={labelStyle}>Nº do RV (opcional)</label>
-                            <div className="relative">
+                            <div className="relative w-full">
                                 <FileText className={inputIconStyle} />
                                 <input 
                                     type="text" 
@@ -379,7 +382,7 @@ const JourneyFormPage: React.FC = () => {
                                 value={formData.notes} 
                                 onChange={handleChange} 
                                 rows={3} 
-                                className={`${inputStyle} pl-4 h-auto min-h-[100px] resize-y`} 
+                                className={`${inputStyle} pl-4 h-auto min-h-[100px] resize-y w-full`} 
                                 placeholder="Observações sobre o dia..."
                             ></textarea>
                         </div>
@@ -387,13 +390,13 @@ const JourneyFormPage: React.FC = () => {
                 </form>
             </div>
 
-             {/* Footer Fixo */}
-             <div className="fixed bottom-0 left-0 w-full bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-40">
-                <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl flex gap-3">
-                    <button type="button" onClick={handleCancel} className="flex-1 py-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-lg">
+             {/* Footer Fixo - Ajustado para mobile */}
+             <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-40 box-border">
+                <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl w-full flex gap-3 px-2 sm:px-0">
+                    <button type="button" onClick={handleCancel} className="flex-1 py-3 sm:py-4 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-base sm:text-lg active:scale-[0.98]">
                         Cancelar
                     </button>
-                    <button type="submit" form="journey-form" disabled={loading} className="flex-1 py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-primary-dark transition-transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-lg">
+                    <button type="submit" form="journey-form" disabled={loading} className="flex-1 py-3 sm:py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-primary-dark transition-transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-base sm:text-lg">
                         {loading ? 'Salvando...' : 'Salvar'}
                     </button>
                 </div>
