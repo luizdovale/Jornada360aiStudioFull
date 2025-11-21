@@ -66,7 +66,7 @@ const JourneyFormPage: React.FC = () => {
                 meal_duration: existingJourney.meal_duration,
                 rest_duration: existingJourney.rest_duration || '',
                 is_feriado: existingJourney.is_feriado,
-                is_day_off: existingJourney.is_day_off,
+                is_day_off: existingJourney.is_day_off || false,
                 km_start: existingJourney.km_start || '',
                 km_end: existingJourney.km_end || '',
                 rv_number: existingJourney.rv_number || '',
@@ -93,33 +93,14 @@ const JourneyFormPage: React.FC = () => {
     const validateForm = () => {
         if (formData.is_day_off) return true;
 
-        const start = timeToMinutes(formData.start_at);
-        const end = timeToMinutes(formData.end_at);
-
-        if (end < start) {
-            toast({
-                title: 'Horário inválido',
-                description: 'O fim da jornada deve ser após o início.',
-                variant: 'destructive',
-            });
-            return false;
-        }
-
-        const ms = timeToMinutes(formData.meal_start);
-        const me = timeToMinutes(formData.meal_end);
-
-        if (me <= ms) {
-            toast({
-                title: 'Refeição inválida',
-                description: 'O fim da refeição deve ser após o início.',
-                variant: 'destructive',
-            });
-            return false;
-        }
+        // REMOVIDO: Bloqueio de horário noturno (end < start). 
+        // Motoristas podem começar num dia e terminar no outro.
+        // A lógica de cálculo (utils.ts) e o submit abaixo lidam com isso somando 24h.
 
         if (settings?.km_enabled) {
             const ks = Number(formData.km_start || 0);
             const ke = Number(formData.km_end || 0);
+            // Validação de KM permanece útil, pois o odômetro não regride
             if (ke > 0 && ke < ks) {
                 toast({
                     title: 'KM inválido',
@@ -141,6 +122,12 @@ const JourneyFormPage: React.FC = () => {
 
         const ms = timeToMinutes(formData.meal_start);
         const me = timeToMinutes(formData.meal_end);
+        
+        // Calcula a duração da refeição. Se o fim for menor que o início, assume que cruzou a meia-noite.
+        let calculatedMealDuration = me - ms;
+        if (calculatedMealDuration < 0) {
+            calculatedMealDuration += 24 * 60; // Adiciona 24h em minutos
+        }
 
         const processed = formData.is_day_off
             ? {
@@ -154,7 +141,7 @@ const JourneyFormPage: React.FC = () => {
             }
             : {
                 ...formData,
-                meal_duration: me - ms
+                meal_duration: calculatedMealDuration
             };
 
         const dataToSave = {
@@ -179,12 +166,9 @@ const JourneyFormPage: React.FC = () => {
     const handleCancel = () => navigate('/journeys');
 
     // Styles Corrigidos para Mobile
-    const inputContainerStyle = "relative w-full min-w-0"; // min-w-0 permite encolher
+    const inputContainerStyle = "relative w-full min-w-0";
     const inputIconStyle = "absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none";
-    
-    // box-border e w-full são cruciais. min-w-0 em flex items previne overflow.
     const inputStyle = "w-full min-w-0 pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none text-base text-gray-800 placeholder-gray-400 shadow-sm box-border appearance-none";
-    
     const labelStyle = "text-sm font-semibold text-gray-600 mb-2 ml-1 block";
 
     const toggleLabel = (active: boolean, color: string) =>
@@ -195,7 +179,6 @@ const JourneyFormPage: React.FC = () => {
     if (journeysLoading) return <div className="p-6 text-center">Carregando...</div>;
 
     return (
-        // overflow-hidden no eixo X para garantir que nada saia da tela
         <div className="pb-32 w-full max-w-full overflow-x-hidden">
 
             {/* HEADER */}
@@ -209,11 +192,10 @@ const JourneyFormPage: React.FC = () => {
             </div>
 
             {/* FORM CONTAINER */}
-            {/* Removido padding lateral extra que poderia somar com o do MainLayout */}
             <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-soft w-full box-border">
                 <form id="journey-form" onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
 
-                    {/* Feriado / Folga - Lado a Lado (grid-cols-2 forçado) */}
+                    {/* Feriado / Folga */}
                     <div className="grid grid-cols-2 gap-4 w-full">
                         <label className={toggleLabel(formData.is_feriado, "border-yellow-500 text-yellow-700")}>
                             <input type="checkbox" name="is_feriado" checked={formData.is_feriado} onChange={handleChange} className="hidden" />
@@ -237,7 +219,7 @@ const JourneyFormPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Horários - Grid Responsivo */}
+                    {/* Horários */}
                     {!formData.is_day_off && (
                         <div className="space-y-6 w-full">
                             
