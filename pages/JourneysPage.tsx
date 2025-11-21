@@ -1,17 +1,15 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { Journey } from '../types';
 import { calculateJourney, formatMinutesToHours } from '../lib/utils';
 import Skeleton from '../components/ui/Skeleton';
-import JourneyFormModal from '../components/JourneyFormModal';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
 import { Plus, Edit2, Trash2, Filter, ArrowDownUp, Clock, ListX, ChevronDown, FileText, StickyNote } from 'lucide-react';
 
 const JourneyItem: React.FC<{ 
     journey: Journey, 
-    onEdit: (j: Journey) => void, 
+    onEdit: (id: string) => void, 
     onDelete: (id: string) => void,
     isExpanded: boolean,
     onToggleExpand: () => void
@@ -72,7 +70,7 @@ const JourneyItem: React.FC<{
                     </div>
                 </div>
                  <div className="flex items-center gap-2">
-                    <button onClick={(e) => handleActionClick(e, () => onEdit(journey))} className="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50 transition-colors"><Edit2 className="w-4 h-4"/></button>
+                    <button onClick={(e) => handleActionClick(e, () => onEdit(journey.id))} className="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50 transition-colors"><Edit2 className="w-4 h-4"/></button>
                     <button onClick={(e) => handleActionClick(e, () => onDelete(journey.id))} className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"><Trash2 className="w-4 h-4"/></button>
                     <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>
@@ -111,6 +109,14 @@ const JourneyItem: React.FC<{
                         </div>
                      )
                  )}
+                 
+                {/* Exibe intervalo de refeição se disponível e não for folga */}
+                {!journey.is_day_off && journey.meal_start && journey.meal_end && (
+                     <div className="flex items-start gap-2 text-sm text-muted-foreground px-1 mb-2">
+                        <Coffee className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
+                        <p><span className="font-semibold text-primary-dark">Refeição:</span> {journey.meal_start} - {journey.meal_end}</p>
+                    </div>
+                )}
 
                 <div className="space-y-2 text-sm text-muted-foreground px-1">
                     {(journey.rv_number) && (
@@ -125,7 +131,7 @@ const JourneyItem: React.FC<{
                             <p className="break-words">{journey.notes}</p>
                         </div>
                     )}
-                    {(!journey.rv_number && !journey.notes) && (
+                    {(!journey.rv_number && !journey.notes && (!journey.meal_start || journey.is_day_off)) && (
                         <p className="text-xs italic text-gray-400">Sem observações adicionais.</p>
                     )}
                 </div>
@@ -157,8 +163,6 @@ const JourneyItemSkeleton: React.FC = () => (
 
 const JourneysPage: React.FC = () => {
     const { journeys, loading, deleteJourney, settings } = useJourneys();
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [editingJourney, setEditingJourney] = useState<Journey | undefined>(undefined);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [journeyToDelete, setJourneyToDelete] = useState<string | null>(null);
     const [expandedJourneyId, setExpandedJourneyId] = useState<string | null>(null);
@@ -177,17 +181,11 @@ const JourneysPage: React.FC = () => {
         const editJourneyId = params.get('edit');
         
         if (newJourney === 'true') {
-            handleAddNew();
-            navigate(location.pathname, { replace: true });
+            navigate('/journeys/new', { replace: true });
         } else if (editJourneyId) {
-            const journeyToEdit = journeys.find(j => j.id === editJourneyId);
-            if (journeyToEdit) {
-                handleEdit(journeyToEdit);
-                setExpandedJourneyId(editJourneyId);
-            }
-            navigate(location.pathname, { replace: true });
+            navigate(`/journeys/edit/${editJourneyId}`, { replace: true });
         }
-    }, [location.search, navigate, journeys, loading]);
+    }, [location.search, navigate, loading]);
 
     const filteredAndSortedJourneys = useMemo(() => {
         if (!settings) return [];
@@ -221,9 +219,8 @@ const JourneysPage: React.FC = () => {
         return filtered;
     }, [journeys, settings, filterPeriod, sortBy]);
 
-    const handleEdit = (journey: Journey) => {
-        setEditingJourney(journey);
-        setIsFormOpen(true);
+    const handleEdit = (id: string) => {
+        navigate(`/journeys/edit/${id}`);
     };
 
     const handleDeleteRequest = (id: string) => {
@@ -237,8 +234,7 @@ const JourneysPage: React.FC = () => {
     };
     
     const handleAddNew = () => {
-        setEditingJourney(undefined);
-        setIsFormOpen(true);
+        navigate('/journeys/new');
     };
 
     const handleToggleExpand = (id: string) => {
@@ -247,7 +243,6 @@ const JourneysPage: React.FC = () => {
 
     return (
         <div className="space-y-4">
-             <JourneyFormModal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} journey={editingJourney} />
             <ConfirmationModal isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleConfirmDelete} title="Confirmar Exclusão" message="Tem certeza que deseja deletar esta jornada? Esta ação não pode ser desfeita." confirmText="Sim, Deletar" />
             <div className="flex justify-between items-center">
                 <h1 className="text-title-lg text-primary-dark">Minhas Jornadas</h1>

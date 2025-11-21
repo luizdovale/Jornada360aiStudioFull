@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -11,11 +10,12 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import JourneysPage from './pages/JourneysPage';
+import JourneyFormPage from './pages/JourneyFormPage'; // Nova página
 import SettingsPage from './pages/SettingsPage';
 import ReportsPage from './pages/ReportsPage';
 import OnboardingPage from './pages/OnboardingPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import UpdatePasswordPage from './pages/UpdatePasswordPage'; // Importa a nova página
+import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import CalendarPage from './pages/CalendarPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -48,6 +48,26 @@ const App: React.FC = () => {
                                 <ProtectedRoute>
                                     <MainLayout>
                                         <JourneysPage />
+                                    </MainLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/journeys/new"
+                            element={
+                                <ProtectedRoute>
+                                    <MainLayout>
+                                        <JourneyFormPage />
+                                    </MainLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/journeys/edit/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <MainLayout>
+                                        <JourneyFormPage />
                                     </MainLayout>
                                 </ProtectedRoute>
                             }
