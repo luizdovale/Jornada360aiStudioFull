@@ -6,9 +6,12 @@ import { Journey, Settings, JourneyCalculations, MonthSummary } from '../types';
  * @param timeString String no formato "HH:mm"
  * @returns Número total de minutos
  */
-const timeToMinutes = (timeString: string): number => {
-    if (!timeString || !timeString.includes(':')) return 0;
-    const [hours, minutes] = timeString.split(':').map(Number);
+const timeToMinutes = (timeString: string | undefined | null): number => {
+    if (!timeString || typeof timeString !== 'string' || !timeString.includes(':')) return 0;
+    const parts = timeString.split(':');
+    if (parts.length < 2) return 0;
+    const hours = Number(parts[0]) || 0;
+    const minutes = Number(parts[1]) || 0;
     return hours * 60 + minutes;
 };
 
@@ -19,7 +22,15 @@ const timeToMinutes = (timeString: string): number => {
  * @returns Um objeto com os totais calculados para a jornada
  */
 export const calculateJourney = (journey: Journey, settings: Settings): JourneyCalculations => {
-    const kmRodados = (journey.km_end || 0) - (journey.km_start || 0);
+    // Proteção contra objetos nulos
+    if (!journey || !settings) {
+        return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0 };
+    }
+
+    // Converte para número garantindo que não seja NaN
+    const kmStart = Number(journey.km_start) || 0;
+    const kmEnd = Number(journey.km_end) || 0;
+    const kmRodados = kmEnd - kmStart;
 
     // Se for dia de folga, zera horas e retorna apenas KM
     if (journey.is_day_off) {
@@ -40,8 +51,12 @@ export const calculateJourney = (journey: Journey, settings: Settings): JourneyC
         diffMinutes += 24 * 60;
     }
 
-    const totalTrabalhado = diffMinutes - (journey.meal_duration || 0) - (journey.rest_duration || 0);
-    const jornadaBase = settings.jornada_base || 480; // Padrão de 8h se não configurado
+    // Garante que as durações sejam números
+    const mealDuration = Number(journey.meal_duration) || 0;
+    const restDuration = Number(journey.rest_duration) || 0;
+
+    const totalTrabalhado = diffMinutes - mealDuration - restDuration;
+    const jornadaBase = Number(settings.jornada_base) || 480; // Padrão de 8h se não configurado
     
     let horasExtras50 = 0;
     let horasExtras100 = 0;
@@ -53,9 +68,9 @@ export const calculateJourney = (journey: Journey, settings: Settings): JourneyC
     }
 
     return {
-        totalTrabalhado,
-        horasExtras50,
-        horasExtras100,
+        totalTrabalhado: totalTrabalhado > 0 ? totalTrabalhado : 0,
+        horasExtras50: horasExtras50 > 0 ? horasExtras50 : 0,
+        horasExtras100: horasExtras100 > 0 ? horasExtras100 : 0,
         kmRodados: kmRodados > 0 ? kmRodados : 0,
     };
 };
@@ -81,6 +96,8 @@ export const formatMinutesToHours = (totalMinutes: number): string => {
  * @returns Um array de jornadas que pertencem ao período contábil do mês de exibição
  */
 export const getJourneysForDisplayMonth = (journeys: Journey[], displayDate: Date, settings: Settings): Journey[] => {
+    if (!journeys || !displayDate || !settings) return [];
+
     const startDay = settings.month_start_day || 1;
     
     const displayYear = displayDate.getFullYear();
@@ -91,7 +108,9 @@ export const getJourneysForDisplayMonth = (journeys: Journey[], displayDate: Dat
     endDate.setHours(23, 59, 59, 999); // Garante que o último dia seja incluído completamente
 
     return journeys.filter(j => {
+        if (!j || !j.date) return false;
         const journeyDate = new Date(j.date + 'T00:00:00');
+        if (isNaN(journeyDate.getTime())) return false;
         return journeyDate >= startDate && journeyDate <= endDate;
     });
 };
@@ -109,12 +128,15 @@ export const getMonthSummary = (journeys: Journey[], settings: Settings | null):
         horasExtras50: 0,
         horasExtras100: 0,
         kmRodados: 0,
-        totalDiasTrabalhados: journeys.length,
+        totalDiasTrabalhados: 0,
     };
     
-    if (!settings) return summary;
+    if (!settings || !journeys || !Array.isArray(journeys)) return summary;
+
+    summary.totalDiasTrabalhados = journeys.length;
 
     return journeys.reduce((acc, journey) => {
+        if (!journey) return acc;
         const calcs = calculateJourney(journey, settings);
         acc.totalTrabalhado += calcs.totalTrabalhado;
         acc.horasExtras50 += calcs.horasExtras50;
@@ -131,7 +153,7 @@ export const getMonthSummary = (journeys: Journey[], settings: Settings | null):
  * @returns 'work', 'off', ou null se não for possível calcular
  */
 export const getDayTypeForScale = (date: Date, settings: Settings): 'work' | 'off' | null => {
-    if (!settings.escala_pattern || !settings.escala_start_date) {
+    if (!settings || !settings.escala_pattern || !settings.escala_start_date) {
         return null;
     }
 

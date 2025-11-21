@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
@@ -5,7 +6,7 @@ import { Journey } from '../types';
 import { calculateJourney, formatMinutesToHours } from '../lib/utils';
 import Skeleton from '../components/ui/Skeleton';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import { Plus, Edit2, Trash2, Filter, ArrowDownUp, Clock, ListX, ChevronDown, FileText, StickyNote } from 'lucide-react';
+import { Plus, Edit2, Trash2, Filter, ArrowDownUp, Clock, ListX, ChevronDown, FileText, StickyNote, Coffee } from 'lucide-react';
 
 const JourneyItem: React.FC<{ 
     journey: Journey, 
@@ -15,20 +16,39 @@ const JourneyItem: React.FC<{
     onToggleExpand: () => void
 }> = ({ journey, onEdit, onDelete, isExpanded, onToggleExpand }) => {
     const { settings } = useJourneys();
-    if (!settings) return null;
-
-    const calcs = calculateJourney(journey, settings);
-    const journeyDate = new Date(journey.date + 'T00:00:00');
-    const dayOfWeek = journeyDate.toLocaleDateString('pt-BR', { weekday: 'short' });
-    const day = journeyDate.getDate();
     
-    // Previne que o card expanda/retraia ao clicar nos botões de ação
+    // Proteção crítica: Se não houver settings ou jornada, não renderiza
+    if (!settings || !journey) return null;
+
+    let calcs;
+    try {
+        calcs = calculateJourney(journey, settings);
+    } catch (e) {
+        console.error("Erro ao calcular jornada:", e);
+        calcs = { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0 };
+    }
+
+    // Proteção de Data
+    let dayOfWeek = '-';
+    let day = 0;
+    
+    if (journey.date) {
+        try {
+            const dateObj = new Date(journey.date + 'T00:00:00');
+            if (!isNaN(dateObj.getTime())) {
+                dayOfWeek = dateObj.toLocaleDateString('pt-BR', { weekday: 'short' });
+                day = dateObj.getDate();
+            }
+        } catch (e) {
+            console.error("Data inválida:", journey.date);
+        }
+    }
+    
     const handleActionClick = (e: React.MouseEvent, action: () => void) => {
         e.stopPropagation();
         action();
     };
 
-    // Define estilos baseados no status (Folga, Feriado ou Normal)
     let statusLabel = 'Dia Normal';
     let statusColorClass = 'text-primary-dark';
     let cardBorderClass = 'border-transparent';
@@ -38,7 +58,7 @@ const JourneyItem: React.FC<{
         statusLabel = 'FOLGA';
         statusColorClass = 'text-red-600 font-bold';
         cardBorderClass = 'border-red-200';
-        bgColorClass = 'bg-red-50/30'; // Fundo levemente avermelhado
+        bgColorClass = 'bg-red-50/30'; 
     } else if (journey.is_feriado) {
         statusLabel = 'Feriado';
         statusColorClass = 'text-yellow-600 font-bold';
@@ -76,9 +96,7 @@ const JourneyItem: React.FC<{
                 </div>
             </div>
             
-            {/* Detalhes expandidos */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 pt-3 mt-3 border-t border-gray-100' : 'max-h-0 pt-0 mt-0'}`}>
-                 {/* Se não for folga, mostra o grid de cálculos */}
                  {!journey.is_day_off ? (
                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs bg-primary-light/40 p-3 rounded-xl mb-3">
                         <div>
@@ -101,7 +119,6 @@ const JourneyItem: React.FC<{
                         )}
                     </div>
                  ) : (
-                    // Se for folga, mas tiver KM (ex: deslocamento), mostra apenas o KM
                      settings.km_enabled && calcs.kmRodados > 0 && (
                         <div className="bg-primary-light/40 p-3 rounded-xl mb-3 text-center">
                             <p className="font-bold text-primary-dark text-sm">{calcs.kmRodados.toFixed(1)} km</p>
@@ -110,7 +127,6 @@ const JourneyItem: React.FC<{
                      )
                  )}
                  
-                {/* Exibe intervalo de refeição se disponível e não for folga */}
                 {!journey.is_day_off && journey.meal_start && journey.meal_end && (
                      <div className="flex items-start gap-2 text-sm text-muted-foreground px-1 mb-2">
                         <Coffee className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
@@ -188,34 +204,73 @@ const JourneysPage: React.FC = () => {
     }, [location.search, navigate, loading]);
 
     const filteredAndSortedJourneys = useMemo(() => {
-        if (!settings) return [];
+        // Proteção: garante que dependências existam
+        if (!settings || !journeys) return [];
 
         let filtered = [...journeys];
         const now = new Date();
-        if (filterPeriod === 'current_month') {
-            const startDay = settings?.month_start_day || 1;
-            let startDate = new Date(now.getFullYear(), now.getMonth(), startDay);
-            if (now.getDate() < startDay) {
-                startDate = new Date(now.getFullYear(), now.getMonth() - 1, startDay);
+        
+        try {
+            if (filterPeriod === 'current_month') {
+                const startDay = settings?.month_start_day || 1;
+                let startDate = new Date(now.getFullYear(), now.getMonth(), startDay);
+                if (now.getDate() < startDay) {
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 1, startDay);
+                }
+                let endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDay - 1);
+                endDate.setHours(23, 59, 59, 999); 
+                
+                filtered = journeys.filter(j => {
+                    if (!j || !j.date) return false;
+                    try {
+                        const d = new Date(j.date + 'T00:00:00');
+                        if (isNaN(d.getTime())) return false;
+                        return d >= startDate && d <= endDate;
+                    } catch { return false; }
+                });
+            } else if (filterPeriod === 'last_7_days') {
+                const sevenDaysAgo = new Date(now);
+                sevenDaysAgo.setDate(now.getDate() - 7);
+                sevenDaysAgo.setHours(0, 0, 0, 0);
+                
+                filtered = journeys.filter(j => {
+                    if (!j || !j.date) return false;
+                    try {
+                        const d = new Date(j.date + 'T00:00:00');
+                        if (isNaN(d.getTime())) return false;
+                        return d >= sevenDaysAgo;
+                    } catch { return false; }
+                });
             }
-            let endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDay - 1);
-            endDate.setHours(23, 59, 59, 999); 
-            filtered = journeys.filter(j => new Date(j.date + 'T00:00:00') >= startDate && new Date(j.date + 'T00:00:00') <= endDate);
-        } else if (filterPeriod === 'last_7_days') {
-            const sevenDaysAgo = new Date(now);
-            sevenDaysAgo.setDate(now.getDate() - 7);
-            sevenDaysAgo.setHours(0, 0, 0, 0);
-            filtered = journeys.filter(j => new Date(j.date + 'T00:00:00') >= sevenDaysAgo);
+        } catch (e) {
+            console.error("Erro no filtro:", e);
+            // Fallback: mostra tudo se o filtro falhar
+            filtered = journeys;
         }
 
+        // Ordenação segura
         filtered.sort((a, b) => {
-            switch (sortBy) {
-                case 'date_asc': return new Date(a.date).getTime() - new Date(b.date).getTime();
-                case 'total_hours_desc': return calculateJourney(b, settings).totalTrabalhado - calculateJourney(a, settings).totalTrabalhado;
-                case 'extra_hours_desc': return (calculateJourney(b, settings).horasExtras50 + calculateJourney(b, settings).horasExtras100) - (calculateJourney(a, settings).horasExtras50 + calculateJourney(a, settings).horasExtras100);
-                default: return new Date(b.date).getTime() - new Date(a.date).getTime();
+            try {
+                if (!a || !b) return 0;
+                
+                const dateA = a.date ? new Date(a.date + 'T00:00:00').getTime() : 0;
+                const dateB = b.date ? new Date(b.date + 'T00:00:00').getTime() : 0;
+
+                switch (sortBy) {
+                    case 'date_asc': return dateA - dateB;
+                    case 'total_hours_desc': 
+                        return calculateJourney(b, settings).totalTrabalhado - calculateJourney(a, settings).totalTrabalhado;
+                    case 'extra_hours_desc': 
+                        const extraA = calculateJourney(a, settings).horasExtras50 + calculateJourney(a, settings).horasExtras100;
+                        const extraB = calculateJourney(b, settings).horasExtras50 + calculateJourney(b, settings).horasExtras100;
+                        return extraB - extraA;
+                    default: return dateB - dateA;
+                }
+            } catch (e) {
+                return 0;
             }
         });
+        
         return filtered;
     }, [journeys, settings, filterPeriod, sortBy]);
 
