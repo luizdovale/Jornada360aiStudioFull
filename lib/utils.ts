@@ -1,3 +1,4 @@
+
 import { Journey, Settings, JourneyCalculations, MonthSummary } from '../types';
 
 /**
@@ -18,6 +19,18 @@ const timeToMinutes = (timeString: string): number => {
  * @returns Um objeto com os totais calculados para a jornada
  */
 export const calculateJourney = (journey: Journey, settings: Settings): JourneyCalculations => {
+    const kmRodados = (journey.km_end || 0) - (journey.km_start || 0);
+
+    // Se for dia de folga, zera horas e retorna apenas KM
+    if (journey.is_day_off) {
+        return {
+            totalTrabalhado: 0,
+            horasExtras50: 0,
+            horasExtras100: 0,
+            kmRodados: kmRodados > 0 ? kmRodados : 0,
+        };
+    }
+
     const startMinutes = timeToMinutes(journey.start_at);
     const endMinutes = timeToMinutes(journey.end_at);
 
@@ -38,8 +51,6 @@ export const calculateJourney = (journey: Journey, settings: Settings): JourneyC
     } else if (totalTrabalhado > jornadaBase) {
         horasExtras50 = totalTrabalhado - jornadaBase;
     }
-
-    const kmRodados = (journey.km_end || 0) - (journey.km_start || 0);
 
     return {
         totalTrabalhado,

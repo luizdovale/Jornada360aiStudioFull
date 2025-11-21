@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // =================================================================================
@@ -69,6 +70,7 @@ if (isPlaceholder) {
         const mockQueryBuilder = (tableName) => ({
             _query: null,
             _single: false,
+            _options: null,
 
             select: function(columns = '*') {
                 // CORREÇÃO: Previne que '.select()' sobrescreva uma query de mutação.
@@ -92,6 +94,7 @@ if (isPlaceholder) {
             },
             upsert: function(data, options) {
                 this._query = { type: 'upsert', table: tableName, data };
+                this._options = options;
                 return this;
             },
             eq: function(column, value) {
@@ -160,13 +163,27 @@ if (isPlaceholder) {
                             break;
                         
                         case 'upsert':
-                            const existingIndex = tableData.findIndex(item => item.user_id === this._query.data.user_id);
+                            // Mock strategy: try to find by ID first, then by user_id (common for settings)
+                            let existingIndex = -1;
+                            
+                            if (this._query.data.id) {
+                                existingIndex = tableData.findIndex(item => item.id === this._query.data.id);
+                            }
+                            
+                            // Fallback logic mainly for 'settings' table which often doesn't send ID on upsert but uses user_id as unique key
+                            if (existingIndex === -1 && this._query.data.user_id && this._query.table === 'settings') {
+                                existingIndex = tableData.findIndex(item => item.user_id === this._query.data.user_id);
+                            }
+
                             if (existingIndex > -1) {
                                 const updatedItem = { ...tableData[existingIndex], ...this._query.data, updatedAt: new Date().toISOString() };
                                 db[this._query.table][existingIndex] = updatedItem;
                                 resultData = updatedItem;
                             } else {
-                                const newItemUpsert = { ...this._query.data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+                                const newItemUpsert = { ...this._query.data };
+                                if (!newItemUpsert.id) newItemUpsert.id = crypto.randomUUID();
+                                newItemUpsert.createdAt = new Date().toISOString();
+                                
                                 db[this._query.table].push(newItemUpsert);
                                 resultData = newItemUpsert;
                             }

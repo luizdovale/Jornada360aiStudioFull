@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -82,7 +83,7 @@ const ReportsPage: React.FC = () => {
         doc.setTextColor("#6B7280");
         doc.text(`${userName} | ${period}`, 14, 21);
 
-        // RESUMO
+        // RESUMO - Removido "Total Trabalhado" conforme solicitado
         const summary = getMonthSummary(filteredJourneys, settings);
         
         doc.setFontSize(10);
@@ -90,6 +91,7 @@ const ReportsPage: React.FC = () => {
         
         const summaryY = 30;
         doc.text(`Dias Trabalhados: ${summary.totalDiasTrabalhados}`, 14, summaryY);
+        // Mantendo apenas Extras e KM
         doc.text(`Extras 50%: ${formatMinutesToHours(summary.horasExtras50)}`, 60, summaryY);
         doc.text(`Extras 100%: ${formatMinutesToHours(summary.horasExtras100)}`, 110, summaryY);
 
@@ -98,7 +100,8 @@ const ReportsPage: React.FC = () => {
         }
 
         // TABELA
-        const tableColumn = ["Data", "Início", "Fim", "Total", "HE 50%", "HE 100%", "KM", "RV", "Observações"];
+        // Removido "Total" e atualizado "RV" para "Refeição"
+        const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "KM", "RV", "Observações"];
         const tableRows: any[] = [];
 
         const sortedJourneys = [...filteredJourneys].sort(
@@ -115,19 +118,24 @@ const ReportsPage: React.FC = () => {
                     { content: dateFormatted, styles: style },
                     { content: "FOLGA", styles: style },
                     { content: "FOLGA", styles: style },
-                    { content: "", styles: style },
-                    { content: "-", styles: style },
-                    { content: "-", styles: style },
-                    { content: settings.km_enabled ? calcs.kmRodados.toFixed(1) : "-", styles: {} },
+                    { content: "FOLGA", styles: style }, // Refeição vira FOLGA
+                    { content: "-", styles: style }, // HE 50
+                    { content: "-", styles: style }, // HE 100
+                    { content: settings.km_enabled ? (calcs.kmRodados > 0 ? calcs.kmRodados.toFixed(1) : "-") : "-", styles: {} },
                     { content: journey.rv_number || "-", styles: {} },
                     { content: journey.notes || "-", styles: {} }
                 ]);
             } else {
+                // Formata o intervalo de refeição (ex: 12:00 - 13:00)
+                const mealStart = journey.meal_start ? journey.meal_start.slice(0, 5) : "??:??";
+                const mealEnd = journey.meal_end ? journey.meal_end.slice(0, 5) : "??:??";
+                const mealInterval = `${mealStart} - ${mealEnd}`;
+
                 tableRows.push([
                     dateFormatted,
                     journey.start_at?.slice(0, 5) || "-",
                     journey.end_at?.slice(0, 5) || "-",
-                    formatMinutesToHours(calcs.totalTrabalhado),
+                    mealInterval, // Nova coluna de intervalo de refeição
                     formatMinutesToHours(calcs.horasExtras50),
                     formatMinutesToHours(calcs.horasExtras100),
                     settings.km_enabled ? calcs.kmRodados.toFixed(1) : "-",
@@ -145,7 +153,23 @@ const ReportsPage: React.FC = () => {
             theme: "grid",
             headStyles: { fillColor: "#0C2344", fontSize: 8 },
             styles: { fontSize: 8, cellPadding: 2, halign: "center" },
-            columnStyles: { 8: { halign: "left", cellWidth: "auto" } }
+            // Ajuste nas larguras das colunas para acomodar o intervalo de refeição
+            columnStyles: { 
+                0: { cellWidth: 18 }, // Data
+                1: { cellWidth: 12 }, // Início
+                2: { cellWidth: 12 }, // Fim
+                3: { cellWidth: 22 }, // Refeição (Aumentado)
+                4: { cellWidth: 15 }, // HE 50
+                5: { cellWidth: 15 }, // HE 100
+                6: { cellWidth: 15 }, // KM
+                7: { cellWidth: 20 }, // RV
+                8: { halign: "left", cellWidth: "auto" } // Obs
+            },
+            didParseCell: function(data: any) {
+                if (data.row.raw && data.row.raw[1] && data.row.raw[1].content === 'FOLGA') {
+                   data.cell.styles.fillColor = [255, 235, 235];
+                }
+            }
         });
 
         // RODAPÉ

@@ -26,11 +26,13 @@ interface JourneyFormModalProps {
 }
 
 // Helper type for form state where number fields can be empty strings for UI purposes
-type JourneyFormState = Omit<Journey, 'id' | 'user_id' | 'rest_duration' | 'km_start' | 'km_end'> & {
+type JourneyFormState = Omit<Journey, 'id' | 'user_id' | 'rest_duration' | 'km_start' | 'km_end' | 'meal_start' | 'meal_end'> & {
     rest_duration: number | string;
     km_start: number | string;
     km_end: number | string;
     is_day_off: boolean;
+    meal_start: string;
+    meal_end: string;
 };
 
 const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, journey }) => {
@@ -42,7 +44,9 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         date: getTodayString(),
         start_at: '08:00',
         end_at: '18:00',
-        meal_duration: 61, 
+        meal_start: '12:00', // Valor padrão
+        meal_end: '13:00',   // Valor padrão
+        meal_duration: 60, 
         rest_duration: '', // Start empty
         is_feriado: false,
         is_day_off: false,
@@ -59,6 +63,8 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                 date: journey.date,
                 start_at: journey.start_at,
                 end_at: journey.end_at,
+                meal_start: journey.meal_start || '12:00',
+                meal_end: journey.meal_end || '13:00',
                 meal_duration: journey.meal_duration,
                 rest_duration: journey.rest_duration !== undefined && journey.rest_duration !== 0 ? journey.rest_duration : '',
                 is_feriado: journey.is_feriado,
@@ -74,7 +80,9 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                 date: getTodayString(),
                 start_at: '08:00',
                 end_at: '18:00',
-                meal_duration: 61, 
+                meal_start: '12:00',
+                meal_end: '13:00',
+                meal_duration: 60, 
                 rest_duration: '',
                 is_feriado: false,
                 is_day_off: false,
@@ -106,9 +114,18 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         if (endMinutes > 0 && startMinutes > 0 && endMinutes < startMinutes) {
             const isNextDay = endMinutes < startMinutes;
             if(!isNextDay) {
-                toast({ title: 'Horário Inválido', description: 'A hora final deve ser posterior à hora inicial.', variant: 'destructive' });
+                toast({ title: 'Horário Inválido', description: 'A hora final da jornada deve ser posterior à hora inicial.', variant: 'destructive' });
                 return false;
             }
+        }
+
+        // Validação da Refeição
+        const mealStartMinutes = timeToMinutes(formData.meal_start);
+        const mealEndMinutes = timeToMinutes(formData.meal_end);
+
+        if (mealEndMinutes <= mealStartMinutes) {
+             toast({ title: 'Horário de Refeição Inválido', description: 'O fim da refeição deve ser após o início.', variant: 'destructive' });
+             return false;
         }
         
         if (settings?.km_enabled) {
@@ -130,14 +147,24 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
         
         setLoading(true);
 
+        // Calcula a duração da refeição
+        const mealStartMinutes = timeToMinutes(formData.meal_start);
+        const mealEndMinutes = timeToMinutes(formData.meal_end);
+        const calculatedMealDuration = mealEndMinutes - mealStartMinutes;
+
         // Se for dia de folga, reseta os horários para 00:00 e durações para 0
         const dataToProcess = formData.is_day_off ? {
             ...formData,
             start_at: '00:00',
             end_at: '00:00',
+            meal_start: '00:00',
+            meal_end: '00:00',
             meal_duration: 0,
             rest_duration: 0,
-        } : formData;
+        } : {
+            ...formData,
+            meal_duration: calculatedMealDuration
+        };
 
         // Convert empty strings back to 0 for submission
         const dataToSave: Omit<Journey, 'id' | 'user_id'> = {
@@ -240,7 +267,7 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                             <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="grid grid-cols-2 gap-5">
                                     <div className={inputContainerStyle}>
-                                        <label className={labelStyle}>Início</label>
+                                        <label className={labelStyle}>Início Jornada</label>
                                         <div className="relative">
                                             <Clock className={inputIconStyle} />
                                             <input 
@@ -254,7 +281,7 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                                         </div>
                                     </div>
                                     <div className={inputContainerStyle}>
-                                        <label className={labelStyle}>Fim</label>
+                                        <label className={labelStyle}>Fim Jornada</label>
                                         <div className="relative">
                                             <Clock className={inputIconStyle} />
                                             <input 
@@ -271,13 +298,13 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
 
                                 <div className="grid grid-cols-2 gap-5">
                                      <div className={inputContainerStyle}>
-                                        <label className={labelStyle}>Refeição (min)</label>
+                                        <label className={labelStyle}>Início Refeição</label>
                                         <div className="relative">
                                             <Coffee className={inputIconStyle} />
                                             <input 
-                                                type="number" 
-                                                name="meal_duration" 
-                                                value={formData.meal_duration} 
+                                                type="time" 
+                                                name="meal_start" 
+                                                value={formData.meal_start} 
                                                 onChange={handleChange} 
                                                 required 
                                                 className={inputStyle} 
@@ -285,18 +312,34 @@ const JourneyFormModal: React.FC<JourneyFormModalProps> = ({ isOpen, onClose, jo
                                         </div>
                                     </div>
                                      <div className={inputContainerStyle}>
-                                        <label className={labelStyle}>Descanso (min)</label>
+                                        <label className={labelStyle}>Fim Refeição</label>
                                         <div className="relative">
                                             <Coffee className={inputIconStyle} />
                                             <input 
-                                                type="number" 
-                                                name="rest_duration" 
-                                                value={formData.rest_duration} 
+                                                type="time" 
+                                                name="meal_end" 
+                                                value={formData.meal_end} 
                                                 onChange={handleChange} 
+                                                required
                                                 className={inputStyle} 
-                                                placeholder="Opcional"
                                             />
                                         </div>
+                                    </div>
+                                </div>
+
+                                {/* Descanso permanece numérico/opcional */}
+                                <div className={inputContainerStyle}>
+                                    <label className={labelStyle}>Descanso Adicional (min)</label>
+                                    <div className="relative">
+                                        <Coffee className={inputIconStyle} />
+                                        <input 
+                                            type="number" 
+                                            name="rest_duration" 
+                                            value={formData.rest_duration} 
+                                            onChange={handleChange} 
+                                            className={inputStyle} 
+                                            placeholder="Opcional"
+                                        />
                                     </div>
                                 </div>
                             </div>

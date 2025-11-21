@@ -7,7 +7,9 @@ export interface Journey {
   date: string; // YYYY-MM-DD
   start_at: string; // HH:mm
   end_at: string; // HH:mm
-  meal_duration: number; // in minutes
+  meal_start?: string; // HH:mm - Novo campo
+  meal_end?: string;   // HH:mm - Novo campo
+  meal_duration: number; // in minutes - Mantido para compatibilidade de cálculo
   rest_duration?: number; // in minutes
   is_feriado: boolean;
   is_day_off?: boolean; // Propriedade para Dia de Folga
