@@ -1,13 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Menu, User as UserIcon, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../../hooks/useToast';
 
 const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
     const { user } = useAuth();
+    const { toast } = useToast();
     
     // Simplificado: Busca o nome apenas dos metadados do usuário autenticado.
     const userName = user?.user_metadata?.nome || 'Usuário';
+
+    // Estado para a foto do usuário
+    const [avatar, setAvatar] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Carregar avatar do localStorage ao iniciar
+    useEffect(() => {
+        if (user?.id) {
+            const storedAvatar = localStorage.getItem(`jornada360-avatar-${user.id}`);
+            if (storedAvatar) {
+                setAvatar(storedAvatar);
+            }
+        }
+    }, [user]);
+
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            // Validação de tamanho (limite 2MB para localStorage)
+            if (file.size > 2 * 1024 * 1024) {
+                toast({ title: "Erro", description: "A imagem é muito grande. Máximo de 2MB.", variant: 'destructive' });
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                setAvatar(base64String);
+                if (user?.id) {
+                    try {
+                        localStorage.setItem(`jornada360-avatar-${user.id}`, base64String);
+                        toast({ title: "Sucesso", description: "Foto de perfil atualizada." });
+                    } catch (e) {
+                        toast({ title: "Erro", description: "Espaço insuficiente no navegador.", variant: 'destructive' });
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     return (
         <header className="bg-primary pt-10 pb-20 px-5 text-white">
@@ -28,8 +74,23 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-primary-light flex items-center justify-center text-primary-dark">
-                       <UserIcon className="w-8 h-8" />
+                    {/* Avatar interativo */}
+                    <div 
+                        onClick={handleAvatarClick}
+                        className="w-14 h-14 rounded-full bg-primary-light flex items-center justify-center text-primary-dark overflow-hidden cursor-pointer relative"
+                    >
+                       {avatar ? (
+                           <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                       ) : (
+                           <UserIcon className="w-8 h-8" />
+                       )}
+                       <input 
+                           type="file" 
+                           ref={fileInputRef} 
+                           onChange={handleFileChange} 
+                           className="hidden" 
+                           accept="image/*"
+                       />
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Olá,</p>
