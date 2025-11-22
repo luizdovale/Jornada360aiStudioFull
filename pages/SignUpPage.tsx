@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
-import logo from './assets/logo.png';
 
 const SignUpPage: React.FC = () => {
     const navigate = useNavigate();
@@ -28,7 +27,11 @@ const SignUpPage: React.FC = () => {
         setLoading(false);
 
         if (error) {
-            toast({ title: "Erro ao cadastrar", description: error.message, variant: 'destructive' });
+            toast({
+                title: "Erro ao cadastrar",
+                description: error.message,
+                variant: 'destructive'
+            });
             return;
         }
 
@@ -56,11 +59,11 @@ const SignUpPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
-                
-                {/* LOGO PNG AQUI */}
+
+                {/* LOGO PNG (SEM IMPORT, FUNCIONA NA VERCEL) */}
                 <div className="mb-8 text-center flex flex-col items-center">
                     <img
-                        src={logo}
+                        src="/assets/logo.png"
                         alt="Logo Jornada360"
                         className="w-20 h-20 mb-4 object-contain"
                     />
