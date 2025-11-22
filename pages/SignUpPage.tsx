@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
-import logo from '../assets/logo.png';
+import logo from './assets/logo.png';
 
 const SignUpPage: React.FC = () => {
     const navigate = useNavigate();
