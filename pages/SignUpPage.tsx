@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
@@ -60,10 +61,10 @@ const SignUpPage: React.FC = () => {
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
 
-                {/* LOGO PNG (SEM IMPORT, FUNCIONA NA VERCEL) */}
+                {/* LOGO PNG */}
                 <div className="mb-8 text-center flex flex-col items-center">
                     <img
-                        src="/assets/logo.png"
+                        src="assets/logo.png"
                         alt="Logo Jornada360"
                         className="w-20 h-20 mb-4 object-contain"
                     />

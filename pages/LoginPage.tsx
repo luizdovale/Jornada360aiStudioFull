@@ -1,8 +1,8 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
-import Jornada360Icon from '../components/ui/Jornada360Icon';
 
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
@@ -38,7 +38,11 @@ const LoginPage: React.FC = () => {
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
                 <div className="mb-8 text-center flex flex-col items-center">
-                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
+                     <img
+                        src="assets/logo.png"
+                        alt="Logo Jornada360"
+                        className="w-20 h-20 mb-4 object-contain"
+                    />
                     <h1 className="text-2xl font-bold text-white">Jornada360</h1>
                 </div>
 
