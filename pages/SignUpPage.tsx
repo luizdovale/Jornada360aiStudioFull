@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
-import Jornada360Icon from '../components/ui/Jornada360Icon';
+import logo from '../assets/logo.png';
 
 const SignUpPage: React.FC = () => {
     const navigate = useNavigate();
@@ -21,11 +20,7 @@ const SignUpPage: React.FC = () => {
             email,
             password,
             options: {
-                data: {
-                    nome: nome,
-                },
-                // CORREÇÃO: Usa o 'origin' da URL atual para o redirecionamento.
-                // Isso torna o link de confirmação funcional em qualquer ambiente (local, dev, prod).
+                data: { nome },
                 emailRedirectTo: window.location.origin,
             },
         });
@@ -37,35 +32,44 @@ const SignUpPage: React.FC = () => {
             return;
         }
 
-        // O cadastro foi bem-sucedido, mas o usuário precisa confirmar o email.
-        // A sessão (data.session) será nula se a confirmação por email estiver ativada.
         if (data.user && !data.session) {
-            toast({ 
-                title: "Cadastro quase completo!", 
-                description: "Enviamos um link de confirmação para o seu email. Por favor, verifique sua caixa de entrada para ativar sua conta." 
+            toast({
+                title: "Cadastro quase completo!",
+                description: "Enviamos um link de confirmação para o seu email. Verifique sua caixa de entrada.",
             });
-            // Redireciona para a página de login para que ele possa entrar após a confirmação.
             navigate('/login');
-        } 
-        // Este caso ocorre se a confirmação de email estiver desativada no Supabase.
-        else if (data.user && data.session) {
-            toast({ title: `Bem-vindo(a), ${nome.split(' ')[0]}!`, description: "Sua conta foi criada e você já está conectado." });
-            navigate('/'); // Redireciona para a home, pois o login foi automático.
+        } else if (data.user && data.session) {
+            toast({
+                title: `Bem-vindo(a), ${nome.split(' ')[0]}!`,
+                description: "Sua conta foi criada e você já está conectado.",
+            });
+            navigate('/');
         } else {
-             toast({ title: "Erro inesperado", description: "Não foi possível completar o cadastro. Tente novamente.", variant: 'destructive' });
+            toast({
+                title: "Erro inesperado",
+                description: "Não foi possível completar o cadastro. Tente novamente.",
+                variant: 'destructive',
+            });
         }
     };
 
     return (
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
             <div className="max-w-sm mx-auto px-6 w-full">
+                
+                {/* LOGO PNG AQUI */}
                 <div className="mb-8 text-center flex flex-col items-center">
-                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
+                    <img
+                        src={logo}
+                        alt="Logo Jornada360"
+                        className="w-20 h-20 mb-4 object-contain"
+                    />
                     <h1 className="text-2xl font-bold text-white">Criar Conta</h1>
                 </div>
 
                 <div className="bg-card rounded-3xl shadow-card p-6 space-y-5">
                     <h2 className="text-xl font-bold text-primary-dark">Preencha seus dados</h2>
+
                     <form onSubmit={handleSignUp} className="space-y-4">
                         <div>
                             <label className="text-xs font-medium text-muted-foreground">Nome completo</label>
@@ -78,6 +82,7 @@ const SignUpPage: React.FC = () => {
                                 placeholder="Seu nome"
                             />
                         </div>
+
                         <div>
                             <label className="text-xs font-medium text-muted-foreground">Email</label>
                             <input
@@ -89,6 +94,7 @@ const SignUpPage: React.FC = () => {
                                 placeholder="seu@email.com"
                             />
                         </div>
+
                         <div>
                             <label className="text-xs font-medium text-muted-foreground">Senha</label>
                             <input
@@ -101,12 +107,17 @@ const SignUpPage: React.FC = () => {
                                 placeholder="Mínimo 6 caracteres"
                             />
                         </div>
+
                         <button
                             type="submit"
                             disabled={loading}
                             className="w-full bg-primary-medium text-primary-dark font-bold py-3 rounded-lg hover:brightness-95 transition-transform active:scale-[0.98] disabled:opacity-50 flex items-center justify-center"
                         >
-                             {loading ? <div className="w-5 h-5 border-2 border-t-transparent border-primary-dark rounded-full animate-spin"></div> : 'Criar conta'}
+                            {loading ? (
+                                <div className="w-5 h-5 border-2 border-t-transparent border-primary-dark rounded-full animate-spin"></div>
+                            ) : (
+                                'Criar conta'
+                            )}
                         </button>
                     </form>
                 </div>
