@@ -1,24 +1,82 @@
-import React from 'react';
+import React from "react";
 
-// Este componente SVG representa o ícone personalizado da aplicação Jornada360.
-// Foi criado com base na imagem fornecida para manter a identidade visual.
-const Jornada360Icon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg 
-        viewBox="0 0 50 50" 
-        xmlns="http://www.w3.org/2000/svg" 
-        className={className}
-        fill="currentColor"
+const Jornada360Icon: React.FC<{ className?: string }> = ({ className }) => {
+  return (
+    <svg
+      viewBox="0 0 512 512"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
     >
-        <path 
-            fillRule="evenodd" 
-            clipRule="evenodd" 
-            d="M25 50C38.8071 50 50 38.8071 50 25C50 11.1929 38.8071 0 25 0C11.1929 0 0 11.1929 0 25C0 38.8071 11.1929 50 25 50ZM25 45C36.0457 45 45 36.0457 45 25C45 13.9543 36.0457 5 25 5C13.9543 5 5 13.9543 5 25C5 36.0457 13.9543 45 25 45Z" 
+      <defs>
+        <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FFE78A" />
+          <stop offset="40%" stopColor="#F9C733" />
+          <stop offset="100%" stopColor="#E6A11A" />
+        </linearGradient>
+
+        <linearGradient id="highlight" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
+          <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0" />
+        </linearGradient>
+
+        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow
+            dx="0"
+            dy="6"
+            stdDeviation="6"
+            floodColor="#D4941E"
+            floodOpacity="0.6"
+          />
+        </filter>
+      </defs>
+
+      <g filter="url(#softShadow)">
+        <circle
+          cx="256"
+          cy="256"
+          r="190"
+          stroke="url(#goldGradient)"
+          strokeWidth="36"
+          fill="none"
+          strokeLinecap="round"
         />
-        <path d="M23 11V26H38V21H28V11H23Z" />
-        <path d="M18 23C19.1046 23 20 23.8954 20 25C20 26.1046 19.1046 27 18 27C16.8954 27 16 26.1046 16 25C16 23.8954 16.8954 23 18 23Z" />
-        <path d="M18.8143 33L13.5 44H19L22.2571 36.5H27.7429L31 44H36.5L31.1857 33H18.8143Z" />
-        <path d="M23.5 37H26.5L25 41.5L23.5 37Z" />
+
+        <circle
+          cx="256"
+          cy="256"
+          r="190"
+          stroke="url(#highlight)"
+          strokeWidth="18"
+          fill="none"
+          strokeLinecap="round"
+        />
+
+        <circle cx="256" cy="86" r="14" fill="url(#goldGradient)" />
+        <circle cx="380" cy="256" r="14" fill="url(#goldGradient)" />
+        <circle cx="132" cy="256" r="14" fill="url(#goldGradient)" />
+
+        <rect
+          x="242"
+          y="130"
+          width="28"
+          height="140"
+          rx="14"
+          fill="url(#goldGradient)"
+        />
+
+        <rect
+          x="256"
+          y="242"
+          width="120"
+          height="28"
+          rx="14"
+          fill="url(#goldGradient)"
+        />
+
+        <circle cx="256" cy="256" r="20" fill="url(#goldGradient)" />
+      </g>
     </svg>
-);
+  );
+};
 
 export default Jornada360Icon;

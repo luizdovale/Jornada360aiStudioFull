@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Home, List, Settings, FileText, LogOut, X, User, CalendarDays } from 'lucide-react';
+import Jornada360Icon from '../ui/Jornada360Icon';
 
 const NavItem = ({ icon: Icon, label, path, onClick }: { icon: React.ElementType, label: string, path?: string, onClick?: () => void }) => {
     const navigate = useNavigate();
@@ -38,11 +39,7 @@ const Sidebar: React.FC<{ isOpen: boolean; setIsOpen: (isOpen: boolean) => void;
             >
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <img 
-                            src="assets/logo.png" 
-                            alt="Logo Jornada360" 
-                            className="w-8 h-8 object-contain"
-                        />
+                        <Jornada360Icon className="w-8 h-8 text-accent" />
                         <span className="text-white font-bold text-lg">Jornada360</span>
                     </div>
                     <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-white">
