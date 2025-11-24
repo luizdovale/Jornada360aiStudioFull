@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
 import Jornada360Icon from '../components/ui/Jornada360Icon';
@@ -8,9 +7,47 @@ import Jornada360Icon from '../components/ui/Jornada360Icon';
 const UpdatePasswordPage: React.FC = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
+    const [searchParams] = useSearchParams();
+
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        const access_token = searchParams.get("access_token");
+        const refresh_token = searchParams.get("refresh_token");
+
+        if (!access_token || !refresh_token) {
+            toast({
+                title: "Erro",
+                description: "Link inválido ou expirado.",
+                variant: "destructive",
+            });
+            navigate('/login');
+            return;
+        }
+
+        // 🔥 1. Criar sessão temporária no Supabase
+        supabase.auth
+            .setSession({
+                access_token,
+                refresh_token,
+            })
+            .then(({ data, error }) => {
+                if (error) {
+                    console.error(error);
+                    toast({
+                        title: "Erro",
+                        description: "Não foi possível validar sua sessão.",
+                        variant: "destructive",
+                    });
+                    navigate('/login');
+                } else {
+                    setLoading(false); // Agora pode mostrar o formulário
+                }
+            });
+    }, []);
 
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -20,21 +57,32 @@ const UpdatePasswordPage: React.FC = () => {
             return;
         }
 
-        setLoading(true);
+        setSaving(true);
 
+        // 🔥 2. Atualizar a senha no Supabase
         const { error } = await supabase.auth.updateUser({
             password: password,
         });
 
-        setLoading(false);
+        setSaving(false);
 
         if (error) {
             toast({ title: "Erro", description: error.message, variant: 'destructive' });
         } else {
             toast({ title: "Senha atualizada!", description: "Sua senha foi alterada com sucesso." });
-            navigate('/');
+
+            // Redireciona para o login
+            navigate('/login');
         }
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-primary flex items-center justify-center">
+                <p className="text-white">Validando link de segurança...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-primary flex flex-col justify-center py-12">
@@ -73,10 +121,10 @@ const UpdatePasswordPage: React.FC = () => {
                         </div>
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={saving}
                             className="w-full bg-primary-medium text-primary-dark font-bold py-3 rounded-lg hover:brightness-95 transition-transform active:scale-[0.98] disabled:opacity-50 flex items-center justify-center"
                         >
-                            {loading ? <div className="w-5 h-5 border-2 border-t-transparent border-primary-dark rounded-full animate-spin"></div> : 'Atualizar Senha'}
+                            {saving ? <div className="w-5 h-5 border-2 border-t-transparent border-primary-dark rounded-full animate-spin"></div> : 'Atualizar Senha'}
                         </button>
                     </form>
                 </div>
