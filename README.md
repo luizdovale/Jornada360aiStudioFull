@@ -149,5 +149,6 @@ npm run build
 
 **Luiz Fernando — luizdovaletech**
 Desenvolvedor Web & Flutter • Soluções Digitais Premium
+🌎 Site: https://luizdovaletech.vercel.app/
 📧 *[luizdovaletech@gmail.com](mailto:luizdovaletech@gmail.com)*
 GitHub: [https://github.com/luizdovale](https://github.com/luizdovale)
