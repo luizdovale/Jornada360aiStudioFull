@@ -8,6 +8,37 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
     const { settings } = useJourneys();
     const [currentDate, setCurrentDate] = useState(new Date());
 
+    // Estados para controle do Swipe (Toque)
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+    // Distância mínima (em pixels) para considerar um swipe válido
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e: React.TouchEvent) => {
+        setTouchEnd(null); // Reseta o fim ao tocar
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        if (isLeftSwipe) {
+            changeMonth(1); // Deslizar para esquerda -> Próximo Mês
+        }
+        if (isRightSwipe) {
+            changeMonth(-1); // Deslizar para direita -> Mês Anterior
+        }
+    };
+
     const changeMonth = (amount: number) => {
         setCurrentDate(prev => {
             const newDate = new Date(prev);
@@ -37,7 +68,12 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
     }
     
     return (
-         <div className="w-full">
+         <div 
+            className="w-full select-none" // select-none evita selecionar texto ao arrastar
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+         >
             <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold text-lg text-primary-dark capitalize">{monthName} <span className="text-muted-foreground font-normal">{year}</span></h3>
                 {!isWidget && (
