@@ -1,6 +1,9 @@
 
-![Uploading banner jornada 360WIDE.png…]()
-
+<p align="center">
+  <a href="https://jornada360ai-studio-full.vercel.app/">
+    <img src="https://lh3.googleusercontent.com/pw/AP1GczOx6aup6rJOQhv9sjPoF8ckgR7nYhdSI7UkdVugATvvTSVLWH0q2h6ZweYKLVQMsVMQAAQsoBLNH6l--qvw7Q33tqj5dfwOkb_SD2d4LP3gazrxpxye0zT9QMyUwaJPYRxCwT1-BpAaq31l-QN1IYs=w1366-h473-s-no-gm?authuser=4" width="100%" />
+  </a>
+</p>
 # Jornada360 🚀  
 **by luizdovaletech**
 
