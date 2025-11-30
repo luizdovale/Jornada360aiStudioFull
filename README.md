@@ -1,20 +1,156 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
 
-# Run and deploy your AI Studio app
+![Uploading banner jornada 360WIDE.png…]()
 
-This contains everything you need to run your app locally.
+# Jornada360 🚀  
+**by luizdovaletech**
 
-View your app in AI Studio: https://ai.studio/apps/drive/1PtwokVykpiACJl6fjHc4YNzwh9r3bs_h
+[![Website](https://img.shields.io/badge/Acessar-Jornada360-0ea5e9?style=for-the-badge)](https://jornada360ai-studio-full.vercel.app)
+[![Stack](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge)]()
+[![Stack](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge)]()
+[![Stack](https://img.shields.io/badge/TailwindCSS-3-38bdf8?style=for-the-badge)]()
+[![Deploy](https://img.shields.io/badge/Vercel-Deploy-000000?style=for-the-badge)]()
 
-## Run Locally
+---
 
-**Prerequisites:**  Node.js
+## 📌 Visão Geral
 
+O **Jornada360** é uma aplicação web moderna desenvolvida com **React + TypeScript + TailwindCSS**, criada para organizar, visualizar e acompanhar jornadas, atividades e conteúdos de forma simples, rápida e eficiente.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+O projeto entrega uma UI limpa, responsiva e otimizada, servindo tanto como ferramenta prática quanto como demonstração profissional das habilidades de desenvolvimento front-end do autor.
+
+---
+
+## 🌐 Acesso ao Site
+
+👉 **Site oficial:**  
+https://jornada360ai-studio-full.vercel.app/
+
+---
+
+## 🧩 Funcionalidades Principais
+
+- ✔️ Interface moderna, clara e responsiva  
+- ✔️ TailwindCSS para estilização rápida e consistente  
+- ✔️ Estrutura modular (components, pages, hooks, contexts)  
+- ✔️ Organização preparada para expansão futura  
+- ✔️ Deploy automático e CI conectados à Vercel  
+- ✔️ Ótima performance graças ao Vite  
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+- **React 18**
+- **TypeScript**
+- **Vite**
+- **TailwindCSS**
+- **Context API / Hooks**
+- **ESLint + TS configs**
+- **Hospedagem via Vercel**
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+
+Jornada360aiStudioFull/
+├── components/
+├── contexts/
+├── hooks/
+├── pages/
+├── public/
+├── styles/
+├── supabase/
+├── App.tsx
+├── main.tsx
+├── index.html
+├── package.json
+├── vite.config.ts
+└── tsconfig.json
+
+````
+
+---
+
+## 🚀 Como Rodar o Projeto Localmente
+
+### 1️⃣ Clone o repositório
+
+```bash
+git clone https://github.com/luizdovale/Jornada360aiStudioFull.git
+````
+
+### 2️⃣ Acesse a pasta
+
+```bash
+cd Jornada360aiStudioFull
+```
+
+### 3️⃣ Instale as dependências
+
+```bash
+npm install
+```
+
+### 4️⃣ Configure variáveis de ambiente (se aplicável)
+
+Crie um arquivo `.env` ou `.env.local`, por exemplo:
+
+```
+VITE_API_KEY=sua_key_aqui
+```
+
+### 5️⃣ Inicie o servidor de desenvolvimento
+
+```bash
+npm run dev
+```
+
+Aplicação disponível em:
+👉 [http://localhost:5173](http://localhost:5173)
+
+---
+
+## 🌐 Deploy / Produção
+
+A versão de produção está disponível em:
+👉 **[https://jornada360ai-studio-full.vercel.app/](https://jornada360ai-studio-full.vercel.app/)**
+
+Deploy automático via Vercel conectado ao GitHub.
+
+---
+
+## 🎯 Objetivo do Projeto
+
+O Jornada360 foi criado para:
+
+* Organizar e visualizar jornadas e atividades pessoais ou profissionais
+* Demonstrar domínio em **React + TypeScript + TailwindCSS**
+* Servir como base sólida para futuros módulos e integrações
+* Compor o portfólio profissional **luizdovaletech**
+
+---
+
+## 🤝 Contribuições
+
+Contribuições são bem-vindas!
+Para contribuir:
+
+1. Faça um fork
+2. Crie uma branch: `feature/nova-feature`
+3. Faça commit das suas alterações
+4. Abra um Pull Request
+
+---
+
+## 👨‍💻 Desenvolvido por
+
+**luizdovaletech**
+📧 *[luizdovaletech@gmail.com](mailto:luizdovaletech@gmail.com)*
+
+---
+
+## 📝 Licença
+
+Este projeto está sob a licença **MIT**.
