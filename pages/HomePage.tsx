@@ -201,7 +201,7 @@ const HomePage: React.FC = () => {
                             </div>
                             {settings.km_enabled && (
                                 <div className="pt-2 text-center">
-                                   <SummaryItem label="KM Rodados (Civil)" value={`${summary.kmRodados.toFixed(1)} km`} />
+                                   <SummaryItem label="KM Rodados (Mês Civil)" value={`${summary.kmRodados.toFixed(1)} km`} />
                                 </div>
                             )}
                         </div>
