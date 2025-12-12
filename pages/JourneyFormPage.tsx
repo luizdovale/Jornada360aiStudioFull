@@ -40,7 +40,7 @@ const JourneyFormPage: React.FC = () => {
     const [formData, setFormData] = useState<JourneyFormState>({
         date: getTodayString(),
         start_at: '08:00',
-        end_at: '18:00',
+        end_at: '17:00',
         meal_start: '12:00',
         meal_end: '13:00',
         meal_duration: 60,
