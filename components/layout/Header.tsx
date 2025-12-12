@@ -1,58 +1,87 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Menu, User as UserIcon, Home } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
+import { Menu, User as UserIcon, Home, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 
 const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
-    const { user } = useAuth();
+    const { user, updateUserMetadata } = useAuth();
     const { toast } = useToast();
     
-    // Simplificado: Busca o nome apenas dos metadados do usuário autenticado.
     const userName = user?.user_metadata?.nome || 'Usuário';
-
-    // Estado para a foto do usuário
-    const [avatar, setAvatar] = useState<string | null>(null);
+    
+    // O avatar agora vem diretamente dos metadados do usuário (Supabase)
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Carregar avatar do localStorage ao iniciar
     useEffect(() => {
-        if (user?.id) {
-            const storedAvatar = localStorage.getItem(`jornada360-avatar-${user.id}`);
-            if (storedAvatar) {
-                setAvatar(storedAvatar);
-            }
+        if (user?.user_metadata?.avatar_url) {
+            // Adiciona um timestamp para evitar cache do navegador se a URL for a mesma mas o conteúdo mudou
+            setAvatarUrl(user.user_metadata.avatar_url);
+        } else {
+            setAvatarUrl(null);
         }
     }, [user]);
 
     const handleAvatarClick = () => {
+        if (uploading) return;
         fileInputRef.current?.click();
     };
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            // Validação de tamanho (limite 2MB para localStorage)
-            if (file.size > 2 * 1024 * 1024) {
-                toast({ title: "Erro", description: "A imagem é muito grande. Máximo de 2MB.", variant: 'destructive' });
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            const file = event.target.files?.[0];
+            if (!file || !user) return;
+
+            // Validações
+            if (!file.type.startsWith('image/')) {
+                toast({ title: "Arquivo inválido", description: "Por favor, selecione uma imagem.", variant: 'destructive' });
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) { // 2MB
+                toast({ title: "Muito grande", description: "A imagem deve ter no máximo 2MB.", variant: 'destructive' });
                 return;
             }
 
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result as string;
-                setAvatar(base64String);
-                if (user?.id) {
-                    try {
-                        localStorage.setItem(`jornada360-avatar-${user.id}`, base64String);
-                        toast({ title: "Sucesso", description: "Foto de perfil atualizada." });
-                    } catch (e) {
-                        toast({ title: "Erro", description: "Espaço insuficiente no navegador.", variant: 'destructive' });
-                    }
-                }
-            };
-            reader.readAsDataURL(file);
+            setUploading(true);
+
+            // 1. Upload para o Supabase Storage
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // Remove avatar antigo se necessário (opcional, mas boa prática para economizar espaço)
+            // Para simplificar, vamos apenas fazer o upload do novo.
+
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // 2. Obter URL Pública
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            // 3. Atualizar perfil do usuário com a nova URL
+            await updateUserMetadata({ avatar_url: publicUrl });
+            
+            // Atualiza estado local imediatamente para feedback visual
+            setAvatarUrl(publicUrl);
+
+            toast({ title: "Sucesso", description: "Foto de perfil atualizada." });
+
+        } catch (error: any) {
+            console.error('Erro no upload:', error);
+            toast({ title: "Erro", description: "Falha ao atualizar foto. Tente novamente.", variant: 'destructive' });
+        } finally {
+            setUploading(false);
+            // Limpa o input para permitir selecionar o mesmo arquivo se necessário
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -62,13 +91,13 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
                 <div className="flex items-center justify-between mb-6">
                     {/* Lado Esquerdo: Apenas o botão de Menu */}
                     <div className="flex items-center gap-2">
-                        <button onClick={onMenuClick} className="w-9 h-9 rounded-full bg-primary-dark/40 flex items-center justify-center text-white">
+                        <button onClick={onMenuClick} className="w-9 h-9 rounded-full bg-primary-dark/40 flex items-center justify-center text-white transition hover:bg-primary-dark/60">
                             <Menu className="w-5 h-5" />
                         </button>
                     </div>
                     {/* Lado Direito: Apenas o botão de Home */}
                     <div className="flex items-center gap-3">
-                        <Link to="/" className="w-9 h-9 rounded-full bg-primary-dark/40 flex items-center justify-center text-white">
+                        <Link to="/" className="w-9 h-9 rounded-full bg-primary-dark/40 flex items-center justify-center text-white transition hover:bg-primary-dark/60">
                             <Home className="w-5 h-5" />
                         </Link>
                     </div>
@@ -78,19 +107,23 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
                     {/* Avatar interativo */}
                     <div 
                         onClick={handleAvatarClick}
-                        className="w-14 h-14 rounded-full bg-primary-light flex items-center justify-center text-primary-dark overflow-hidden cursor-pointer relative"
+                        className={`w-14 h-14 rounded-full bg-primary-light flex items-center justify-center text-primary-dark overflow-hidden cursor-pointer relative border-2 border-transparent hover:border-accent transition-all ${uploading ? 'opacity-70' : ''}`}
                     >
-                       {avatar ? (
-                           <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                       {uploading ? (
+                           <Loader2 className="w-6 h-6 animate-spin text-primary-dark" />
+                       ) : avatarUrl ? (
+                           <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                        ) : (
                            <UserIcon className="w-8 h-8" />
                        )}
+                       
                        <input 
                            type="file" 
                            ref={fileInputRef} 
                            onChange={handleFileChange} 
                            className="hidden" 
                            accept="image/*"
+                           disabled={uploading}
                        />
                     </div>
                     <div>
