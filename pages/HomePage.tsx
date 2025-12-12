@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
-import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysForDisplayMonth } from '../lib/utils';
+import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysForDisplayMonth, getJourneysForCalendarMonth } from '../lib/utils';
 import OverlappingCard from '../components/ui/OverlappingCard';
 import Skeleton from '../components/ui/Skeleton';
 import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft } from 'lucide-react';
@@ -121,8 +121,20 @@ const HomePage: React.FC = () => {
 
     const summary: MonthSummary = useMemo(() => {
         if (!settings || !displayDate) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0, totalDiasTrabalhados: 0 };
-        const currentMonthJourneys = getJourneysForDisplayMonth(journeys, displayDate, settings);
-        return getMonthSummary(currentMonthJourneys, settings);
+        
+        // 1. Cálculo de HORAS: Segue o ciclo contábil configurado (ex: dia 21 a 20)
+        const accountingJourneys = getJourneysForDisplayMonth(journeys, displayDate, settings);
+        const accountingSummary = getMonthSummary(accountingJourneys, settings);
+
+        // 2. Cálculo de KM: Segue estritamente o mês civil (dia 1 a 30/31)
+        const calendarJourneys = getJourneysForCalendarMonth(journeys, displayDate);
+        const calendarSummary = getMonthSummary(calendarJourneys, settings);
+
+        // 3. Mescla os resultados
+        return {
+            ...accountingSummary, // Mantém horas e dias trabalhados do ciclo contábil
+            kmRodados: calendarSummary.kmRodados // Sobrescreve apenas o KM com o ciclo civil
+        };
     }, [journeys, settings, displayDate]);
 
     const handlePrevMonth = () => {
@@ -189,7 +201,7 @@ const HomePage: React.FC = () => {
                             </div>
                             {settings.km_enabled && (
                                 <div className="pt-2 text-center">
-                                   <SummaryItem label="KM Rodados" value={`${summary.kmRodados.toFixed(1)} km`} />
+                                   <SummaryItem label="KM Rodados (Civil)" value={`${summary.kmRodados.toFixed(1)} km`} />
                                 </div>
                             )}
                         </div>

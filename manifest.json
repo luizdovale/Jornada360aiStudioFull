@@ -1,15 +1,16 @@
+
 {
   "short_name": "Jornada360",
   "name": "Jornada360",
   "description": "Controle sua jornada de trabalho de motorista com facilidade.",
   "icons": [
     {
-      "src": "/assets/logo.png",
+      "src": "https://lh3.googleusercontent.com/pw/AP1GczNGtnN0Ayiv-bkG1tG_lB6oaK_um0dlk2Yvalt-fuq5hqi8VW7Hpjuy6ca9G3xEgy2Jvu_lPODRXTJ-KQcIq920od4jxl8PdElhy41aKivVzJ6T1H1058OsYeoE6mN6nAJIsaaYHvoDMQCPg9kJJZkR=w180-h180-s-no-gm?authuser=4",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/assets/logo.png",
+      "src": "https://lh3.googleusercontent.com/pw/AP1GczNGtnN0Ayiv-bkG1tG_lB6oaK_um0dlk2Yvalt-fuq5hqi8VW7Hpjuy6ca9G3xEgy2Jvu_lPODRXTJ-KQcIq920od4jxl8PdElhy41aKivVzJ6T1H1058OsYeoE6mN6nAJIsaaYHvoDMQCPg9kJJZkR=w180-h180-s-no-gm?authuser=4",
       "type": "image/png",
       "sizes": "512x512"
     }
@@ -18,5 +19,5 @@
    "scope": "/",
   "display": "standalone",
   "theme_color": "#1A2346",
-  "background_color": "#1A2346"
+  "background_color": "#F5F7FA"
 }

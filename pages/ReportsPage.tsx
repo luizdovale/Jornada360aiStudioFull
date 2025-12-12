@@ -113,7 +113,8 @@ const ReportsPage: React.FC = () => {
             const dateFormatted = new Date(journey.date + "T00:00:00").toLocaleDateString('pt-BR');
 
             if (journey.is_day_off) {
-                const style = { textColor: [220, 38, 38], fontStyle: "bold", fontSize: 6 };
+                // REMOVIDO: fontSize: 6. Agora usa o tamanho padrão da tabela (8).
+                const style = { textColor: [220, 38, 38], fontStyle: "bold" };
                 tableRows.push([
                     { content: dateFormatted, styles: style },
                     { content: "Folga", styles: style },

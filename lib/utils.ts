@@ -89,7 +89,7 @@ export const formatMinutesToHours = (totalMinutes: number): string => {
 };
 
 /**
- * Filtra as jornadas para um mês de exibição específico, respeitando o dia de início contábil.
+ * Filtra as jornadas para um mês de exibição específico, respeitando o dia de início contábil (Ciclo de Horas).
  * @param journeys Todas as jornadas do usuário
  * @param displayDate A data (mês/ano) para a qual o resumo deve ser gerado
  * @param settings As configurações do usuário, contendo month_start_day
@@ -115,9 +115,34 @@ export const getJourneysForDisplayMonth = (journeys: Journey[], displayDate: Dat
     });
 };
 
+/**
+ * Filtra as jornadas estritamente pelo mês civil (1 a 30/31), ignorando o ciclo contábil (Ciclo de KM).
+ * @param journeys Todas as jornadas do usuário
+ * @param displayDate A data (mês/ano) para a qual o resumo deve ser gerado
+ * @returns Um array de jornadas que pertencem ao mês civil
+ */
+export const getJourneysForCalendarMonth = (journeys: Journey[], displayDate: Date): Journey[] => {
+    if (!journeys || !displayDate) return [];
+
+    const year = displayDate.getFullYear();
+    const month = displayDate.getMonth();
+
+    // Do dia 1 do mês atual até o último dia do mês atual
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0); 
+    endDate.setHours(23, 59, 59, 999);
+
+    return journeys.filter(j => {
+        if (!j || !j.date) return false;
+        const journeyDate = new Date(j.date + 'T00:00:00');
+        if (isNaN(journeyDate.getTime())) return false;
+        return journeyDate >= startDate && journeyDate <= endDate;
+    });
+};
+
 
 /**
- * Gera um resumo para um conjunto de jornadas, tipicamente de um mês.
+ * Gera um resumo para um conjunto de jornadas.
  * @param journeys Array de jornadas
  * @param settings Configurações do usuário
  * @returns Um objeto com os totais consolidados
