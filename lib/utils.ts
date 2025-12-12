@@ -158,7 +158,8 @@ export const getMonthSummary = (journeys: Journey[], settings: Settings | null):
     
     if (!settings || !journeys || !Array.isArray(journeys)) return summary;
 
-    summary.totalDiasTrabalhados = journeys.length;
+    // Calcula apenas os dias que NÃO são folga
+    summary.totalDiasTrabalhados = journeys.filter(j => !j.is_day_off).length;
 
     return journeys.reduce((acc, journey) => {
         if (!journey) return acc;
