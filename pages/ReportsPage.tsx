@@ -8,8 +8,8 @@ import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
 type ReportType = 'hours' | 'km';
 
-// Ícone Principal (Versão 'lh3' é mais estável para PDFs que 'photos.fife')
-const APP_ICON_URL = "https://lh3.googleusercontent.com/pw/AP1GczNGtnN0Ayiv-bkG1tG_lB6oaK_um0dlk2Yvalt-fuq5hqi8VW7Hpjuy6ca9G3xEgy2Jvu_lPODRXTJ-KQcIq920od4jxl8PdElhy41aKivVzJ6T1H1058OsYeoE6mN6nAJIsaaYHvoDMQCPg9kJJZkR=w180-h180-s-no-gm?authuser=4";
+// Ícone Local (Deve estar em public/assets/icone_pdf.png)
+const APP_ICON_URL = "/assets/icone_pdf.png";
 
 // Ícone Fallback (Base64 de um quadrado azul simples) para garantir que o PDF não quebre se o link falhar
 const FALLBACK_ICON_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAABNSURBVHgB7c6xCQAgDAVBM50zsZzO2ScWcwcJPCIg90e+237tXgMLi7CwCAutsLAIC62wsAgLrbCwCAutsLAIC62wsAgLrbCwCAutsEwdh9IBi5gJ8k4AAAAASUVORK5CYII=";
@@ -115,7 +115,7 @@ const ReportsPage: React.FC = () => {
     const getBase64ImageFromURL = (url: string): Promise<string> => {
         return new Promise((resolve) => {
             const img = new Image();
-            // crossOrigin é crucial, mas servidores do Google às vezes o rejeitam.
+            // crossOrigin é crucial para canvas tainted, mesmo localmente em alguns setups
             img.setAttribute("crossOrigin", "anonymous");
             
             img.onload = () => {
@@ -129,7 +129,7 @@ const ReportsPage: React.FC = () => {
                         const dataURL = canvas.toDataURL("image/png");
                         resolve(dataURL);
                     } catch (e) {
-                        console.warn("CORS bloqueou o acesso aos pixels da imagem (Tainted Canvas). Usando fallback.");
+                        console.warn("Erro ao converter imagem local para base64:", e);
                         resolve(FALLBACK_ICON_BASE64);
                     }
                 } else {
@@ -138,12 +138,12 @@ const ReportsPage: React.FC = () => {
             };
             
             img.onerror = () => {
-                console.warn("Erro ao carregar imagem para PDF. Usando fallback.");
+                console.warn("Erro ao carregar imagem para PDF. Verifique se o arquivo existe em public/assets/icone_pdf.png");
                 resolve(FALLBACK_ICON_BASE64);
             };
             
-            // Adiciona um timestamp para tentar evitar cache antigo corrompido
-            img.src = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+            // Adiciona timestamp para evitar cache agressivo, útil em dev
+            img.src = url + '?t=' + new Date().getTime();
         });
     };
 
