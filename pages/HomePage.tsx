@@ -5,13 +5,13 @@ import { useJourneys } from '../contexts/JourneyContext';
 import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysForDisplayMonth, getJourneysForCalendarMonth } from '../lib/utils';
 import OverlappingCard from '../components/ui/OverlappingCard';
 import Skeleton from '../components/ui/Skeleton';
-import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft } from 'lucide-react';
+import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft, Map, Clock } from 'lucide-react';
 import { MonthSummary, Journey } from '../types';
 
 const SummaryItem: React.FC<{ label: string; value: string; colorClass?: string }> = ({ label, value, colorClass = 'text-white' }) => (
     <div className="flex flex-col items-center text-center">
-        <span className="text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
-        <span className={`text-xl font-bold ${colorClass}`}>{value}</span>
+        <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider font-medium">{label}</span>
+        <span className={`text-lg sm:text-xl font-bold ${colorClass}`}>{value}</span>
     </div>
 );
 
@@ -176,6 +176,7 @@ const HomePage: React.FC = () => {
     }
     
     const formattedMonth = displayDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    const formattedCalendarMonth = displayDate.toLocaleDateString('pt-BR', { month: 'long' });
 
     return (
         <div className="-mt-16 space-y-5 pb-4">
@@ -183,10 +184,13 @@ const HomePage: React.FC = () => {
                 <OverlappingCard>
                     {settings ? (
                         <div className="space-y-4">
-                             <div className="flex items-center justify-between text-center">
+                             {/* Cabeçalho do Card */}
+                             <div className="flex items-center justify-between text-center mb-4">
                                 <button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-white/10 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
                                 <div className="flex-1">
-                                    <span className="text-card-label font-semibold text-accent uppercase">Resumo do Mês</span>
+                                    <span className="text-card-label font-semibold text-accent uppercase flex items-center justify-center gap-1">
+                                        <Clock className="w-3 h-3" /> Resumo do Ciclo
+                                    </span>
                                     <h2 className="text-lg font-bold text-white capitalize flex items-center justify-center gap-2 mt-1">
                                         {formattedMonth}
                                         {isCurrentAccountingMonth() && <span className="text-xs bg-accent text-primary-dark font-bold px-2 py-0.5 rounded-full">Atual</span>}
@@ -194,15 +198,29 @@ const HomePage: React.FC = () => {
                                 </div>
                                 <button onClick={handleNextMonth} className="p-2 rounded-full hover:bg-white/10 transition-colors"><ChevronRight className="w-5 h-5" /></button>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 pt-2">
+
+                            {/* Seção de Horas */}
+                            <div className="grid grid-cols-3 gap-2">
                                 <SummaryItem label="Horas" value={formatMinutesToHours(summary.totalTrabalhado)} />
-                                <SummaryItem label="Extras 50%" value={formatMinutesToHours(summary.horasExtras50)} colorClass="text-green-400" />
-                                <SummaryItem label="Extras 100%" value={formatMinutesToHours(summary.horasExtras100)} colorClass="text-yellow-400" />
+                                <SummaryItem label="Extra 50%" value={formatMinutesToHours(summary.horasExtras50)} colorClass="text-green-400" />
+                                <SummaryItem label="Extra 100%" value={formatMinutesToHours(summary.horasExtras100)} colorClass="text-yellow-400" />
                             </div>
+                            
+                            {/* Divisor Visual se KM estiver ativo */}
                             {settings.km_enabled && (
-                                <div className="pt-2 text-center">
-                                   <SummaryItem label="KM Rodados (Mês Civil)" value={`${summary.kmRodados.toFixed(1)} km`} />
-                                </div>
+                                <>
+                                    <div className="my-2 border-t border-white/10"></div>
+                                    
+                                    <div className="flex items-center justify-between px-2 pt-1">
+                                        <div className="flex items-center gap-2 text-accent/80">
+                                            <Map className="w-4 h-4" />
+                                            <span className="text-xs font-medium uppercase tracking-wider">Mês Civil ({formattedCalendarMonth})</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-xl font-bold text-white block leading-none">{summary.kmRodados.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">km</span></span>
+                                        </div>
+                                    </div>
+                                </>
                             )}
                         </div>
                     ) : (
@@ -250,7 +268,7 @@ const HomePage: React.FC = () => {
                             </button>
                         </div>
                         <ActionCard icon={CalendarDays} title="Calendário de Escala" subtitle="Planeje seus dias" onClick={() => navigate('/calendar')} />
-                        <ActionCard icon={Route} title="Exportar Relatório" subtitle="Gerar PDF do período" onClick={() => navigate('/reports')} />
+                        <ActionCard icon={Route} title="Exportar Relatório" subtitle="PDFs de Ponto e KM" onClick={() => navigate('/reports')} />
                         <ActionCard icon={Settings} title="Configurações" subtitle="Ajustar sua jornada" onClick={() => navigate('/settings')} />
                     </div>
                 </div>

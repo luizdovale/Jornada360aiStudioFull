@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jornada360</title>
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#101524">
+    <meta name="theme-color" content="#1E263C">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/pw/AP1GczNGtnN0Ayiv-bkG1tG_lB6oaK_um0dlk2Yvalt-fuq5hqi8VW7Hpjuy6ca9G3xEgy2Jvu_lPODRXTJ-KQcIq920od4jxl8PdElhy41aKivVzJ6T1H1058OsYeoE6mN6nAJIsaaYHvoDMQCPg9kJJZkR=w180-h180-s-no-gm?authuser=4">
@@ -24,13 +24,13 @@
                 extend: {
                     colors: {
                         primary: {
-                            DEFAULT: "#101524", // Cor principal mais escura
-                            dark: "#0A0E18",    // Variação ainda mais escura
-                            light: "#E8EEF7",
-                            medium: "#A9C2E8",
+                            DEFAULT: "#1E263C", // Azul Paytrack Base
+                            dark: "#151B2C",    // Variação Dark para Sidebar/Contrastes
+                            light: "#EAEFF5",   // Fundo claro com toque azulado
+                            medium: "#9DA8BE",  // Tom médio para detalhes
                         },
                         accent: {
-                            DEFAULT: "#F8C400",
+                            DEFAULT: "#F8C400", // Mantido o amarelo de destaque
                         },
                         muted: {
                             DEFAULT: "#BDC6D1",
@@ -38,16 +38,16 @@
                         },
                         background: "#F5F7FA",
                         card: "#FFFFFF",
-                        foreground: "#101524", // Texto padrão acompanhando a cor primária
+                        foreground: "#1E263C", // Texto padrão acompanhando a cor primária
                     },
                     borderRadius: {
                         xl2: "1.5rem",
                         xl3: "2rem",
                     },
                     boxShadow: {
-                        card: "0 8px 16px rgba(16, 21, 36, 0.1)",
-                        soft: "0 6px 16px rgba(0,0,0,0.08)",
-                        floating: "0 18px 35px rgba(0,0,0,0.22)",
+                        card: "0 8px 16px rgba(30, 38, 60, 0.08)",
+                        soft: "0 6px 16px rgba(0,0,0,0.06)",
+                        floating: "0 18px 35px rgba(0,0,0,0.18)",
                     },
                     spacing: {
                         18: "4.5rem",
@@ -69,13 +69,13 @@
         }
     </script>
 <style>
-    /* Corrige o estilo de preenchimento automático do navegador (fundo azul) */
+    /* Corrige o estilo de preenchimento automático do navegador */
     input:-webkit-autofill,
     input:-webkit-autofill:hover,
     input:-webkit-autofill:focus,
     input:-webkit-autofill:active {
-        -webkit-text-fill-color: #101524 !important; /* Cor do texto (escuro) */
-        -webkit-box-shadow: 0 0 0 30px #f3f4f6 inset !important; /* Força o fundo cinza claro (gray-100) */
+        -webkit-text-fill-color: #1E263C !important;
+        -webkit-box-shadow: 0 0 0 30px #f3f4f6 inset !important;
         background-clip: content-box !important;
     }
 </style>
