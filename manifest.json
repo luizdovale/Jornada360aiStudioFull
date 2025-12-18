@@ -5,18 +5,26 @@
   "description": "Controle sua jornada de trabalho de motorista com facilidade.",
   "icons": [
     {
-      "src": "https://lh3.googleusercontent.com/pw/AP1GczNGtnN0Ayiv-bkG1tG_lB6oaK_um0dlk2Yvalt-fuq5hqi8VW7Hpjuy6ca9G3xEgy2Jvu_lPODRXTJ-KQcIq920od4jxl8PdElhy41aKivVzJ6T1H1058OsYeoE6mN6nAJIsaaYHvoDMQCPg9kJJZkR=w180-h180-s-no-gm?authuser=4",
+      "src": "/assets/icons/icon-192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any"
     },
     {
-      "src": "https://lh3.googleusercontent.com/pw/AP1GczNGtnN0Ayiv-bkG1tG_lB6oaK_um0dlk2Yvalt-fuq5hqi8VW7Hpjuy6ca9G3xEgy2Jvu_lPODRXTJ-KQcIq920od4jxl8PdElhy41aKivVzJ6T1H1058OsYeoE6mN6nAJIsaaYHvoDMQCPg9kJJZkR=w180-h180-s-no-gm?authuser=4",
+      "src": "/assets/icons/icon-512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/maskable-icon.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ],
-   "start_url": "/index.html#/",
-   "scope": "/",
+  "start_url": "/index.html#/",
+  "scope": "/",
   "display": "standalone",
   "theme_color": "#1E263C",
   "background_color": "#F5F7FA"
