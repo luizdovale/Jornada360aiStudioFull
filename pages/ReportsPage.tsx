@@ -8,8 +8,6 @@ import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
 type ReportType = 'hours' | 'km';
 
-const FALLBACK_ICON_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAABNSURBVHgB7c6xCQAgDAVBM50zsZzO2ScWcwcJPCIg90e+237tXgMLi7CwCAutsLAIC62wsAgLrbCwCAutsLAIC62wsAgLrbCwCAutsEwdh9IBi5gJ8k4AAAAASUVORK5CYII=";
-
 const ReportsPage: React.FC = () => {
     const { journeys, settings } = useJourneys();
     const { user } = useAuth();
@@ -26,11 +24,9 @@ const ReportsPage: React.FC = () => {
         const today = new Date();
         const startDay = settings?.month_start_day || 1;
         
-        // Gera opções para os últimos 12 meses
         for (let i = -1; i < 11; i++) {
             const ref = new Date(today.getFullYear(), today.getMonth() - i, 1);
             
-            // Ciclo de Horas (Baseado no dia de fechamento configurado)
             const cycleStart = new Date(ref.getFullYear(), ref.getMonth() - 1, startDay);
             const cycleEnd = new Date(ref.getFullYear(), ref.getMonth(), startDay - 1);
             
@@ -72,7 +68,7 @@ const ReportsPage: React.FC = () => {
         setIsGenerating(true);
         
         try {
-            // @ts-ignore - jspdf é carregado via CDN
+            // @ts-ignore
             const { jsPDF } = window.jspdf;
             if (!jsPDF) throw new Error("Biblioteca jsPDF não carregada.");
 
@@ -83,9 +79,8 @@ const ReportsPage: React.FC = () => {
             });
 
             const margin = 14;
-            const titleColor = [30, 38, 60]; // Primary Dark (#1E263C)
+            const titleColor = [30, 38, 60];
 
-            // Header - Nome do App e Usuário
             doc.setFontSize(16);
             doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
             doc.setFont("helvetica", "bold");
@@ -101,7 +96,6 @@ const ReportsPage: React.FC = () => {
             const summary = getMonthSummary(filtered, settings);
 
             if (reportType === 'hours') {
-                // Resumo de Horas
                 doc.setDrawColor(230, 230, 230);
                 doc.line(margin, 38, 210 - margin, 38);
                 
@@ -120,20 +114,9 @@ const ReportsPage: React.FC = () => {
                     .map(j => {
                         const c = calculateJourney(j, settings);
                         const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                        
                         if (j.is_day_off) return [d, "FOLGA", "FOLGA", "-", "-", "-", "-", j.notes || ""];
-                        
                         const mealLabel = j.is_plantao ? "PLANTÃO" : `${j.meal_start || '00:00'} - ${j.meal_end || '00:00'}`;
-                        return [
-                            d, 
-                            j.start_at || '00:00', 
-                            j.end_at || '00:00', 
-                            mealLabel, 
-                            formatMinutesToHours(c.horasExtras50), 
-                            formatMinutesToHours(c.horasExtras100), 
-                            formatMinutesToHours(c.adicionalNoturno), 
-                            j.notes || ""
-                        ];
+                        return [d, j.start_at || '00:00', j.end_at || '00:00', mealLabel, formatMinutesToHours(c.horasExtras50), formatMinutesToHours(c.horasExtras100), formatMinutesToHours(c.adicionalNoturno), j.notes || ""];
                     });
 
                 // @ts-ignore
@@ -157,7 +140,6 @@ const ReportsPage: React.FC = () => {
                     margin: { left: margin, right: margin }
                 });
             } else {
-                // Relatório de KM e Entregas
                 doc.setDrawColor(230, 230, 230);
                 doc.line(margin, 38, 210 - margin, 38);
                 
@@ -175,15 +157,7 @@ const ReportsPage: React.FC = () => {
                     .map(j => {
                         const c = calculateJourney(j, settings);
                         const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR');
-                        return [
-                            d, 
-                            j.rv_number || "-", 
-                            j.deliveries || "0", 
-                            j.km_start || "0", 
-                            j.km_end || "0", 
-                            c.kmRodados.toFixed(1),
-                            j.notes || ""
-                        ];
+                        return [d, j.rv_number || "-", j.deliveries || "0", j.km_start || "0", j.km_end || "0", c.kmRodados.toFixed(1), j.notes || ""];
                     });
 
                 // @ts-ignore
@@ -219,7 +193,8 @@ const ReportsPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Exporte seus dados em PDF para conferência.</p>
             </div>
 
-            <div className="flex bg-gray-100 p-1 rounded-2xl shadow-inner border border-gray-200">
+            {/* Seleção do Tipo de Relatório - Um ao lado do outro, mas bem espaçados */}
+            <div className="flex bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200">
                 <button 
                     onClick={() => setReportType('hours')} 
                     className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'hours' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
@@ -230,73 +205,72 @@ const ReportsPage: React.FC = () => {
                     onClick={() => setReportType('km')} 
                     className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'km' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
                 >
-                    <Map className="w-4 h-4" /> KM & Entregas
+                    <Map className="w-4 h-4" /> KM Rodado
                 </button>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100">
-                <div className="space-y-6">
+            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6">
+                <div>
+                    <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência do Mês</label>
+                    <select 
+                        value={selectedOptionIndex}
+                        onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))} 
+                        className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none"
+                    >
+                        {monthOptions.map((o, i) => (
+                            <option key={i} value={i}>{o.label}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Datas em linhas separadas conforme solicitado */}
+                <div className="space-y-4">
                     <div>
-                        <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência</label>
-                        <select 
-                            value={selectedOptionIndex}
-                            onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))} 
-                            className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        >
-                            {monthOptions.map((o, i) => (
-                                <option key={i} value={i}>{o.label}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase mb-1 block">Início do Período</label>
-                            <div className="relative">
-                                <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                <input 
-                                    type="date" 
-                                    value={startDate} 
-                                    onChange={e => setStartDate(e.target.value)} 
-                                    className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl text-sm font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20" 
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase mb-1 block">Fim do Período</label>
-                            <div className="relative">
-                                <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                <input 
-                                    type="date" 
-                                    value={endDate} 
-                                    onChange={e => setEndDate(e.target.value)} 
-                                    className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl text-sm font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20" 
-                                />
-                            </div>
+                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
+                        <div className="relative">
+                            <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                            <input 
+                                type="date" 
+                                value={startDate} 
+                                onChange={e => setStartDate(e.target.value)} 
+                                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-base font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20 transition-all" 
+                            />
                         </div>
                     </div>
-
-                    <div className="pt-2">
-                        <button 
-                            onClick={generatePdf} 
-                            disabled={isGenerating} 
-                            className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark transition active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70"
-                        >
-                            {isGenerating ? (
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                                <FileDown className="w-5 h-5" />
-                            )}
-                            {isGenerating ? "Processando..." : "Gerar Relatório PDF"}
-                        </button>
+                    <div>
+                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Fim do Período</label>
+                        <div className="relative">
+                            <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                            <input 
+                                type="date" 
+                                value={endDate} 
+                                onChange={e => setEndDate(e.target.value)} 
+                                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-base font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20 transition-all" 
+                            />
+                        </div>
                     </div>
+                </div>
+
+                <div className="pt-2">
+                    <button 
+                        onClick={generatePdf} 
+                        disabled={isGenerating} 
+                        className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark transition active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70"
+                    >
+                        {isGenerating ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <FileDown className="w-5 h-5" />
+                        )}
+                        {isGenerating ? "Processando..." : "Gerar Relatório PDF"}
+                    </button>
                 </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-primary-light/50 rounded-xl border border-primary/10">
                 <AlertCircle className="w-5 h-5 text-primary-dark/60 flex-shrink-0 mt-0.5" />
                 <p className="text-[11px] text-primary-dark/70 leading-relaxed">
-                    <strong>Dica:</strong> O PDF gerado inclui todos os registros dentro do intervalo selecionado. Certifique-se de que os horários de início e fim da jornada estão preenchidos para cálculos precisos.
+                    <strong>Atenção:</strong> O PDF gerado inclui todos os registros dentro do intervalo selecionado. Para o relatório de KM, certifique-se de que os campos de odômetro foram preenchidos.
                 </p>
             </div>
 
@@ -304,7 +278,7 @@ const ReportsPage: React.FC = () => {
                 isOpen={isModalOpen} 
                 onClose={() => setIsModalOpen(false)} 
                 pdfUrl={pdfPreviewUrl} 
-                fileName={`Jornada360_${reportType === 'hours' ? 'Horas' : 'KM'}_${startDate}_${endDate}.pdf`} 
+                fileName={`Jornada360_${reportType === 'hours' ? 'Ponto' : 'KM'}_${startDate}_${endDate}.pdf`} 
             />
         </div>
     );
