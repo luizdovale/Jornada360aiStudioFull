@@ -27,11 +27,9 @@ const ReportsPage: React.FC = () => {
         for (let i = -1; i < 11; i++) {
             const ref = new Date(today.getFullYear(), today.getMonth() - i, 1);
             
-            // Ciclo Contábil (Baseado nas configurações de fechamento)
             const cycleStart = new Date(ref.getFullYear(), ref.getMonth() - 1, startDay);
             const cycleEnd = new Date(ref.getFullYear(), ref.getMonth(), startDay - 1);
             
-            // Ciclo Civil (Dia 01 ao último dia do mês)
             const calendarStart = new Date(ref.getFullYear(), ref.getMonth(), 1);
             const calendarEnd = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
             
@@ -48,7 +46,6 @@ const ReportsPage: React.FC = () => {
         return options;
     }, [settings]);
 
-    // Sincroniza as datas baseadas no tipo de relatório e na opção selecionada
     useEffect(() => {
         if (monthOptions.length > 0) {
             const currentOption = monthOptions[selectedOptionIndex];
@@ -62,8 +59,25 @@ const ReportsPage: React.FC = () => {
         }
     }, [selectedOptionIndex, monthOptions, reportType]);
 
+    // Função auxiliar para carregar imagem e converter para base64
+    const loadImage = (url: string): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = () => reject(new Error('Falha ao carregar ícone do PDF'));
+            img.src = url;
+        });
+    };
+
     const generatePdf = async () => {
-        // Usa as datas que estão nos estados (que já foram sincronizadas ou editadas manualmente)
         const filtered = journeys.filter(j => j.date >= startDate && j.date <= endDate);
         
         if (!filtered.length) {
@@ -92,10 +106,21 @@ const ReportsPage: React.FC = () => {
             const margin = 14;
             const titleColor = [30, 38, 60];
 
-            doc.setFontSize(16);
-            doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
-            doc.setFont("helvetica", "bold");
-            doc.text("Jornada360 - Relatório de Atividades", margin, 20);
+            // Tenta adicionar o ícone ao lado esquerdo do título
+            try {
+                const iconBase64 = await loadImage('assets/icone_pdf.png');
+                doc.addImage(iconBase64, 'PNG', margin, 14, 8, 8);
+                doc.setFontSize(16);
+                doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+                doc.setFont("helvetica", "bold");
+                doc.text("Jornada360 - Relatório de Atividades", margin + 11, 20);
+            } catch (e) {
+                // Se falhar o ícone, imprime apenas o texto na posição original
+                doc.setFontSize(16);
+                doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+                doc.setFont("helvetica", "bold");
+                doc.text("Jornada360 - Relatório de Atividades", margin, 20);
+            }
 
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
@@ -117,7 +142,8 @@ const ReportsPage: React.FC = () => {
                 doc.text("RESUMO DO PERÍODO:", margin, 48);
                 
                 doc.setFont("helvetica", "normal");
-                const summaryText = `Total Trabalhado: ${formatMinutesToHours(summary.totalTrabalhado)}  |  HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
+                // Removido "Total Trabalhado" conforme solicitado
+                const summaryText = `HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
                 doc.text(summaryText, margin, 53);
 
                 const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Noturno", "Obs"];
@@ -205,7 +231,6 @@ const ReportsPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Exporte seus dados em PDF para conferência.</p>
             </div>
 
-            {/* Seleção do Tipo de Relatório - Um ao lado do outro */}
             <div className="flex bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200">
                 <button 
                     onClick={() => setReportType('hours')} 
@@ -235,7 +260,6 @@ const ReportsPage: React.FC = () => {
                     </select>
                 </div>
 
-                {/* Datas em linhas separadas conforme solicitado */}
                 <div className="space-y-4">
                     <div>
                         <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
