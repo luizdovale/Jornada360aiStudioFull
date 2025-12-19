@@ -112,14 +112,16 @@ const JourneyFormPage: React.FC = () => {
         setFormData(prev => {
             let nextState = { ...prev, [name]: type === 'checkbox' ? checked : value };
 
+            // Se marcar Folga, desmarca Plantão
+            if (name === 'is_day_off' && checked) {
+                nextState.is_plantao = false;
+            }
+            
+            // Se marcar Plantão, desmarca Folga mas MANTÉM Feriado se já estiver marcado
             if (name === 'is_plantao' && checked) {
                 nextState.is_day_off = false;
                 nextState.start_at = '13:00';
                 nextState.end_at = '19:00';
-            }
-            
-            if (name === 'is_day_off' && checked) {
-                nextState.is_plantao = false;
             }
 
             return nextState;
@@ -132,11 +134,9 @@ const JourneyFormPage: React.FC = () => {
 
         const ms = timeToMinutes(formData.meal_start);
         const me = timeToMinutes(formData.meal_end);
-        
         let calculatedMealDuration = me - ms;
         if (calculatedMealDuration < 0) calculatedMealDuration += 24 * 60; 
 
-        // No Plantão e na Folga, campos de KM e RV são zerados/limpos
         const hideDetails = formData.is_day_off || formData.is_plantao;
 
         const dataToSave = {
@@ -268,7 +268,6 @@ const JourneyFormPage: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
-
                                     <div className={inputContainerStyle}>
                                         <label className={labelStyle}>Descanso Adicional (min)</label>
                                         <div className="relative w-full">
@@ -276,7 +275,6 @@ const JourneyFormPage: React.FC = () => {
                                             <input type="number" name="rest_duration" value={formData.rest_duration} onChange={handleChange} className={inputStyle} placeholder="Opcional" />
                                         </div>
                                     </div>
-
                                     {settings?.km_enabled && (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
                                             <div className={inputContainerStyle}>
@@ -286,7 +284,6 @@ const JourneyFormPage: React.FC = () => {
                                                     <input type="number" step="0.1" name="km_start" value={formData.km_start} onChange={handleChange} className={inputStyle} placeholder="Opcional" />
                                                 </div>
                                             </div>
-
                                             <div className={inputContainerStyle}>
                                                 <label className={labelStyle}>KM Final</label>
                                                 <div className="relative w-full">
@@ -307,7 +304,6 @@ const JourneyFormPage: React.FC = () => {
                                         <input type="number" name="deliveries" value={formData.deliveries} onChange={handleChange} className={inputStyle} placeholder="0" />
                                     </div>
                                 </div>
-                                
                                 {!formData.is_plantao && (
                                     <div className={inputContainerStyle}>
                                         <label className={labelStyle}>Nº do RV</label>

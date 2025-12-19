@@ -172,8 +172,14 @@ const ReportsPage: React.FC = () => {
                         const style = { textColor: [220, 38, 38], fontStyle: "bold" };
                         tableRows.push([{ content: dateF, styles: style }, { content: "Folga", styles: style }, { content: "Folga", styles: style }, { content: "Folga", styles: style }, "-", "-", "-", journey.notes || "-"]);
                     } else if (journey.is_plantao) {
+                        // Se for plantão (independente de ser feriado), a regra de pagamento é a do Plantão
                         const style = { textColor: [30, 64, 175], fontStyle: "bold" };
-                        tableRows.push([{ content: dateF, styles: style }, "13:00", "19:00", { content: "Plantão", styles: style }, deliveryCount, formatMinutesToHours(calcs.horasExtras50), formatMinutesToHours(calcs.horasExtras100), journey.notes || "-"]);
+                        const label = journey.is_feriado ? "Plantão/Fer." : "Plantão";
+                        tableRows.push([{ content: dateF, styles: style }, journey.start_at?.slice(0, 5), journey.end_at?.slice(0, 5), { content: label, styles: style }, deliveryCount, formatMinutesToHours(calcs.horasExtras50), formatMinutesToHours(calcs.horasExtras100), journey.notes || "-"]);
+                    } else if (journey.is_feriado) {
+                        const style = { textColor: [181, 145, 0], fontStyle: "bold" };
+                        const meal = `${journey.meal_start?.slice(0, 5)} - ${journey.meal_end?.slice(0, 5)}`;
+                        tableRows.push([{ content: dateF, styles: style }, journey.start_at?.slice(0, 5), journey.end_at?.slice(0, 5), meal, deliveryCount, formatMinutesToHours(calcs.horasExtras50), formatMinutesToHours(calcs.horasExtras100), journey.notes || "-"]);
                     } else {
                         const meal = `${journey.meal_start?.slice(0, 5)} - ${journey.meal_end?.slice(0, 5)}`;
                         tableRows.push([dateF, journey.start_at?.slice(0, 5), journey.end_at?.slice(0, 5), meal, deliveryCount, formatMinutesToHours(calcs.horasExtras50), formatMinutesToHours(calcs.horasExtras100), journey.notes || "-"]);
@@ -187,7 +193,7 @@ const ReportsPage: React.FC = () => {
                     columnStyles: { 0: { cellWidth: 18 }, 1: { cellWidth: 14 }, 2: { cellWidth: 14 }, 3: { cellWidth: 22 }, 4: { cellWidth: 12 }, 5: { cellWidth: 18 }, 6: { cellWidth: 18 }, 7: { halign: "left", cellWidth: "auto" } },
                     didParseCell: (data: any) => {
                         if (data.row.raw && data.row.raw[1] && data.row.raw[1].content === 'Folga') data.cell.styles.fillColor = [255, 235, 235];
-                        if (data.row.raw && data.row.raw[3] && data.row.raw[3].content === 'Plantão') data.cell.styles.fillColor = [239, 246, 255];
+                        if (data.row.raw && data.row.raw[3] && (data.row.raw[3].content === 'Plantão' || data.row.raw[3].content === 'Plantão/Fer.')) data.cell.styles.fillColor = [239, 246, 255];
                     }
                 });
             } else {
