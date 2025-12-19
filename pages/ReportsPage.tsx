@@ -3,12 +3,11 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getMonthSummary, calculateJourney, formatMinutesToHours } from '../lib/utils';
-import { FileDown, Clock, Map, CalendarDays } from 'lucide-react';
+import { FileDown, Clock, Map, CalendarDays, AlertCircle } from 'lucide-react';
 import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
 type ReportType = 'hours' | 'km';
 
-const APP_ICON_URL = "/assets/icone_pdf.png";
 const FALLBACK_ICON_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAABNSURBVHgB7c6xCQAgDAVBM50zsZzO2ScWcwcJPCIg90e+237tXgMLi7CwCAutsLAIC62wsAgLrbCwCAutsLAIC62wsAgLrbCwCAutsEwdh9IBi5gJ8k4AAAAASUVORK5CYII=";
 
 const ReportsPage: React.FC = () => {
@@ -20,139 +19,194 @@ const ReportsPage: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [selectedOptionIndex, setSelectedOptionIndex] = useState<number>(0);
+    const [selectedOptionIndex, setSelectedOptionIndex] = useState<number>(1);
 
     const monthOptions = useMemo(() => {
         const options = [];
         const today = new Date();
         const startDay = settings?.month_start_day || 1;
-        for (let i = -1; i < 12; i++) {
+        
+        // Gera opções para os últimos 12 meses
+        for (let i = -1; i < 11; i++) {
             const ref = new Date(today.getFullYear(), today.getMonth() - i, 1);
-            let start = '', end = '';
-            if (reportType === 'hours') {
-                const cycleStart = new Date(ref.getFullYear(), ref.getMonth() - 1, startDay);
-                const cycleEnd = new Date(ref.getFullYear(), ref.getMonth(), startDay - 1);
-                start = cycleStart.toISOString().split('T')[0];
-                end = cycleEnd.toISOString().split('T')[0];
-            } else {
-                start = new Date(ref.getFullYear(), ref.getMonth(), 1).toISOString().split('T')[0];
-                end = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).toISOString().split('T')[0];
-            }
+            
+            // Ciclo de Horas (Baseado no dia de fechamento configurado)
+            const cycleStart = new Date(ref.getFullYear(), ref.getMonth() - 1, startDay);
+            const cycleEnd = new Date(ref.getFullYear(), ref.getMonth(), startDay - 1);
+            
+            const start = cycleStart.toISOString().split('T')[0];
+            const end = cycleEnd.toISOString().split('T')[0];
+            
             const label = ref.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-            options.push({ label: label.charAt(0).toUpperCase() + label.slice(1), start, end, value: i });
+            options.push({ 
+                label: label.charAt(0).toUpperCase() + label.slice(1), 
+                start, 
+                end, 
+                value: i 
+            });
         }
         return options;
-    }, [reportType, settings]);
+    }, [settings]);
 
     useEffect(() => {
         if (monthOptions.length > 0) {
-            setSelectedOptionIndex(1);
-            setStartDate(monthOptions[1].start);
-            setEndDate(monthOptions[1].end);
+            const currentOption = monthOptions[selectedOptionIndex];
+            setStartDate(currentOption.start);
+            setEndDate(currentOption.end);
         }
-    }, [reportType, monthOptions]);
-
-    const getBase64ImageFromURL = (url: string): Promise<string> => {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.setAttribute("crossOrigin", "anonymous");
-            img.onload = () => {
-                const canvas = document.createElement("canvas");
-                canvas.width = img.width; canvas.height = img.height;
-                const ctx = canvas.getContext("2d");
-                if (ctx) { ctx.drawImage(img, 0, 0); resolve(canvas.toDataURL("image/png")); }
-                else resolve(FALLBACK_ICON_BASE64);
-            };
-            img.onerror = () => resolve(FALLBACK_ICON_BASE64);
-            img.src = url + '?t=' + new Date().getTime();
-        });
-    };
+    }, [selectedOptionIndex, monthOptions]);
 
     const generatePdf = async () => {
         const filtered = journeys.filter(j => j.date >= startDate && j.date <= endDate);
-        if (!filtered.length || !settings) return alert('Sem dados no período.');
+        
+        if (!filtered.length) {
+            alert('Nenhum registro encontrado para o período selecionado.');
+            return;
+        }
+
+        if (!settings) {
+            alert('Configurações não encontradas.');
+            return;
+        }
+
         setIsGenerating(true);
+        
         try {
-            // @ts-ignore
+            // @ts-ignore - jspdf é carregado via CDN
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            if (!jsPDF) throw new Error("Biblioteca jsPDF não carregada.");
+
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
             const margin = 14;
-            const iconBase64 = await getBase64ImageFromURL(APP_ICON_URL);
-            
-            // Header
-            doc.addImage(iconBase64, 'PNG', margin, 10, 7, 7);
-            doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.text("Jornada360", margin + 10, 15);
-            doc.setFontSize(10); doc.setFont("helvetica", "normal");
-            doc.text(`${user?.user_metadata?.nome || 'Usuário'} | ${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`, margin, 25);
+            const titleColor = [30, 38, 60]; // Primary Dark (#1E263C)
+
+            // Header - Nome do App e Usuário
+            doc.setFontSize(16);
+            doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+            doc.setFont("helvetica", "bold");
+            doc.text("Jornada360 - Relatório de Atividades", margin, 20);
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100, 100, 100);
+            const periodLabel = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
+            doc.text(`Colaborador: ${user?.user_metadata?.nome || 'Usuário'}`, margin, 28);
+            doc.text(`Período: ${periodLabel}`, margin, 33);
 
             const summary = getMonthSummary(filtered, settings);
 
             if (reportType === 'hours') {
-                doc.setFontSize(8);
-                doc.text(`Ex 50%: ${formatMinutesToHours(summary.horasExtras50)} | Ex 100%: ${formatMinutesToHours(summary.horasExtras100)} | Adic. Noturno (Hora Reduzida): ${formatMinutesToHours(summary.adicionalNoturno)}`, margin, 32);
+                // Resumo de Horas
+                doc.setDrawColor(230, 230, 230);
+                doc.line(margin, 38, 210 - margin, 38);
                 
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+                doc.text("RESUMO DO PERÍODO:", margin, 45);
+                
+                doc.setFont("helvetica", "normal");
+                const summaryText = `Total Trabalhado: ${formatMinutesToHours(summary.totalTrabalhado)}  |  HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
+                doc.text(summaryText, margin, 50);
+
                 const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Noturno", "Obs"];
-                const tableRows = filtered.sort((a,b) => a.date.localeCompare(b.date)).map(j => {
-                    const c = calculateJourney(j, settings);
-                    const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR');
-                    if (j.is_day_off) return [d, "FOLGA", "FOLGA", "-", "-", "-", "-", j.notes || ""];
-                    
-                    const mealLabel = j.is_plantao ? "PLANTÃO" : `${j.meal_start || '00:00'}-${j.meal_end || '00:00'}`;
-                    return [
-                        d, 
-                        j.start_at, 
-                        j.end_at, 
-                        mealLabel, 
-                        formatMinutesToHours(c.horasExtras50), 
-                        formatMinutesToHours(c.horasExtras100), 
-                        formatMinutesToHours(c.adicionalNoturno), 
-                        j.notes || ""
-                    ];
-                });
+                const tableRows = filtered
+                    .sort((a, b) => a.date.localeCompare(b.date))
+                    .map(j => {
+                        const c = calculateJourney(j, settings);
+                        const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                        
+                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "-", "-", "-", "-", j.notes || ""];
+                        
+                        const mealLabel = j.is_plantao ? "PLANTÃO" : `${j.meal_start || '00:00'} - ${j.meal_end || '00:00'}`;
+                        return [
+                            d, 
+                            j.start_at || '00:00', 
+                            j.end_at || '00:00', 
+                            mealLabel, 
+                            formatMinutesToHours(c.horasExtras50), 
+                            formatMinutesToHours(c.horasExtras100), 
+                            formatMinutesToHours(c.adicionalNoturno), 
+                            j.notes || ""
+                        ];
+                    });
 
                 // @ts-ignore
                 doc.autoTable({ 
                     head: [tableColumn], 
                     body: tableRows, 
-                    startY: 36, 
+                    startY: 55, 
                     theme: 'grid', 
-                    headStyles: { fillColor: "#1E263C" },
-                    styles: { fontSize: 7, halign: 'center' },
-                    columnStyles: { 7: { halign: 'left' } }
+                    headStyles: { fillColor: titleColor, fontSize: 8, halign: 'center' },
+                    bodyStyles: { fontSize: 7, halign: 'center' },
+                    columnStyles: {
+                        0: { cellWidth: 15 },
+                        1: { cellWidth: 15 },
+                        2: { cellWidth: 15 },
+                        3: { cellWidth: 30 },
+                        4: { cellWidth: 20 },
+                        5: { cellWidth: 20 },
+                        6: { cellWidth: 20 },
+                        7: { halign: 'left' }
+                    },
+                    margin: { left: margin, right: margin }
                 });
             } else {
-                doc.setFontSize(9);
-                doc.text(`Total KM: ${summary.kmRodados.toFixed(1)} km | Total Entregas: ${summary.totalDeliveries}`, margin, 32);
+                // Relatório de KM e Entregas
+                doc.setDrawColor(230, 230, 230);
+                doc.line(margin, 38, 210 - margin, 38);
                 
-                const tableColumn = ["Data", "Veículo/RV", "Entregas", "KM Inicial", "KM Final", "Total KM"];
-                const tableRows = filtered.sort((a,b) => a.date.localeCompare(b.date)).map(j => {
-                    const c = calculateJourney(j, settings);
-                    return [
-                        new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR'), 
-                        j.rv_number || "-", 
-                        j.deliveries || "0", 
-                        j.km_start || "0", 
-                        j.km_end || "0", 
-                        c.kmRodados.toFixed(1)
-                    ];
-                });
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "bold");
+                doc.text("ESTATÍSTICAS DE VIAGEM:", margin, 45);
+                
+                doc.setFont("helvetica", "normal");
+                const summaryText = `Distância Total: ${summary.kmRodados.toFixed(1)} km  |  Total de Entregas: ${summary.totalDeliveries}  |  Dias com Viagem: ${summary.totalDiasTrabalhados}`;
+                doc.text(summaryText, margin, 50);
+
+                const tableColumn = ["Data", "Veículo/RV", "Entregas", "KM Inicial", "KM Final", "Total KM", "Obs"];
+                const tableRows = filtered
+                    .sort((a, b) => a.date.localeCompare(b.date))
+                    .map(j => {
+                        const c = calculateJourney(j, settings);
+                        const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR');
+                        return [
+                            d, 
+                            j.rv_number || "-", 
+                            j.deliveries || "0", 
+                            j.km_start || "0", 
+                            j.km_end || "0", 
+                            c.kmRodados.toFixed(1),
+                            j.notes || ""
+                        ];
+                    });
 
                 // @ts-ignore
                 doc.autoTable({ 
                     head: [tableColumn], 
                     body: tableRows, 
-                    startY: 36, 
+                    startY: 55, 
                     theme: 'grid', 
-                    headStyles: { fillColor: "#1E263C" },
-                    styles: { fontSize: 8, halign: 'center' } 
+                    headStyles: { fillColor: titleColor, fontSize: 8, halign: 'center' },
+                    bodyStyles: { fontSize: 7, halign: 'center' },
+                    columnStyles: {
+                        5: { fontStyle: 'bold' },
+                        6: { halign: 'left' }
+                    },
+                    margin: { left: margin, right: margin }
                 });
             }
 
             setPdfPreviewUrl(doc.output("datauristring")); 
             setIsModalOpen(true);
-        } catch (e) { 
-            console.error(e);
-            alert("Erro ao gerar PDF"); 
+        } catch (e: any) { 
+            console.error("Erro PDF:", e);
+            alert(`Erro ao gerar o relatório: ${e.message}`); 
         } finally { 
             setIsGenerating(false); 
         }
@@ -160,44 +214,98 @@ const ReportsPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-title-lg text-primary-dark">Exportar Relatório</h1>
-            <div className="flex bg-gray-100 p-1 rounded-2xl">
-                <button onClick={() => setReportType('hours')} className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all ${reportType === 'hours' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-200'}`}>Ponto & Horas</button>
-                <button onClick={() => setReportType('km')} className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all ${reportType === 'km' ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-200'}`}>KM & Entregas</button>
+            <div className="flex flex-col gap-1">
+                <h1 className="text-title-lg text-primary-dark">Relatórios</h1>
+                <p className="text-sm text-muted-foreground">Exporte seus dados em PDF para conferência.</p>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-soft">
-                <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-700 mb-1 block">Selecione o Mês</label>
-                    <select 
-                        value={selectedOptionIndex}
-                        onChange={(e) => { 
-                            const idx = parseInt(e.target.value);
-                            setSelectedOptionIndex(idx);
-                            const o = monthOptions[idx]; 
-                            setStartDate(o.start); 
-                            setEndDate(o.end); 
-                        }} 
-                        className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50"
-                    >
-                        {monthOptions.map((o, i) => <option key={i} value={i}>{o.label}</option>)}
-                    </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label className="text-xs font-bold text-muted-foreground uppercase">De</label>
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full p-2 border rounded-lg text-sm" />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-muted-foreground uppercase">Até</label>
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full p-2 border rounded-lg text-sm" />
-                    </div>
-                </div>
-                <button onClick={generatePdf} disabled={isGenerating} className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark transition active:scale-95 flex items-center justify-center gap-2">
-                    {isGenerating ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <FileDown className="w-5 h-5" />}
-                    {isGenerating ? "Gerando..." : "Gerar PDF"}
+
+            <div className="flex bg-gray-100 p-1 rounded-2xl shadow-inner border border-gray-200">
+                <button 
+                    onClick={() => setReportType('hours')} 
+                    className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'hours' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
+                >
+                    <Clock className="w-4 h-4" /> Ponto & Horas
+                </button>
+                <button 
+                    onClick={() => setReportType('km')} 
+                    className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'km' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
+                >
+                    <Map className="w-4 h-4" /> KM & Entregas
                 </button>
             </div>
-            <PdfPreviewModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} pdfUrl={pdfPreviewUrl} fileName={`relatorio_jornada360_${reportType}.pdf`} />
+
+            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100">
+                <div className="space-y-6">
+                    <div>
+                        <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência</label>
+                        <select 
+                            value={selectedOptionIndex}
+                            onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))} 
+                            className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        >
+                            {monthOptions.map((o, i) => (
+                                <option key={i} value={i}>{o.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase mb-1 block">Início do Período</label>
+                            <div className="relative">
+                                <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <input 
+                                    type="date" 
+                                    value={startDate} 
+                                    onChange={e => setStartDate(e.target.value)} 
+                                    className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl text-sm font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20" 
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase mb-1 block">Fim do Período</label>
+                            <div className="relative">
+                                <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <input 
+                                    type="date" 
+                                    value={endDate} 
+                                    onChange={e => setEndDate(e.target.value)} 
+                                    className="w-full pl-9 pr-3 py-3 border border-gray-200 rounded-xl text-sm font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20" 
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-2">
+                        <button 
+                            onClick={generatePdf} 
+                            disabled={isGenerating} 
+                            className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark transition active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70"
+                        >
+                            {isGenerating ? (
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                <FileDown className="w-5 h-5" />
+                            )}
+                            {isGenerating ? "Processando..." : "Gerar Relatório PDF"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-4 bg-primary-light/50 rounded-xl border border-primary/10">
+                <AlertCircle className="w-5 h-5 text-primary-dark/60 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-primary-dark/70 leading-relaxed">
+                    <strong>Dica:</strong> O PDF gerado inclui todos os registros dentro do intervalo selecionado. Certifique-se de que os horários de início e fim da jornada estão preenchidos para cálculos precisos.
+                </p>
+            </div>
+
+            <PdfPreviewModal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                pdfUrl={pdfPreviewUrl} 
+                fileName={`Jornada360_${reportType === 'hours' ? 'Horas' : 'KM'}_${startDate}_${endDate}.pdf`} 
+            />
         </div>
     );
 };
