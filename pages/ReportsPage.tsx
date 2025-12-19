@@ -107,7 +107,7 @@ const ReportsPage: React.FC = () => {
 
             // Cabeçalho com Ícone
             try {
-                const iconBase64 = await loadImage('https://lh3.googleusercontent.com/pw/AP1GczMzevf3MtEhoqH_m88FmaGlcCRm7xNpg3sZTyDcPT6_I7jthzMtVudC4ZLUZ8kL7J0BB5Ahky7903UpG2CBHqPCrYduoiusu6KI7vfm0kFundAszoeMnmfgInqoa5TUCUVxmHOYwXWNbQl5OyxjJ_v8=w512-h512-s-no-gm?authuser=4');
+                const iconBase64 = await loadImage('/assets/icone_pdf.png');
                 doc.addImage(iconBase64, 'PNG', margin, 14, 8, 8);
                 doc.setFontSize(16);
                 doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
