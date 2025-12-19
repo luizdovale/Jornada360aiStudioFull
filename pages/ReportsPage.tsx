@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -77,47 +78,163 @@ const ReportsPage: React.FC = () => {
 
     const generatePdf = async () => {
         const filtered = journeys.filter(j => j.date >= startDate && j.date <= endDate);
+        
         if (!filtered.length) {
             alert('Nenhum registro encontrado para o período selecionado.');
             return;
         }
+
         if (!settings) {
             alert('Configurações não encontradas.');
             return;
         }
 
         setIsGenerating(true);
+        
         try {
             // @ts-ignore
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            if (!jsPDF) throw new Error("Biblioteca jsPDF não carregada.");
+
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
 
             const margin = 14;
             const titleColor = [30, 38, 60];
 
+            // Cabeçalho com Ícone
             try {
                 const iconBase64 = await loadImage('/assets/icone_pdf.png');
                 doc.addImage(iconBase64, 'PNG', margin, 14, 8, 8);
                 doc.setFontSize(16);
+                doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
                 doc.setFont("helvetica", "bold");
                 doc.text("Jornada360 - Relatório de Atividades", margin + 11, 20);
-            } catch {
+            } catch (e) {
                 doc.setFontSize(16);
+                doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
                 doc.setFont("helvetica", "bold");
                 doc.text("Jornada360 - Relatório de Atividades", margin, 20);
             }
 
-            setPdfPreviewUrl(doc.output("datauristring"));
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100, 100, 100);
+            const periodLabel = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
+            doc.text(`Colaborador: ${user?.user_metadata?.nome || 'Usuário'}`, margin, 28);
+            doc.text(`Período: ${periodLabel}`, margin, 33);
+            doc.text(`Tipo: ${reportType === 'hours' ? 'Ponto e Horas Extras' : 'Controle de KM e Entregas'}`, margin, 38);
+
+            const summary = getMonthSummary(filtered, settings);
+
+            if (reportType === 'hours') {
+                doc.setDrawColor(230, 230, 230);
+                doc.line(margin, 42, 210 - margin, 42);
+                
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+                doc.text("RESUMO DO PERÍODO:", margin, 48);
+                
+                doc.setFont("helvetica", "normal");
+                const summaryText = `HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
+                doc.text(summaryText, margin, 53);
+
+                const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Noturno", "Obs"];
+                const tableRows = filtered
+                    .sort((a, b) => a.date.localeCompare(b.date))
+                    .map(j => {
+                        const c = calculateJourney(j, settings);
+                        const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", j.notes || ""];
+                        const mealLabel = j.is_plantao ? "PLANTÃO" : `${j.meal_start || '00:00'} - ${j.meal_end || '00:00'}`;
+                        return [d, j.start_at || '00:00', j.end_at || '00:00', mealLabel, formatMinutesToHours(c.horasExtras50), formatMinutesToHours(c.horasExtras100), formatMinutesToHours(c.adicionalNoturno), j.notes || ""];
+                    });
+
+                // @ts-ignore
+                doc.autoTable({ 
+                    head: [tableColumn], 
+                    body: tableRows, 
+                    startY: 58, 
+                    theme: 'grid', 
+                    headStyles: { fillColor: titleColor, fontSize: 8, halign: 'center' },
+                    bodyStyles: { fontSize: 7, halign: 'center' },
+                    columnStyles: {
+                        0: { cellWidth: 15 },
+                        1: { cellWidth: 15 },
+                        2: { cellWidth: 15 },
+                        3: { cellWidth: 30 },
+                        4: { cellWidth: 20 },
+                        5: { cellWidth: 20 },
+                        6: { cellWidth: 20 },
+                        7: { halign: 'left' }
+                    },
+                    didParseCell: (data: any) => {
+                        if (data.cell.text && data.cell.text.includes('FOLGA')) {
+                            data.cell.styles.textColor = [220, 38, 38]; // Red-600
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+            } else {
+                doc.setDrawColor(230, 230, 230);
+                doc.line(margin, 42, 210 - margin, 42);
+                
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "bold");
+                doc.text("ESTATÍSTICAS DE VIAGEM:", margin, 48);
+                
+                doc.setFont("helvetica", "normal");
+                const summaryText = `Distância Total: ${summary.kmRodados.toFixed(1)} km  |  Total de Entregas: ${summary.totalDeliveries}  |  Dias com Viagem: ${summary.totalDiasTrabalhados}`;
+                doc.text(summaryText, margin, 53);
+
+                const tableColumn = ["Data", "RV", "Entregas", "KM Inicial", "KM Final", "Total KM"];
+                const tableRows = filtered
+                    .sort((a, b) => a.date.localeCompare(b.date))
+                    .map(j => {
+                        const c = calculateJourney(j, settings);
+                        const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR');
+                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", c.kmRodados > 0 ? c.kmRodados.toFixed(1) : "FOLGA"];
+                        return [d, j.rv_number || "-", j.deliveries || "0", j.km_start || "0", j.km_end || "0", c.kmRodados.toFixed(1)];
+                    });
+
+                // @ts-ignore
+                doc.autoTable({ 
+                    head: [tableColumn], 
+                    body: tableRows, 
+                    startY: 58, 
+                    theme: 'grid', 
+                    headStyles: { fillColor: titleColor, fontSize: 8, halign: 'center' },
+                    bodyStyles: { fontSize: 7, halign: 'center' },
+                    columnStyles: {
+                        5: { fontStyle: 'bold' }
+                    },
+                    didParseCell: (data: any) => {
+                        if (data.cell.text && data.cell.text.includes('FOLGA')) {
+                            data.cell.styles.textColor = [220, 38, 38]; // Red-600
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+            }
+
+            setPdfPreviewUrl(doc.output("datauristring")); 
             setIsModalOpen(true);
-        } catch (e: any) {
-            alert(`Erro ao gerar o relatório: ${e.message}`);
-        } finally {
-            setIsGenerating(false);
+        } catch (e: any) { 
+            console.error("Erro PDF:", e);
+            alert(`Erro ao gerar o relatório: ${e.message}`); 
+        } finally { 
+            setIsGenerating(false); 
         }
     };
 
-    const commonInputStyles =
-        "block w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all box-border min-w-0";
+    // Estilo unificado e seguro contra overflow: box-border e w-full garantem que padding não aumente o tamanho
+    const commonInputStyles = "block w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all box-border min-w-0";
 
     return (
         <div className="space-y-6">
@@ -126,36 +243,84 @@ const ReportsPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Exporte seus dados em PDF para conferência.</p>
             </div>
 
-            {/* ✅ AJUSTE AQUI */}
-            <div className="flex gap-1 bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200 overflow-hidden">
-                <button
-                    onClick={() => setReportType('hours')}
-                    className={`flex-1 min-w-0 whitespace-nowrap py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
-                        reportType === 'hours'
-                            ? 'bg-primary text-white shadow-md'
-                            : 'text-gray-500 hover:bg-gray-200'
-                    }`}
+            <div className="flex bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200">
+                <button 
+                    onClick={() => setReportType('hours')} 
+                    className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'hours' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
                 >
                     <Clock className="w-4 h-4" /> Ponto & Horas
                 </button>
-
-                <button
-                    onClick={() => setReportType('km')}
-                    className={`flex-1 min-w-0 whitespace-nowrap py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
-                        reportType === 'km'
-                            ? 'bg-primary text-white shadow-md'
-                            : 'text-gray-500 hover:bg-gray-200'
-                    }`}
+                <button 
+                    onClick={() => setReportType('km')} 
+                    className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'km' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
                 >
                     <Map className="w-4 h-4" /> KM Rodado
                 </button>
             </div>
 
-            <PdfPreviewModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                pdfUrl={pdfPreviewUrl}
-                fileName={`Jornada360_${reportType}_${startDate}_${endDate}.pdf`}
+            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6 overflow-hidden">
+                <div className="w-full">
+                    <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência do Mês</label>
+                    <select 
+                        value={selectedOptionIndex}
+                        onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))} 
+                        className={`${commonInputStyles} appearance-none`}
+                    >
+                        {monthOptions.map((o, i) => (
+                            <option key={i} value={i}>{o.label}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-4 w-full">
+                    <div className="w-full">
+                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
+                        <input 
+                            type="date" 
+                            value={startDate} 
+                            onChange={e => setStartDate(e.target.value)} 
+                            className={commonInputStyles} 
+                        />
+                    </div>
+                    <div className="w-full">
+                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Fim do Período</label>
+                        <input 
+                            type="date" 
+                            value={endDate} 
+                            onChange={e => setEndDate(e.target.value)} 
+                            className={commonInputStyles} 
+                        />
+                    </div>
+                </div>
+
+                <div className="pt-2 w-full">
+                    <button 
+                        onClick={generatePdf} 
+                        disabled={isGenerating} 
+                        className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark transition active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70"
+                    >
+                        {isGenerating ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <FileDown className="w-5 h-5" />
+                        )}
+                        {isGenerating ? "Processando..." : "Gerar Relatório PDF"}
+                    </button>
+                </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-4 bg-primary-light/50 rounded-xl border border-primary/10">
+                <AlertCircle className="w-5 h-5 text-primary-dark/60 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-primary-dark/70 leading-relaxed">
+                    <strong>Dica:</strong> Para o relatório de KM, utilizamos o período civil (dia 01 ao dia 30/31). Para o relatório de Ponto, seguimos o ciclo de fechamento configurado.
+                </p>
+            </div>
+
+            <PdfPreviewModal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                pdfUrl={pdfPreviewUrl} 
+                fileName={`Jornada360_${reportType === 'hours' ? 'Ponto' : 'KM'}_${startDate}_${endDate}.pdf`} 
             />
         </div>
     );
