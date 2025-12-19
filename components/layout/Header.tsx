@@ -10,16 +10,16 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
     const { user, updateUserMetadata } = useAuth();
     const { toast } = useToast();
     
-    const userName = user?.user_metadata?.nome || 'Usuário';
+    // Extrai apenas o primeiro nome para a saudação
+    const fullUserName = user?.user_metadata?.nome || 'Usuário';
+    const userName = fullUserName.trim().split(' ')[0];
     
-    // O avatar agora vem diretamente dos metadados do usuário (Supabase)
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (user?.user_metadata?.avatar_url) {
-            // Adiciona um timestamp para evitar cache do navegador se a URL for a mesma mas o conteúdo mudou
             setAvatarUrl(user.user_metadata.avatar_url);
         } else {
             setAvatarUrl(null);
@@ -36,7 +36,6 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
             const file = event.target.files?.[0];
             if (!file || !user) return;
 
-            // Validações
             if (!file.type.startsWith('image/')) {
                 toast({ title: "Arquivo inválido", description: "Por favor, selecione uma imagem.", variant: 'destructive' });
                 return;
@@ -48,13 +47,9 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
 
             setUploading(true);
 
-            // 1. Upload para o Supabase Storage
             const fileExt = file.name.split('.').pop();
             const fileName = `${user.id}-${Math.random()}.${fileExt}`;
             const filePath = `${fileName}`;
-
-            // Remove avatar antigo se necessário (opcional, mas boa prática para economizar espaço)
-            // Para simplificar, vamos apenas fazer o upload do novo.
 
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
@@ -62,15 +57,11 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
 
             if (uploadError) throw uploadError;
 
-            // 2. Obter URL Pública
             const { data: { publicUrl } } = supabase.storage
                 .from('avatars')
                 .getPublicUrl(filePath);
 
-            // 3. Atualizar perfil do usuário com a nova URL
             await updateUserMetadata({ avatar_url: publicUrl });
-            
-            // Atualiza estado local imediatamente para feedback visual
             setAvatarUrl(publicUrl);
 
             toast({ title: "Sucesso", description: "Foto de perfil atualizada." });
@@ -80,7 +71,6 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
             toast({ title: "Erro", description: "Falha ao atualizar foto. Tente novamente.", variant: 'destructive' });
         } finally {
             setUploading(false);
-            // Limpa o input para permitir selecionar o mesmo arquivo se necessário
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
@@ -89,13 +79,11 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
         <header className="bg-primary pt-10 pb-20 px-5 text-white">
             <div className="max-w-md mx-auto md:max-w-2xl lg:max-w-4xl">
                 <div className="flex items-center justify-between mb-6">
-                    {/* Lado Esquerdo: Apenas o botão de Menu */}
                     <div className="flex items-center gap-2">
                         <button onClick={onMenuClick} className="w-9 h-9 rounded-full bg-primary-dark/40 flex items-center justify-center text-white transition hover:bg-primary-dark/60">
                             <Menu className="w-5 h-5" />
                         </button>
                     </div>
-                    {/* Lado Direito: Apenas o botão de Home */}
                     <div className="flex items-center gap-3">
                         <Link to="/" className="w-9 h-9 rounded-full bg-primary-dark/40 flex items-center justify-center text-white transition hover:bg-primary-dark/60">
                             <Home className="w-5 h-5" />
@@ -104,7 +92,6 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* Avatar interativo */}
                     <div 
                         onClick={handleAvatarClick}
                         className={`w-14 h-14 rounded-full bg-primary-light flex items-center justify-center text-primary-dark overflow-hidden cursor-pointer relative border-2 border-transparent hover:border-accent transition-all ${uploading ? 'opacity-70' : ''}`}

@@ -6,7 +6,7 @@ import { Journey } from '../types';
 import { calculateJourney, formatMinutesToHours } from '../lib/utils';
 import Skeleton from '../components/ui/Skeleton';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import { Plus, Edit2, Trash2, Filter, ArrowDownUp, Clock, ListX, ChevronDown, FileText, StickyNote, Coffee, Shield, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, Filter, ArrowDownUp, Clock, ListX, ChevronDown, FileText, StickyNote, Coffee, Shield, Package, Moon } from 'lucide-react';
 
 const JourneyItem: React.FC<{ 
     journey: Journey, 
@@ -24,7 +24,7 @@ const JourneyItem: React.FC<{
         calcs = calculateJourney(journey, settings);
     } catch (e) {
         console.error("Erro ao calcular jornada:", e);
-        calcs = { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0 };
+        calcs = { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, adicionalNoturno: 0, kmRodados: 0 };
     }
 
     let dayOfWeek = '-';
@@ -100,31 +100,29 @@ const JourneyItem: React.FC<{
             
             <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-96 pt-3 mt-3 border-t border-gray-100' : 'max-h-0 pt-0 mt-0'}`}>
                  {!journey.is_day_off ? (
-                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs bg-primary-light/40 p-3 rounded-xl mb-3">
+                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-[10px] bg-primary-light/40 p-3 rounded-xl mb-3">
                         <div>
                             <p className="font-bold text-primary-dark text-sm">{formatMinutesToHours(calcs.totalTrabalhado)}</p>
-                            <p className="text-muted-foreground">Trabalhado</p>
+                            <p className="text-muted-foreground">Trab.</p>
                         </div>
                         <div>
                             <p className="font-bold text-green-600 text-sm">{formatMinutesToHours(calcs.horasExtras50)}</p>
-                            <p className="text-muted-foreground">Extra 50%</p>
+                            <p className="text-muted-foreground">Ex 50%</p>
                         </div>
                         <div>
                             <p className="font-bold text-yellow-600 text-sm">{formatMinutesToHours(calcs.horasExtras100)}</p>
-                            <p className="text-muted-foreground">Extra 100%</p>
+                            <p className="text-muted-foreground">Ex 100%</p>
                         </div>
-                        {settings.km_enabled && !journey.is_plantao && (
+                        <div>
+                            <p className="font-bold text-indigo-600 text-sm">{formatMinutesToHours(calcs.adicionalNoturno)}</p>
+                            <p className="text-muted-foreground">Noturno</p>
+                        </div>
+                        {settings.km_enabled && !journey.is_plantao ? (
                             <div>
-                                <p className="font-bold text-primary-dark text-sm">{calcs.kmRodados.toFixed(1)} km</p>
-                                <p className="text-muted-foreground">Rodados</p>
+                                <p className="font-bold text-primary-dark text-sm">{calcs.kmRodados.toFixed(1)}</p>
+                                <p className="text-muted-foreground">KM</p>
                             </div>
-                        )}
-                        {journey.is_plantao && (
-                            <div>
-                                <p className="font-bold text-blue-600 text-sm">Escala</p>
-                                <p className="text-muted-foreground">Plantão</p>
-                            </div>
-                        )}
+                        ) : <div className="flex items-center justify-center opacity-20"><Shield className="w-3 h-3"/></div>}
                     </div>
                  ) : (
                      settings.km_enabled && calcs.kmRodados > 0 && (

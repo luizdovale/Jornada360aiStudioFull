@@ -6,13 +6,13 @@ import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysFor
 import OverlappingCard from '../components/ui/OverlappingCard';
 import Skeleton from '../components/ui/Skeleton';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft, Map, Clock, Edit2, Trash2, ChevronDown, Coffee, FileText, StickyNote, Package, Shield } from 'lucide-react';
+import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft, Map, Clock, Edit2, Trash2, ChevronDown, Coffee, FileText, StickyNote, Package, Shield, Moon } from 'lucide-react';
 import { MonthSummary, Journey } from '../types';
 
 const SummaryItem: React.FC<{ label: string; value: string; colorClass?: string }> = ({ label, value, colorClass = 'text-white' }) => (
     <div className="flex flex-col items-center text-center">
         <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider font-medium">{label}</span>
-        <span className={`text-lg sm:text-xl font-bold ${colorClass}`}>{value}</span>
+        <span className={`text-sm sm:text-lg font-bold ${colorClass}`}>{value}</span>
     </div>
 );
 
@@ -96,12 +96,16 @@ const RecentJourneyItem: React.FC<{
                                 <p className="text-[10px] text-muted-foreground uppercase font-bold">Extra 100%</p>
                                 <p className="text-sm font-bold text-yellow-600">{formatMinutesToHours(calcs.horasExtras100)}</p>
                             </div>
-                            {settings.km_enabled && !journey.is_plantao && (
-                                <div className="bg-gray-50 p-2 rounded-xl text-center col-span-2">
-                                    <p className="text-[10px] text-muted-foreground uppercase font-bold">KM Rodados no Dia</p>
+                             <div className="bg-gray-50 p-2 rounded-xl text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Noturno (Red.)</p>
+                                <p className="text-sm font-bold text-indigo-600">{formatMinutesToHours(calcs.adicionalNoturno)}</p>
+                            </div>
+                            {settings.km_enabled && !journey.is_plantao ? (
+                                <div className="bg-gray-50 p-2 rounded-xl text-center">
+                                    <p className="text-[10px] text-muted-foreground uppercase font-bold">KM Rodados</p>
                                     <p className="text-sm font-bold text-primary-dark">{calcs.kmRodados.toFixed(1)} km</p>
                                 </div>
-                            )}
+                            ) : <div className="bg-gray-50 p-2 rounded-xl text-center flex items-center justify-center"><Clock className="w-4 h-4 text-muted-foreground opacity-30"/></div>}
                         </div>
                     ) : (
                         settings.km_enabled && calcs.kmRodados > 0 && (
@@ -169,31 +173,14 @@ const HomePageSkeleton: React.FC = () => (
                     <Skeleton className="h-4 w-24 mx-auto" />
                     <Skeleton className="h-8 w-48 mx-auto mt-2" />
                 </div>
-                <div className="grid grid-cols-3 gap-2 pt-2">
-                    <div className="flex flex-col items-center text-center">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-7 w-20 mt-1" />
-                    </div>
-                    <div className="flex flex-col items-center text-center">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-7 w-20 mt-1" />
-                    </div>
-                    <div className="flex flex-col items-center text-center">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-7 w-20 mt-1" />
-                    </div>
+                <div className="grid grid-cols-4 gap-2 pt-2">
+                    <Skeleton className="h-10 rounded-lg" />
+                    <Skeleton className="h-10 rounded-lg" />
+                    <Skeleton className="h-10 rounded-lg" />
+                    <Skeleton className="h-10 rounded-lg" />
                 </div>
             </div>
         </OverlappingCard>
-        <div className="pt-2">
-            <Skeleton className="h-7 w-32 mb-3" />
-            <div className="grid grid-cols-2 gap-3">
-                <Skeleton className="h-28 rounded-2xl" />
-                <Skeleton className="h-28 rounded-2xl" />
-                <Skeleton className="h-28 rounded-2xl" />
-                <Skeleton className="h-28 rounded-2xl" />
-            </div>
-        </div>
     </>
 );
 
@@ -224,7 +211,7 @@ const HomePage: React.FC = () => {
     }, [journeys]);
 
     const summary: MonthSummary = useMemo(() => {
-        if (!settings || !displayDate) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0, totalDiasTrabalhados: 0 };
+        if (!settings || !displayDate) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, adicionalNoturno: 0, kmRodados: 0, totalDiasTrabalhados: 0, totalDeliveries: 0 };
         
         const accountingJourneys = getJourneysForDisplayMonth(journeys, displayDate, settings);
         const accountingSummary = getMonthSummary(accountingJourneys, settings);
@@ -323,10 +310,11 @@ const HomePage: React.FC = () => {
                                 <button onClick={handleNextMonth} className="p-2 rounded-full hover:bg-white/10 transition-colors"><ChevronRight className="w-5 h-5" /></button>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 <SummaryItem label="Horas" value={formatMinutesToHours(summary.totalTrabalhado)} />
                                 <SummaryItem label="Extra 50%" value={formatMinutesToHours(summary.horasExtras50)} colorClass="text-green-400" />
                                 <SummaryItem label="Extra 100%" value={formatMinutesToHours(summary.horasExtras100)} colorClass="text-yellow-400" />
+                                <SummaryItem label="Noturno" value={formatMinutesToHours(summary.adicionalNoturno)} colorClass="text-indigo-400" />
                             </div>
                             
                             {settings.km_enabled && (
