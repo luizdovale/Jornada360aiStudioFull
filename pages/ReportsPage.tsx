@@ -233,8 +233,8 @@ const ReportsPage: React.FC = () => {
         }
     };
 
-    // Estilo unificado para inputs e select
-    const commonInputStyles = "w-full p-4 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all";
+    // Estilo unificado e seguro contra overflow: box-border e w-full garantem que padding não aumente o tamanho
+    const commonInputStyles = "block w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all box-border min-w-0";
 
     return (
         <div className="space-y-6">
@@ -258,8 +258,8 @@ const ReportsPage: React.FC = () => {
                 </button>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6">
-                <div>
+            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6 overflow-hidden">
+                <div className="w-full">
                     <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência do Mês</label>
                     <select 
                         value={selectedOptionIndex}
@@ -272,8 +272,8 @@ const ReportsPage: React.FC = () => {
                     </select>
                 </div>
 
-                <div className="space-y-4">
-                    <div>
+                <div className="space-y-4 w-full">
+                    <div className="w-full">
                         <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
                         <input 
                             type="date" 
@@ -282,7 +282,7 @@ const ReportsPage: React.FC = () => {
                             className={commonInputStyles} 
                         />
                     </div>
-                    <div>
+                    <div className="w-full">
                         <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Fim do Período</label>
                         <input 
                             type="date" 
@@ -293,7 +293,7 @@ const ReportsPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 w-full">
                     <button 
                         onClick={generatePdf} 
                         disabled={isGenerating} 
