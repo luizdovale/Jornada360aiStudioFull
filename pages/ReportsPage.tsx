@@ -272,8 +272,8 @@ const ReportsPage: React.FC = () => {
                     </select>
                 </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                <div className="w-full">
+            <div className="space-y-4 w-full">
+                <div className="w-full overflow-hidden">
                     <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
                         Início do Período
                     </label>
@@ -281,11 +281,11 @@ const ReportsPage: React.FC = () => {
                         type="date" 
                         value={startDate} 
                         onChange={e => setStartDate(e.target.value)} 
-                        className={commonInputStyles} 
+                        className={`${commonInputStyles} max-w-full`} 
                     />
                 </div>
-
-                <div className="w-full">
+            
+                <div className="w-full overflow-hidden">
                     <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
                         Fim do Período
                     </label>
@@ -293,10 +293,11 @@ const ReportsPage: React.FC = () => {
                         type="date" 
                         value={endDate} 
                         onChange={e => setEndDate(e.target.value)} 
-                        className={commonInputStyles} 
+                        className={`${commonInputStyles} max-w-full`} 
                     />
-                </div>        
+                </div>
             </div>
+
 
 
                 <div className="pt-2 w-full">
