@@ -59,7 +59,6 @@ const ReportsPage: React.FC = () => {
         }
     }, [selectedOptionIndex, monthOptions, reportType]);
 
-    // Função auxiliar para carregar imagem e converter para base64
     const loadImage = (url: string): Promise<string> => {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -106,7 +105,7 @@ const ReportsPage: React.FC = () => {
             const margin = 14;
             const titleColor = [30, 38, 60];
 
-            // Tenta adicionar o ícone ao lado esquerdo do título
+            // Cabeçalho com Ícone
             try {
                 const iconBase64 = await loadImage('assets/icone_pdf.png');
                 doc.addImage(iconBase64, 'PNG', margin, 14, 8, 8);
@@ -115,7 +114,6 @@ const ReportsPage: React.FC = () => {
                 doc.setFont("helvetica", "bold");
                 doc.text("Jornada360 - Relatório de Atividades", margin + 11, 20);
             } catch (e) {
-                // Se falhar o ícone, imprime apenas o texto na posição original
                 doc.setFontSize(16);
                 doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
                 doc.setFont("helvetica", "bold");
@@ -142,7 +140,7 @@ const ReportsPage: React.FC = () => {
                 doc.text("RESUMO DO PERÍODO:", margin, 48);
                 
                 doc.setFont("helvetica", "normal");
-                // Removido "Total Trabalhado" conforme solicitado
+                // Removido "Total Trabalhado" estritamente aqui
                 const summaryText = `HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
                 doc.text(summaryText, margin, 53);
 
@@ -152,7 +150,7 @@ const ReportsPage: React.FC = () => {
                     .map(j => {
                         const c = calculateJourney(j, settings);
                         const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "-", "-", "-", "-", j.notes || ""];
+                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", j.notes || ""];
                         const mealLabel = j.is_plantao ? "PLANTÃO" : `${j.meal_start || '00:00'} - ${j.meal_end || '00:00'}`;
                         return [d, j.start_at || '00:00', j.end_at || '00:00', mealLabel, formatMinutesToHours(c.horasExtras50), formatMinutesToHours(c.horasExtras100), formatMinutesToHours(c.adicionalNoturno), j.notes || ""];
                     });
@@ -175,6 +173,12 @@ const ReportsPage: React.FC = () => {
                         6: { cellWidth: 20 },
                         7: { halign: 'left' }
                     },
+                    didParseCell: (data: any) => {
+                        if (data.cell.text && data.cell.text.includes('FOLGA')) {
+                            data.cell.styles.textColor = [220, 38, 38]; // Red-600
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    },
                     margin: { left: margin, right: margin }
                 });
             } else {
@@ -195,6 +199,7 @@ const ReportsPage: React.FC = () => {
                     .map(j => {
                         const c = calculateJourney(j, settings);
                         const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR');
+                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", c.kmRodados > 0 ? c.kmRodados.toFixed(1) : "FOLGA", j.notes || ""];
                         return [d, j.rv_number || "-", j.deliveries || "0", j.km_start || "0", j.km_end || "0", c.kmRodados.toFixed(1), j.notes || ""];
                     });
 
@@ -209,6 +214,12 @@ const ReportsPage: React.FC = () => {
                     columnStyles: {
                         5: { fontStyle: 'bold' },
                         6: { halign: 'left' }
+                    },
+                    didParseCell: (data: any) => {
+                        if (data.cell.text && data.cell.text.includes('FOLGA')) {
+                            data.cell.styles.textColor = [220, 38, 38]; // Red-600
+                            data.cell.styles.fontStyle = 'bold';
+                        }
                     },
                     margin: { left: margin, right: margin }
                 });
