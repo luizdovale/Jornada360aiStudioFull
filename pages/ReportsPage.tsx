@@ -27,32 +27,43 @@ const ReportsPage: React.FC = () => {
         for (let i = -1; i < 11; i++) {
             const ref = new Date(today.getFullYear(), today.getMonth() - i, 1);
             
+            // Ciclo Contábil (Baseado nas configurações de fechamento)
             const cycleStart = new Date(ref.getFullYear(), ref.getMonth() - 1, startDay);
             const cycleEnd = new Date(ref.getFullYear(), ref.getMonth(), startDay - 1);
             
-            const start = cycleStart.toISOString().split('T')[0];
-            const end = cycleEnd.toISOString().split('T')[0];
+            // Ciclo Civil (Dia 01 ao último dia do mês)
+            const calendarStart = new Date(ref.getFullYear(), ref.getMonth(), 1);
+            const calendarEnd = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
             
             const label = ref.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
             options.push({ 
                 label: label.charAt(0).toUpperCase() + label.slice(1), 
-                start, 
-                end, 
+                cycleStart: cycleStart.toISOString().split('T')[0], 
+                cycleEnd: cycleEnd.toISOString().split('T')[0],
+                calendarStart: calendarStart.toISOString().split('T')[0],
+                calendarEnd: calendarEnd.toISOString().split('T')[0],
                 value: i 
             });
         }
         return options;
     }, [settings]);
 
+    // Sincroniza as datas baseadas no tipo de relatório e na opção selecionada
     useEffect(() => {
         if (monthOptions.length > 0) {
             const currentOption = monthOptions[selectedOptionIndex];
-            setStartDate(currentOption.start);
-            setEndDate(currentOption.end);
+            if (reportType === 'hours') {
+                setStartDate(currentOption.cycleStart);
+                setEndDate(currentOption.cycleEnd);
+            } else {
+                setStartDate(currentOption.calendarStart);
+                setEndDate(currentOption.calendarEnd);
+            }
         }
-    }, [selectedOptionIndex, monthOptions]);
+    }, [selectedOptionIndex, monthOptions, reportType]);
 
     const generatePdf = async () => {
+        // Usa as datas que estão nos estados (que já foram sincronizadas ou editadas manualmente)
         const filtered = journeys.filter(j => j.date >= startDate && j.date <= endDate);
         
         if (!filtered.length) {
@@ -92,21 +103,22 @@ const ReportsPage: React.FC = () => {
             const periodLabel = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
             doc.text(`Colaborador: ${user?.user_metadata?.nome || 'Usuário'}`, margin, 28);
             doc.text(`Período: ${periodLabel}`, margin, 33);
+            doc.text(`Tipo: ${reportType === 'hours' ? 'Ponto e Horas Extras' : 'Controle de KM e Entregas'}`, margin, 38);
 
             const summary = getMonthSummary(filtered, settings);
 
             if (reportType === 'hours') {
                 doc.setDrawColor(230, 230, 230);
-                doc.line(margin, 38, 210 - margin, 38);
+                doc.line(margin, 42, 210 - margin, 42);
                 
                 doc.setFontSize(9);
                 doc.setFont("helvetica", "bold");
                 doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
-                doc.text("RESUMO DO PERÍODO:", margin, 45);
+                doc.text("RESUMO DO PERÍODO:", margin, 48);
                 
                 doc.setFont("helvetica", "normal");
                 const summaryText = `Total Trabalhado: ${formatMinutesToHours(summary.totalTrabalhado)}  |  HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
-                doc.text(summaryText, margin, 50);
+                doc.text(summaryText, margin, 53);
 
                 const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Noturno", "Obs"];
                 const tableRows = filtered
@@ -123,7 +135,7 @@ const ReportsPage: React.FC = () => {
                 doc.autoTable({ 
                     head: [tableColumn], 
                     body: tableRows, 
-                    startY: 55, 
+                    startY: 58, 
                     theme: 'grid', 
                     headStyles: { fillColor: titleColor, fontSize: 8, halign: 'center' },
                     bodyStyles: { fontSize: 7, halign: 'center' },
@@ -141,15 +153,15 @@ const ReportsPage: React.FC = () => {
                 });
             } else {
                 doc.setDrawColor(230, 230, 230);
-                doc.line(margin, 38, 210 - margin, 38);
+                doc.line(margin, 42, 210 - margin, 42);
                 
                 doc.setFontSize(9);
                 doc.setFont("helvetica", "bold");
-                doc.text("ESTATÍSTICAS DE VIAGEM:", margin, 45);
+                doc.text("ESTATÍSTICAS DE VIAGEM:", margin, 48);
                 
                 doc.setFont("helvetica", "normal");
                 const summaryText = `Distância Total: ${summary.kmRodados.toFixed(1)} km  |  Total de Entregas: ${summary.totalDeliveries}  |  Dias com Viagem: ${summary.totalDiasTrabalhados}`;
-                doc.text(summaryText, margin, 50);
+                doc.text(summaryText, margin, 53);
 
                 const tableColumn = ["Data", "Veículo/RV", "Entregas", "KM Inicial", "KM Final", "Total KM", "Obs"];
                 const tableRows = filtered
@@ -164,7 +176,7 @@ const ReportsPage: React.FC = () => {
                 doc.autoTable({ 
                     head: [tableColumn], 
                     body: tableRows, 
-                    startY: 55, 
+                    startY: 58, 
                     theme: 'grid', 
                     headStyles: { fillColor: titleColor, fontSize: 8, halign: 'center' },
                     bodyStyles: { fontSize: 7, halign: 'center' },
@@ -193,7 +205,7 @@ const ReportsPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Exporte seus dados em PDF para conferência.</p>
             </div>
 
-            {/* Seleção do Tipo de Relatório - Um ao lado do outro, mas bem espaçados */}
+            {/* Seleção do Tipo de Relatório - Um ao lado do outro */}
             <div className="flex bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200">
                 <button 
                     onClick={() => setReportType('hours')} 
@@ -270,7 +282,7 @@ const ReportsPage: React.FC = () => {
             <div className="flex items-start gap-3 p-4 bg-primary-light/50 rounded-xl border border-primary/10">
                 <AlertCircle className="w-5 h-5 text-primary-dark/60 flex-shrink-0 mt-0.5" />
                 <p className="text-[11px] text-primary-dark/70 leading-relaxed">
-                    <strong>Atenção:</strong> O PDF gerado inclui todos os registros dentro do intervalo selecionado. Para o relatório de KM, certifique-se de que os campos de odômetro foram preenchidos.
+                    <strong>Dica:</strong> Para o relatório de KM, utilizamos o período civil (dia 01 ao dia 30/31). Para o relatório de Ponto, seguimos o ciclo de fechamento configurado.
                 </p>
             </div>
 
