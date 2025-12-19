@@ -6,7 +6,7 @@ import { Journey } from '../types';
 import { calculateJourney, formatMinutesToHours } from '../lib/utils';
 import Skeleton from '../components/ui/Skeleton';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import { Plus, Edit2, Trash2, Filter, ArrowDownUp, Clock, ListX, ChevronDown, FileText, StickyNote, Coffee } from 'lucide-react';
+import { Plus, Edit2, Trash2, Filter, ArrowDownUp, Clock, ListX, ChevronDown, FileText, StickyNote, Coffee, Shield, Package } from 'lucide-react';
 
 const JourneyItem: React.FC<{ 
     journey: Journey, 
@@ -17,7 +17,6 @@ const JourneyItem: React.FC<{
 }> = ({ journey, onEdit, onDelete, isExpanded, onToggleExpand }) => {
     const { settings } = useJourneys();
     
-    // Proteção crítica: Se não houver settings ou jornada, não renderiza
     if (!settings || !journey) return null;
 
     let calcs;
@@ -28,7 +27,6 @@ const JourneyItem: React.FC<{
         calcs = { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0 };
     }
 
-    // Proteção de Data
     let dayOfWeek = '-';
     let day = 0;
     
@@ -59,6 +57,9 @@ const JourneyItem: React.FC<{
         statusColorClass = 'text-red-600 font-bold';
         cardBorderClass = 'border-red-200';
         bgColorClass = 'bg-red-50/30'; 
+    } else if (journey.is_plantao) {
+        statusLabel = 'PLANTÃO';
+        statusColorClass = 'text-blue-600 font-bold';
     } else if (journey.is_feriado) {
         statusLabel = 'Feriado';
         statusColorClass = 'text-yellow-600 font-bold';
@@ -76,7 +77,8 @@ const JourneyItem: React.FC<{
                         <p className="text-xl font-bold text-primary-dark">{day}</p>
                     </div>
                     <div>
-                        <p className={`text-sm ${statusColorClass}`}>
+                        <p className={`text-sm flex items-center gap-1 ${statusColorClass}`}>
+                            {journey.is_plantao && <Shield className="w-3 h-3"/>}
                             {statusLabel}
                         </p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
@@ -111,10 +113,16 @@ const JourneyItem: React.FC<{
                             <p className="font-bold text-yellow-600 text-sm">{formatMinutesToHours(calcs.horasExtras100)}</p>
                             <p className="text-muted-foreground">Extra 100%</p>
                         </div>
-                        {settings.km_enabled && (
+                        {settings.km_enabled && !journey.is_plantao && (
                             <div>
                                 <p className="font-bold text-primary-dark text-sm">{calcs.kmRodados.toFixed(1)} km</p>
                                 <p className="text-muted-foreground">Rodados</p>
+                            </div>
+                        )}
+                        {journey.is_plantao && (
+                            <div>
+                                <p className="font-bold text-blue-600 text-sm">Escala</p>
+                                <p className="text-muted-foreground">Plantão</p>
                             </div>
                         )}
                     </div>
@@ -127,28 +135,30 @@ const JourneyItem: React.FC<{
                      )
                  )}
                  
-                {!journey.is_day_off && journey.meal_start && journey.meal_end && (
-                     <div className="flex items-start gap-2 text-sm text-muted-foreground px-1 mb-2">
-                        <Coffee className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
-                        <p><span className="font-semibold text-primary-dark">Refeição:</span> {journey.meal_start} - {journey.meal_end}</p>
-                    </div>
-                )}
-
                 <div className="space-y-2 text-sm text-muted-foreground px-1">
-                    {(journey.rv_number) && (
+                    {journey.deliveries !== undefined && journey.deliveries > 0 && (
+                        <div className="flex items-start gap-2">
+                            <Package className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
+                            <p><span className="font-semibold text-primary-dark">Entregas:</span> {journey.deliveries}</p>
+                        </div>
+                    )}
+                    {!journey.is_day_off && !journey.is_plantao && journey.meal_start && journey.meal_end && (
+                        <div className="flex items-start gap-2">
+                            <Coffee className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
+                            <p><span className="font-semibold text-primary-dark">Refeição:</span> {journey.meal_start} - {journey.meal_end}</p>
+                        </div>
+                    )}
+                    {journey.rv_number && !journey.is_plantao && (
                          <div className="flex items-start gap-2">
                             <FileText className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
                             <p><span className="font-semibold text-primary-dark">RV:</span> {journey.rv_number}</p>
                         </div>
                     )}
-                     {(journey.notes) && (
+                     {journey.notes && (
                          <div className="flex items-start gap-2">
                             <StickyNote className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
-                            <p className="break-words">{journey.notes}</p>
+                            <p className="break-words italic">"{journey.notes}"</p>
                         </div>
-                    )}
-                    {(!journey.rv_number && !journey.notes && (!journey.meal_start || journey.is_day_off)) && (
-                        <p className="text-xs italic text-gray-400">Sem observações adicionais.</p>
                     )}
                 </div>
             </div>
@@ -204,7 +214,6 @@ const JourneysPage: React.FC = () => {
     }, [location.search, navigate, loading]);
 
     const filteredAndSortedJourneys = useMemo(() => {
-        // Proteção: garante que dependências existam
         if (!settings || !journeys) return [];
 
         let filtered = [...journeys];
@@ -244,11 +253,9 @@ const JourneysPage: React.FC = () => {
             }
         } catch (e) {
             console.error("Erro no filtro:", e);
-            // Fallback: mostra tudo se o filtro falhar
             filtered = journeys;
         }
 
-        // Ordenação segura
         filtered.sort((a, b) => {
             try {
                 if (!a || !b) return 0;

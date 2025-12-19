@@ -154,36 +154,37 @@ const ReportsPage: React.FC = () => {
 
             if (reportType === 'hours') {
                 const summary = getMonthSummary(filteredJourneys, settings);
-                doc.setFontSize(10);
-                doc.text(`Dias Trabalhados: ${summary.totalDiasTrabalhados}`, margin, startTableY);
-                doc.text(`Extras 50%: ${formatMinutesToHours(summary.horasExtras50)}`, margin + 50, startTableY);
-                doc.text(`Extras 100%: ${formatMinutesToHours(summary.horasExtras100)}`, margin + 100, startTableY);
+                doc.setFontSize(9);
+                doc.text(`Dias Trab: ${summary.totalDiasTrabalhados}`, margin, startTableY);
+                doc.text(`Ex. 50%: ${formatMinutesToHours(summary.horasExtras50)}`, margin + 45, startTableY);
+                doc.text(`Ex. 100%: ${formatMinutesToHours(summary.horasExtras100)}`, margin + 95, startTableY);
 
-                const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Obs"];
+                const tableColumn = ["Data", "Início", "Fim", "Refeição", "Ent.", "HE 50%", "HE 100%", "Obs"];
                 const tableRows: any[] = [];
                 const sorted = [...filteredJourneys].sort((a, b) => new Date(a.date + "T00:00:00").getTime() - new Date(b.date + "T00:00:00").getTime());
 
                 sorted.forEach(journey => {
                     const calcs = calculateJourney(journey, settings);
                     const dateF = new Date(journey.date + "T00:00:00").toLocaleDateString('pt-BR');
+                    const deliveryCount = journey.deliveries || 0;
 
                     if (journey.is_day_off) {
                         const style = { textColor: [220, 38, 38], fontStyle: "bold" };
-                        tableRows.push([{ content: dateF, styles: style }, { content: "Folga", styles: style }, { content: "Folga", styles: style }, { content: "Folga", styles: style }, "-", "-", journey.notes || "-"]);
+                        tableRows.push([{ content: dateF, styles: style }, { content: "Folga", styles: style }, { content: "Folga", styles: style }, { content: "Folga", styles: style }, "-", "-", "-", journey.notes || "-"]);
                     } else if (journey.is_plantao) {
-                        const style = { textColor: [30, 64, 175], fontStyle: "bold" }; // Azul para Plantão
-                        tableRows.push([{ content: dateF, styles: style }, "13:00", "19:00", { content: "Plantão", styles: style }, formatMinutesToHours(calcs.horasExtras50), formatMinutesToHours(calcs.horasExtras100), journey.notes || "-"]);
+                        const style = { textColor: [30, 64, 175], fontStyle: "bold" };
+                        tableRows.push([{ content: dateF, styles: style }, "13:00", "19:00", { content: "Plantão", styles: style }, deliveryCount, formatMinutesToHours(calcs.horasExtras50), formatMinutesToHours(calcs.horasExtras100), journey.notes || "-"]);
                     } else {
                         const meal = `${journey.meal_start?.slice(0, 5)} - ${journey.meal_end?.slice(0, 5)}`;
-                        tableRows.push([dateF, journey.start_at?.slice(0, 5), journey.end_at?.slice(0, 5), meal, formatMinutesToHours(calcs.horasExtras50), formatMinutesToHours(calcs.horasExtras100), journey.notes || "-"]);
+                        tableRows.push([dateF, journey.start_at?.slice(0, 5), journey.end_at?.slice(0, 5), meal, deliveryCount, formatMinutesToHours(calcs.horasExtras50), formatMinutesToHours(calcs.horasExtras100), journey.notes || "-"]);
                     }
                 });
 
                 // @ts-ignore
                 doc.autoTable({
-                    head: [tableColumn], body: tableRows, startY: startTableY + 6, theme: "grid", headStyles: { fillColor: "#0C2344", fontSize: 8 },
-                    styles: { fontSize: 8, cellPadding: 2, halign: "center" },
-                    columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 15 }, 2: { cellWidth: 15 }, 3: { cellWidth: 25 }, 4: { cellWidth: 20 }, 5: { cellWidth: 20 }, 6: { halign: "left", cellWidth: "auto" } },
+                    head: [tableColumn], body: tableRows, startY: startTableY + 6, theme: "grid", headStyles: { fillColor: "#0C2344", fontSize: 7 },
+                    styles: { fontSize: 7, cellPadding: 1.5, halign: "center" },
+                    columnStyles: { 0: { cellWidth: 18 }, 1: { cellWidth: 14 }, 2: { cellWidth: 14 }, 3: { cellWidth: 22 }, 4: { cellWidth: 12 }, 5: { cellWidth: 18 }, 6: { cellWidth: 18 }, 7: { halign: "left", cellWidth: "auto" } },
                     didParseCell: (data: any) => {
                         if (data.row.raw && data.row.raw[1] && data.row.raw[1].content === 'Folga') data.cell.styles.fillColor = [255, 235, 235];
                         if (data.row.raw && data.row.raw[3] && data.row.raw[3].content === 'Plantão') data.cell.styles.fillColor = [239, 246, 255];
@@ -192,20 +193,20 @@ const ReportsPage: React.FC = () => {
             } else {
                 const summary = getMonthSummary(filteredJourneys, settings);
                 doc.setFontSize(11); doc.text(`Total KM Rodados: ${summary.kmRodados.toFixed(1)} km`, margin, startTableY);
-                const tableColumn = ["Data", "Dia", "Veículo/RV", "KM Inicial", "KM Final", "Total KM"];
+                const tableColumn = ["Data", "Dia", "Veículo/RV", "Ent.", "KM Inicial", "KM Final", "Total KM"];
                 const tableRows: any[] = [];
                 const sorted = [...filteredJourneys].sort((a, b) => new Date(a.date + "T00:00:00").getTime() - new Date(b.date + "T00:00:00").getTime());
                 sorted.forEach(j => {
                     const c = calculateJourney(j, settings);
                     if (c.kmRodados > 0 || (j.km_start && j.km_end)) {
-                        tableRows.push([new Date(j.date + "T00:00:00").toLocaleDateString('pt-BR'), new Date(j.date + "T00:00:00").toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase(), j.rv_number || "-", j.km_start || "-", j.km_end || "-", c.kmRodados.toFixed(1)]);
+                        tableRows.push([new Date(j.date + "T00:00:00").toLocaleDateString('pt-BR'), new Date(j.date + "T00:00:00").toLocaleDateString('pt-BR', { weekday: 'short' }).toUpperCase(), j.rv_number || "-", j.deliveries || 0, j.km_start || "-", j.km_end || "-", c.kmRodados.toFixed(1)]);
                     }
                 });
                 // @ts-ignore
                 doc.autoTable({
-                    head: [tableColumn], body: tableRows, startY: startTableY + 6, theme: "grid", headStyles: { fillColor: "#1E263C", fontSize: 9 },
-                    styles: { fontSize: 9, cellPadding: 3, halign: "center" },
-                    columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 20 }, 2: { cellWidth: 35 }, 3: { cellWidth: 30 }, 4: { cellWidth: 30 }, 5: { cellWidth: 30, fontStyle: "bold" } }
+                    head: [tableColumn], body: tableRows, startY: startTableY + 6, theme: "grid", headStyles: { fillColor: "#1E263C", fontSize: 8 },
+                    styles: { fontSize: 8, cellPadding: 2, halign: "center" },
+                    columnStyles: { 0: { cellWidth: 22 }, 1: { cellWidth: 18 }, 2: { cellWidth: 30 }, 3: { cellWidth: 15 }, 4: { cellWidth: 25 }, 5: { cellWidth: 25 }, 6: { cellWidth: 25, fontStyle: "bold" } }
                 });
             }
 

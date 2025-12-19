@@ -136,18 +136,19 @@ const JourneyFormPage: React.FC = () => {
         let calculatedMealDuration = me - ms;
         if (calculatedMealDuration < 0) calculatedMealDuration += 24 * 60; 
 
-        const isSpecialDay = formData.is_day_off; // No plantão ainda podemos ter entregas e obs
+        // No Plantão e na Folga, campos de KM e RV são zerados/limpos
+        const hideDetails = formData.is_day_off || formData.is_plantao;
 
         const dataToSave = {
             ...formData,
-            meal_duration: formData.is_day_off || formData.is_plantao ? 0 : calculatedMealDuration,
-            rest_duration: formData.rest_duration ? Number(formData.rest_duration) : 0,
-            km_start: isSpecialDay ? 0 : (formData.km_start ? Number(formData.km_start) : 0),
-            km_end: isSpecialDay ? 0 : (formData.km_end ? Number(formData.km_end) : 0),
+            meal_duration: hideDetails ? 0 : calculatedMealDuration,
+            rest_duration: hideDetails ? 0 : (formData.rest_duration ? Number(formData.rest_duration) : 0),
+            km_start: hideDetails ? 0 : (formData.km_start ? Number(formData.km_start) : 0),
+            km_end: hideDetails ? 0 : (formData.km_end ? Number(formData.km_end) : 0),
             deliveries: formData.deliveries ? Number(formData.deliveries) : 0,
-            rv_number: isSpecialDay ? '' : formData.rv_number,
-            meal_start: isSpecialDay ? '00:00' : formData.meal_start,
-            meal_end: isSpecialDay ? '00:00' : formData.meal_end,
+            rv_number: hideDetails ? '' : formData.rv_number,
+            meal_start: hideDetails ? '00:00' : formData.meal_start,
+            meal_end: hideDetails ? '00:00' : formData.meal_end,
         };
 
         if (formData.is_day_off) {
@@ -200,7 +201,7 @@ const JourneyFormPage: React.FC = () => {
             <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-soft w-full box-border">
                 <form id="journey-form" onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
 
-                    <div className="grid grid-cols-3 gap-3 w-full">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
                         <label className={toggleLabel(formData.is_feriado, "border-yellow-500 text-yellow-700")}>
                             <input type="checkbox" name="is_feriado" checked={formData.is_feriado} onChange={handleChange} className="hidden" />
                             <span className="text-[10px] uppercase font-bold tracking-tighter mb-1">Feriado</span>
@@ -298,7 +299,6 @@ const JourneyFormPage: React.FC = () => {
                                 </>
                             )}
 
-                            {/* Campos compactos de identificação e entregas */}
                             <div className="grid grid-cols-2 gap-5 w-full">
                                 <div className={inputContainerStyle}>
                                     <label className={labelStyle}>Qtd. Entregas</label>

@@ -6,7 +6,7 @@ import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysFor
 import OverlappingCard from '../components/ui/OverlappingCard';
 import Skeleton from '../components/ui/Skeleton';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft, Map, Clock, Edit2, Trash2, ChevronDown, Coffee, FileText, StickyNote } from 'lucide-react';
+import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft, Map, Clock, Edit2, Trash2, ChevronDown, Coffee, FileText, StickyNote, Package, Shield } from 'lucide-react';
 import { MonthSummary, Journey } from '../types';
 
 const SummaryItem: React.FC<{ label: string; value: string; colorClass?: string }> = ({ label, value, colorClass = 'text-white' }) => (
@@ -60,7 +60,7 @@ const RecentJourneyItem: React.FC<{
                 className="w-full text-left flex items-center justify-between p-3 outline-none"
             >
                 <div className="flex items-center gap-3">
-                    <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg transition-colors ${isExpanded ? 'bg-primary text-white' : 'bg-primary-light text-primary-dark'}`}>
+                    <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg transition-colors ${isExpanded ? 'bg-primary text-white' : (journey.is_plantao ? 'bg-blue-100 text-blue-800' : 'bg-primary-light text-primary-dark')}`}>
                         <span className="text-[10px] uppercase font-medium">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
                         <span className="font-bold text-lg leading-none">{date.getDate()}</span>
                     </div>
@@ -68,6 +68,8 @@ const RecentJourneyItem: React.FC<{
                         <p className="font-semibold text-sm text-primary-dark">{date.toLocaleDateString('pt-BR', { weekday: 'long' })}</p>
                         {journey.is_day_off ? (
                             <p className="text-xs text-red-600 font-bold uppercase tracking-tighter">FOLGA</p>
+                        ) : journey.is_plantao ? (
+                            <p className="text-xs text-blue-600 font-bold uppercase tracking-tighter flex items-center gap-1"><Shield className="w-3 h-3"/> PLANTÃO</p>
                         ) : (
                             <p className="text-xs text-muted-foreground">{formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas</p>
                         )}
@@ -81,7 +83,7 @@ const RecentJourneyItem: React.FC<{
             </button>
 
             {/* Conteúdo Expandido */}
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[500px] border-t border-gray-50' : 'max-h-0'}`}>
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[600px] border-t border-gray-50' : 'max-h-0'}`}>
                 <div className="p-4 space-y-4">
                     {/* Grid de Resumo */}
                     {!journey.is_day_off ? (
@@ -94,7 +96,7 @@ const RecentJourneyItem: React.FC<{
                                 <p className="text-[10px] text-muted-foreground uppercase font-bold">Extra 100%</p>
                                 <p className="text-sm font-bold text-yellow-600">{formatMinutesToHours(calcs.horasExtras100)}</p>
                             </div>
-                            {settings.km_enabled && (
+                            {settings.km_enabled && !journey.is_plantao && (
                                 <div className="bg-gray-50 p-2 rounded-xl text-center col-span-2">
                                     <p className="text-[10px] text-muted-foreground uppercase font-bold">KM Rodados no Dia</p>
                                     <p className="text-sm font-bold text-primary-dark">{calcs.kmRodados.toFixed(1)} km</p>
@@ -112,13 +114,19 @@ const RecentJourneyItem: React.FC<{
 
                     {/* Detalhes de Texto */}
                     <div className="space-y-2 text-xs text-muted-foreground">
-                        {!journey.is_day_off && journey.meal_start && (
+                        {journey.deliveries !== undefined && journey.deliveries > 0 && (
+                             <div className="flex items-center gap-2">
+                                <Package className="w-3.5 h-3.5 text-primary" />
+                                <span>Entregas: <strong>{journey.deliveries}</strong></span>
+                            </div>
+                        )}
+                        {!journey.is_day_off && !journey.is_plantao && journey.meal_start && (
                             <div className="flex items-center gap-2">
                                 <Coffee className="w-3.5 h-3.5 text-primary" />
                                 <span>Refeição: <strong>{journey.meal_start} - {journey.meal_end}</strong></span>
                             </div>
                         )}
-                        {journey.rv_number && (
+                        {journey.rv_number && !journey.is_plantao && (
                             <div className="flex items-center gap-2">
                                 <FileText className="w-3.5 h-3.5 text-primary" />
                                 <span>RV: <strong>{journey.rv_number}</strong></span>
