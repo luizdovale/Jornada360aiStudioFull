@@ -140,7 +140,6 @@ const ReportsPage: React.FC = () => {
                 doc.text("RESUMO DO PERÍODO:", margin, 48);
                 
                 doc.setFont("helvetica", "normal");
-                // Removido "Total Trabalhado" estritamente aqui
                 const summaryText = `HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
                 doc.text(summaryText, margin, 53);
 
@@ -193,14 +192,17 @@ const ReportsPage: React.FC = () => {
                 const summaryText = `Distância Total: ${summary.kmRodados.toFixed(1)} km  |  Total de Entregas: ${summary.totalDeliveries}  |  Dias com Viagem: ${summary.totalDiasTrabalhados}`;
                 doc.text(summaryText, margin, 53);
 
-                const tableColumn = ["Data", "Veículo/RV", "Entregas", "KM Inicial", "KM Final", "Total KM", "Obs"];
+                // Ajuste solicitado: Adicionado campo 'RV' explicitamente e removido 'Observações'
+                const tableColumn = ["Data", "RV", "Entregas", "KM Inicial", "KM Final", "Total KM"];
                 const tableRows = filtered
                     .sort((a, b) => a.date.localeCompare(b.date))
                     .map(j => {
                         const c = calculateJourney(j, settings);
                         const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR');
-                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", c.kmRodados > 0 ? c.kmRodados.toFixed(1) : "FOLGA", j.notes || ""];
-                        return [d, j.rv_number || "-", j.deliveries || "0", j.km_start || "0", j.km_end || "0", c.kmRodados.toFixed(1), j.notes || ""];
+                        // Ajustado para 6 colunas
+                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", c.kmRodados > 0 ? c.kmRodados.toFixed(1) : "FOLGA"];
+                        // Ajustado para 6 colunas, mapeando RV
+                        return [d, j.rv_number || "-", j.deliveries || "0", j.km_start || "0", j.km_end || "0", c.kmRodados.toFixed(1)];
                     });
 
                 // @ts-ignore
@@ -212,8 +214,7 @@ const ReportsPage: React.FC = () => {
                     headStyles: { fillColor: titleColor, fontSize: 8, halign: 'center' },
                     bodyStyles: { fontSize: 7, halign: 'center' },
                     columnStyles: {
-                        5: { fontStyle: 'bold' },
-                        6: { halign: 'left' }
+                        5: { fontStyle: 'bold' }
                     },
                     didParseCell: (data: any) => {
                         if (data.cell.text && data.cell.text.includes('FOLGA')) {
