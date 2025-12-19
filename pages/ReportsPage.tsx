@@ -107,7 +107,7 @@ const ReportsPage: React.FC = () => {
 
             // Cabeçalho com Ícone
             try {
-                const iconBase64 = await loadImage('assets/icone_pdf.png');
+                const iconBase64 = await loadImage('https://lh3.googleusercontent.com/pw/AP1GczMzevf3MtEhoqH_m88FmaGlcCRm7xNpg3sZTyDcPT6_I7jthzMtVudC4ZLUZ8kL7J0BB5Ahky7903UpG2CBHqPCrYduoiusu6KI7vfm0kFundAszoeMnmfgInqoa5TUCUVxmHOYwXWNbQl5OyxjJ_v8=w512-h512-s-no-gm?authuser=4');
                 doc.addImage(iconBase64, 'PNG', margin, 14, 8, 8);
                 doc.setFontSize(16);
                 doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
@@ -140,6 +140,7 @@ const ReportsPage: React.FC = () => {
                 doc.text("RESUMO DO PERÍODO:", margin, 48);
                 
                 doc.setFont("helvetica", "normal");
+                // Garantindo que Total Trabalhado não apareça aqui
                 const summaryText = `HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
                 doc.text(summaryText, margin, 53);
 
@@ -192,16 +193,13 @@ const ReportsPage: React.FC = () => {
                 const summaryText = `Distância Total: ${summary.kmRodados.toFixed(1)} km  |  Total de Entregas: ${summary.totalDeliveries}  |  Dias com Viagem: ${summary.totalDiasTrabalhados}`;
                 doc.text(summaryText, margin, 53);
 
-                // Ajuste solicitado: Adicionado campo 'RV' explicitamente e removido 'Observações'
                 const tableColumn = ["Data", "RV", "Entregas", "KM Inicial", "KM Final", "Total KM"];
                 const tableRows = filtered
                     .sort((a, b) => a.date.localeCompare(b.date))
                     .map(j => {
                         const c = calculateJourney(j, settings);
                         const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR');
-                        // Ajustado para 6 colunas
                         if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", c.kmRodados > 0 ? c.kmRodados.toFixed(1) : "FOLGA"];
-                        // Ajustado para 6 colunas, mapeando RV
                         return [d, j.rv_number || "-", j.deliveries || "0", j.km_start || "0", j.km_end || "0", c.kmRodados.toFixed(1)];
                     });
 
@@ -258,8 +256,8 @@ const ReportsPage: React.FC = () => {
                 </button>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6">
-                <div>
+            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6 overflow-hidden">
+                <div className="w-full">
                     <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência do Mês</label>
                     <select 
                         value={selectedOptionIndex}
@@ -272,34 +270,34 @@ const ReportsPage: React.FC = () => {
                     </select>
                 </div>
 
-                <div className="space-y-4">
-                    <div>
+                <div className="space-y-4 w-full">
+                    <div className="w-full">
                         <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
-                        <div className="relative">
-                            <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <div className="relative w-full">
+                            <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
                             <input 
                                 type="date" 
                                 value={startDate} 
                                 onChange={e => setStartDate(e.target.value)} 
-                                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-base font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20 transition-all" 
+                                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-base font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20 transition-all box-border" 
                             />
                         </div>
                     </div>
-                    <div>
+                    <div className="w-full">
                         <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Fim do Período</label>
-                        <div className="relative">
-                            <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <div className="relative w-full">
+                            <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
                             <input 
                                 type="date" 
                                 value={endDate} 
                                 onChange={e => setEndDate(e.target.value)} 
-                                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-base font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20 transition-all" 
+                                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-base font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20 transition-all box-border" 
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 w-full">
                     <button 
                         onClick={generatePdf} 
                         disabled={isGenerating} 
