@@ -5,7 +5,8 @@ import { useJourneys } from '../contexts/JourneyContext';
 import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysForDisplayMonth, getJourneysForCalendarMonth } from '../lib/utils';
 import OverlappingCard from '../components/ui/OverlappingCard';
 import Skeleton from '../components/ui/Skeleton';
-import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft, Map, Clock } from 'lucide-react';
+import ConfirmationModal from '../components/ui/ConfirmationModal';
+import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft, Map, Clock, Edit2, Trash2, ChevronDown, Coffee, FileText, StickyNote } from 'lucide-react';
 import { MonthSummary, Journey } from '../types';
 
 const SummaryItem: React.FC<{ label: string; value: string; colorClass?: string }> = ({ label, value, colorClass = 'text-white' }) => (
@@ -25,38 +26,130 @@ const ActionCard: React.FC<{ icon: React.ElementType; title: string; subtitle: s
     </button>
 );
 
-const RecentJourneyItem: React.FC<{ journey: Journey }> = ({ journey }) => {
+const RecentJourneyItem: React.FC<{ 
+    journey: Journey, 
+    isExpanded: boolean, 
+    onToggle: () => void,
+    onDelete: (id: string) => void 
+}> = ({ journey, isExpanded, onToggle, onDelete }) => {
     const { settings } = useJourneys();
     const navigate = useNavigate();
+    
     if (!settings) return null;
+    
     const calcs = calculateJourney(journey, settings);
     const date = new Date(journey.date + 'T00:00:00');
     
-    const handleItemClick = () => {
-        navigate(`/journeys?edit=${journey.id}`);
+    const handleEdit = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigate(`/journeys/edit/${journey.id}`);
+    };
+
+    const handleDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onDelete(journey.id);
     };
 
     return (
-        <button 
-            onClick={handleItemClick}
-            className="w-full text-left flex items-center justify-between p-3 bg-white rounded-xl shadow-soft hover:shadow-md transition-all duration-200"
+        <div 
+            className={`w-full bg-white rounded-2xl shadow-soft border border-transparent transition-all duration-300 ${isExpanded ? 'ring-1 ring-primary/10 shadow-md' : 'hover:shadow-md'}`}
         >
-            <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-primary-light text-primary-dark">
-                    <span className="text-xs">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
-                    <span className="font-bold text-lg">{date.getDate()}</span>
+            {/* Header do Item */}
+            <button 
+                onClick={onToggle}
+                className="w-full text-left flex items-center justify-between p-3 outline-none"
+            >
+                <div className="flex items-center gap-3">
+                    <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg transition-colors ${isExpanded ? 'bg-primary text-white' : 'bg-primary-light text-primary-dark'}`}>
+                        <span className="text-[10px] uppercase font-medium">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                        <span className="font-bold text-lg leading-none">{date.getDate()}</span>
+                    </div>
+                    <div>
+                        <p className="font-semibold text-sm text-primary-dark">{date.toLocaleDateString('pt-BR', { weekday: 'long' })}</p>
+                        {journey.is_day_off ? (
+                            <p className="text-xs text-red-600 font-bold uppercase tracking-tighter">FOLGA</p>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">{formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas</p>
+                        )}
+                    </div>
                 </div>
-                <div>
-                    <p className="font-semibold text-sm text-primary-dark">{date.toLocaleDateString('pt-BR', { weekday: 'long' })}</p>
-                    {journey.is_day_off ? (
-                        <p className="text-xs text-red-600 font-bold">FOLGA</p>
+                <div className="flex items-center gap-1">
+                    <div className={`p-2 rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-gray-100' : ''}`}>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                </div>
+            </button>
+
+            {/* Conteúdo Expandido */}
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[500px] border-t border-gray-50' : 'max-h-0'}`}>
+                <div className="p-4 space-y-4">
+                    {/* Grid de Resumo */}
+                    {!journey.is_day_off ? (
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-gray-50 p-2 rounded-xl text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Extra 50%</p>
+                                <p className="text-sm font-bold text-green-600">{formatMinutesToHours(calcs.horasExtras50)}</p>
+                            </div>
+                            <div className="bg-gray-50 p-2 rounded-xl text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Extra 100%</p>
+                                <p className="text-sm font-bold text-yellow-600">{formatMinutesToHours(calcs.horasExtras100)}</p>
+                            </div>
+                            {settings.km_enabled && (
+                                <div className="bg-gray-50 p-2 rounded-xl text-center col-span-2">
+                                    <p className="text-[10px] text-muted-foreground uppercase font-bold">KM Rodados no Dia</p>
+                                    <p className="text-sm font-bold text-primary-dark">{calcs.kmRodados.toFixed(1)} km</p>
+                                </div>
+                            )}
+                        </div>
                     ) : (
-                        <p className="text-xs text-muted-foreground">{formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas</p>
+                        settings.km_enabled && calcs.kmRodados > 0 && (
+                            <div className="bg-red-50/50 p-2 rounded-xl text-center">
+                                <p className="text-[10px] text-red-400 uppercase font-bold">KM Rodados (Folga)</p>
+                                <p className="text-sm font-bold text-red-600">{calcs.kmRodados.toFixed(1)} km</p>
+                            </div>
+                        )
                     )}
+
+                    {/* Detalhes de Texto */}
+                    <div className="space-y-2 text-xs text-muted-foreground">
+                        {!journey.is_day_off && journey.meal_start && (
+                            <div className="flex items-center gap-2">
+                                <Coffee className="w-3.5 h-3.5 text-primary" />
+                                <span>Refeição: <strong>{journey.meal_start} - {journey.meal_end}</strong></span>
+                            </div>
+                        )}
+                        {journey.rv_number && (
+                            <div className="flex items-center gap-2">
+                                <FileText className="w-3.5 h-3.5 text-primary" />
+                                <span>RV: <strong>{journey.rv_number}</strong></span>
+                            </div>
+                        )}
+                        {journey.notes && (
+                            <div className="flex items-start gap-2">
+                                <StickyNote className="w-3.5 h-3.5 text-primary mt-0.5" />
+                                <span className="italic">"{journey.notes}"</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Botões de Ação */}
+                    <div className="flex gap-2 pt-2 border-t border-gray-50">
+                        <button 
+                            onClick={handleEdit}
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"
+                        >
+                            <Edit2 className="w-3.5 h-3.5" /> Editar
+                        </button>
+                        <button 
+                            onClick={handleDelete}
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" /> Excluir
+                        </button>
+                    </div>
                 </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-        </button>
+        </div>
     );
 };
 
@@ -98,8 +191,11 @@ const HomePageSkeleton: React.FC = () => (
 
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
-    const { journeys, settings, loading } = useJourneys();
+    const { journeys, settings, loading, deleteJourney } = useJourneys();
     const [displayDate, setDisplayDate] = useState<Date | null>(null);
+    const [expandedJourneyId, setExpandedJourneyId] = useState<string | null>(null);
+    const [journeyToDelete, setJourneyToDelete] = useState<string | null>(null);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     useEffect(() => {
         if (settings) {
@@ -122,18 +218,15 @@ const HomePage: React.FC = () => {
     const summary: MonthSummary = useMemo(() => {
         if (!settings || !displayDate) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, kmRodados: 0, totalDiasTrabalhados: 0 };
         
-        // 1. Cálculo de HORAS: Segue o ciclo contábil configurado (ex: dia 21 a 20)
         const accountingJourneys = getJourneysForDisplayMonth(journeys, displayDate, settings);
         const accountingSummary = getMonthSummary(accountingJourneys, settings);
 
-        // 2. Cálculo de KM: Segue estritamente o mês civil (dia 1 a 30/31)
         const calendarJourneys = getJourneysForCalendarMonth(journeys, displayDate);
         const calendarSummary = getMonthSummary(calendarJourneys, settings);
 
-        // 3. Mescla os resultados
         return {
-            ...accountingSummary, // Mantém horas e dias trabalhados do ciclo contábil
-            kmRodados: calendarSummary.kmRodados // Sobrescreve apenas o KM com o ciclo civil
+            ...accountingSummary,
+            kmRodados: calendarSummary.kmRodados
         };
     }, [journeys, settings, displayDate]);
 
@@ -166,6 +259,22 @@ const HomePage: React.FC = () => {
         return currentMonthStartDate.getFullYear() === displayDate.getFullYear() &&
                currentMonthStartDate.getMonth() === displayDate.getMonth();
     };
+
+    const toggleJourney = (id: string) => {
+        setExpandedJourneyId(prev => prev === id ? null : id);
+    };
+
+    const handleDeleteRequest = (id: string) => {
+        setJourneyToDelete(id);
+        setIsConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (journeyToDelete) {
+            deleteJourney(journeyToDelete);
+            setJourneyToDelete(null);
+        }
+    };
     
     if (loading || !displayDate) {
         return (
@@ -180,11 +289,18 @@ const HomePage: React.FC = () => {
 
     return (
         <div className="-mt-16 space-y-5 pb-4">
+            <ConfirmationModal 
+                isOpen={isConfirmOpen} 
+                onClose={() => setIsConfirmOpen(false)} 
+                onConfirm={handleConfirmDelete} 
+                title="Excluir Jornada" 
+                message="Tem certeza que deseja apagar este registro?" 
+            />
+
             <>
                 <OverlappingCard>
                     {settings ? (
                         <div className="space-y-4">
-                             {/* Cabeçalho do Card */}
                              <div className="flex items-center justify-between text-center mb-4">
                                 <button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-white/10 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
                                 <div className="flex-1">
@@ -199,14 +315,12 @@ const HomePage: React.FC = () => {
                                 <button onClick={handleNextMonth} className="p-2 rounded-full hover:bg-white/10 transition-colors"><ChevronRight className="w-5 h-5" /></button>
                             </div>
 
-                            {/* Seção de Horas */}
                             <div className="grid grid-cols-3 gap-2">
                                 <SummaryItem label="Horas" value={formatMinutesToHours(summary.totalTrabalhado)} />
                                 <SummaryItem label="Extra 50%" value={formatMinutesToHours(summary.horasExtras50)} colorClass="text-green-400" />
                                 <SummaryItem label="Extra 100%" value={formatMinutesToHours(summary.horasExtras100)} colorClass="text-yellow-400" />
                             </div>
                             
-                            {/* Divisor Visual se KM estiver ativo */}
                             {settings.km_enabled && (
                                 <>
                                     <div className="my-2 border-t border-white/10"></div>
@@ -231,7 +345,6 @@ const HomePage: React.FC = () => {
                     )}
                 </OverlappingCard>
 
-                 {/* Seção de Jornadas Recentes */}
                 <div className="pt-2 space-y-3">
                     <div className="flex justify-between items-center">
                         <h3 className="text-lg font-bold text-primary-dark">Últimas Jornadas</h3>
@@ -240,14 +353,22 @@ const HomePage: React.FC = () => {
                         )}
                     </div>
                     {recentJourneys.length > 0 ? (
-                        <div className="space-y-2">
-                            {recentJourneys.map(j => <RecentJourneyItem key={j.id} journey={j} />)}
+                        <div className="space-y-3">
+                            {recentJourneys.map(j => (
+                                <RecentJourneyItem 
+                                    key={j.id} 
+                                    journey={j} 
+                                    isExpanded={expandedJourneyId === j.id}
+                                    onToggle={() => toggleJourney(j.id)}
+                                    onDelete={handleDeleteRequest}
+                                />
+                            ))}
                         </div>
                     ) : (
                          <div className="text-center py-6 bg-white rounded-2xl shadow-soft flex flex-col items-center gap-3">
                             <ListChecks className="w-10 h-10 text-muted-foreground" />
                             <p className="text-sm text-muted-foreground">Nenhuma jornada registrada ainda.</p>
-                            <button onClick={() => navigate('/journeys?new=true')} className="bg-accent text-primary-dark font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm">
+                            <button onClick={() => navigate('/journeys/new')} className="bg-accent text-primary-dark font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm">
                                 <Plus className="w-4 h-4" />Adicionar Jornada
                             </button>
                         </div>
@@ -260,7 +381,7 @@ const HomePage: React.FC = () => {
                         <div className="relative">
                             <ActionCard icon={BarChart} title="Minhas Jornadas" subtitle="Ver histórico completo" onClick={() => navigate('/journeys')} />
                             <button
-                                onClick={() => navigate('/journeys?new=true')}
+                                onClick={() => navigate('/journeys/new')}
                                 className="absolute top-3 right-3 w-8 h-8 bg-accent text-primary-dark rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform active:scale-95"
                                 aria-label="Adicionar nova jornada"
                             >

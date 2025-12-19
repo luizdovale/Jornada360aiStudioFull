@@ -1,3 +1,4 @@
+
 // types.ts
 
 export interface Journey {
@@ -12,8 +13,10 @@ export interface Journey {
   rest_duration?: number; // in minutes
   is_feriado: boolean;
   is_day_off?: boolean;
+  is_plantao?: boolean;
   km_start?: number;
   km_end?: number;
+  deliveries?: number; // Novo campo para quantidade de entregas
   rv_number?: string;
   notes?: string;
   created_at?: string;
