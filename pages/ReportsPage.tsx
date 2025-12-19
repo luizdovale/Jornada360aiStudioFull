@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getMonthSummary, calculateJourney, formatMinutesToHours } from '../lib/utils';
-import { FileDown, Clock, Map, AlertCircle } from 'lucide-react';
+import { FileDown, Clock, Map, CalendarDays, AlertCircle } from 'lucide-react';
 import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
 type ReportType = 'hours' | 'km';
@@ -22,24 +22,24 @@ const ReportsPage: React.FC = () => {
         const options = [];
         const today = new Date();
         const startDay = settings?.month_start_day || 1;
-
+        
         for (let i = -1; i < 11; i++) {
             const ref = new Date(today.getFullYear(), today.getMonth() - i, 1);
-
+            
             const cycleStart = new Date(ref.getFullYear(), ref.getMonth() - 1, startDay);
             const cycleEnd = new Date(ref.getFullYear(), ref.getMonth(), startDay - 1);
-
+            
             const calendarStart = new Date(ref.getFullYear(), ref.getMonth(), 1);
             const calendarEnd = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
-
+            
             const label = ref.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-            options.push({
-                label: label.charAt(0).toUpperCase() + label.slice(1),
-                cycleStart: cycleStart.toISOString().split('T')[0],
+            options.push({ 
+                label: label.charAt(0).toUpperCase() + label.slice(1), 
+                cycleStart: cycleStart.toISOString().split('T')[0], 
                 cycleEnd: cycleEnd.toISOString().split('T')[0],
                 calendarStart: calendarStart.toISOString().split('T')[0],
                 calendarEnd: calendarEnd.toISOString().split('T')[0],
-                value: i
+                value: i 
             });
         }
         return options;
@@ -77,19 +77,16 @@ const ReportsPage: React.FC = () => {
 
     const generatePdf = async () => {
         const filtered = journeys.filter(j => j.date >= startDate && j.date <= endDate);
-
         if (!filtered.length) {
             alert('Nenhum registro encontrado para o período selecionado.');
             return;
         }
-
         if (!settings) {
             alert('Configurações não encontradas.');
             return;
         }
 
         setIsGenerating(true);
-
         try {
             // @ts-ignore
             const { jsPDF } = window.jspdf;
@@ -110,13 +107,6 @@ const ReportsPage: React.FC = () => {
                 doc.text("Jornada360 - Relatório de Atividades", margin, 20);
             }
 
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            const periodLabel = `${new Date(startDate).toLocaleDateString('pt-BR')} até ${new Date(endDate).toLocaleDateString('pt-BR')}`;
-            doc.text(`Colaborador: ${user?.user_metadata?.nome || 'Usuário'}`, margin, 28);
-            doc.text(`Período: ${periodLabel}`, margin, 33);
-            doc.text(`Tipo: ${reportType === 'hours' ? 'Ponto e Horas Extras' : 'Controle de KM'}`, margin, 38);
-
             setPdfPreviewUrl(doc.output("datauristring"));
             setIsModalOpen(true);
         } catch (e: any) {
@@ -126,9 +116,8 @@ const ReportsPage: React.FC = () => {
         }
     };
 
-    // 🔧 AJUSTE AQUI (somente isso foi alterado)
     const commonInputStyles =
-        "block w-full max-w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all box-border min-w-0 appearance-none";
+        "block w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all box-border min-w-0";
 
     return (
         <div className="space-y-6">
@@ -137,55 +126,28 @@ const ReportsPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Exporte seus dados em PDF para conferência.</p>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6 overflow-hidden">
-                <div className="w-full">
-                    <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">
-                        Referência do Mês
-                    </label>
-                    <select
-                        value={selectedOptionIndex}
-                        onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))}
-                        className={`${commonInputStyles} appearance-none`}
-                    >
-                        {monthOptions.map((o, i) => (
-                            <option key={i} value={i}>{o.label}</option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* 🔧 AJUSTE AQUI (somente isso foi alterado) */}
-                <div className="grid grid-cols-1 gap-4 w-full max-w-full overflow-hidden">
-                    <div className="w-full">
-                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Início do Período
-                        </label>
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={e => setStartDate(e.target.value)}
-                            className={commonInputStyles}
-                        />
-                    </div>
-
-                    <div className="w-full">
-                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                            Fim do Período
-                        </label>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={e => setEndDate(e.target.value)}
-                            className={commonInputStyles}
-                        />
-                    </div>
-                </div>
+            {/* ✅ AJUSTE AQUI */}
+            <div className="flex gap-1 bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200 overflow-hidden">
+                <button
+                    onClick={() => setReportType('hours')}
+                    className={`flex-1 min-w-0 whitespace-nowrap py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                        reportType === 'hours'
+                            ? 'bg-primary text-white shadow-md'
+                            : 'text-gray-500 hover:bg-gray-200'
+                    }`}
+                >
+                    <Clock className="w-4 h-4" /> Ponto & Horas
+                </button>
 
                 <button
-                    onClick={generatePdf}
-                    disabled={isGenerating}
-                    className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark transition"
+                    onClick={() => setReportType('km')}
+                    className={`flex-1 min-w-0 whitespace-nowrap py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                        reportType === 'km'
+                            ? 'bg-primary text-white shadow-md'
+                            : 'text-gray-500 hover:bg-gray-200'
+                    }`}
                 >
-                    Gerar Relatório PDF
+                    <Map className="w-4 h-4" /> KM Rodado
                 </button>
             </div>
 
@@ -193,7 +155,7 @@ const ReportsPage: React.FC = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 pdfUrl={pdfPreviewUrl}
-                fileName={`Jornada360_${startDate}_${endDate}.pdf`}
+                fileName={`Jornada360_${reportType}_${startDate}_${endDate}.pdf`}
             />
         </div>
     );
