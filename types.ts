@@ -16,7 +16,7 @@ export interface Journey {
   is_plantao?: boolean;
   km_start?: number;
   km_end?: number;
-  deliveries?: number; // Novo campo para quantidade de entregas
+  deliveries?: number;
   rv_number?: string;
   notes?: string;
   created_at?: string;
@@ -37,9 +37,11 @@ export interface JourneyCalculations {
   totalTrabalhado: number; // minutes
   horasExtras50: number; // minutes
   horasExtras100: number; // minutes
+  adicionalNoturno: number; // minutes (22:00 - 05:00)
   kmRodados: number;
 }
 
 export interface MonthSummary extends JourneyCalculations {
   totalDiasTrabalhados: number;
+  totalDeliveries: number;
 }
