@@ -272,26 +272,32 @@ const ReportsPage: React.FC = () => {
                     </select>
                 </div>
 
-                <div className="space-y-4 w-full">
-                    <div className="w-full">
-                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
-                        <input 
-                            type="date" 
-                            value={startDate} 
-                            onChange={e => setStartDate(e.target.value)} 
-                            className={commonInputStyles} 
-                        />
-                    </div>
-                    <div className="w-full">
-                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Fim do Período</label>
-                        <input 
-                            type="date" 
-                            value={endDate} 
-                            onChange={e => setEndDate(e.target.value)} 
-                            className={commonInputStyles} 
-                        />
-                    </div>
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+    <div className="w-full">
+        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+            Início do Período
+        </label>
+        <input 
+            type="date" 
+            value={startDate} 
+            onChange={e => setStartDate(e.target.value)} 
+            className={commonInputStyles} 
+        />
+    </div>
+
+    <div className="w-full">
+        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
+            Fim do Período
+        </label>
+        <input 
+            type="date" 
+            value={endDate} 
+            onChange={e => setEndDate(e.target.value)} 
+            className={commonInputStyles} 
+        />
+    </div>
+</div>
+
 
                 <div className="pt-2 w-full">
                     <button 
