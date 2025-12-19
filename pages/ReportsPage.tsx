@@ -140,7 +140,6 @@ const ReportsPage: React.FC = () => {
                 doc.text("RESUMO DO PERÍODO:", margin, 48);
                 
                 doc.setFont("helvetica", "normal");
-                // Garantindo que Total Trabalhado não apareça aqui
                 const summaryText = `HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
                 doc.text(summaryText, margin, 53);
 
@@ -234,6 +233,9 @@ const ReportsPage: React.FC = () => {
         }
     };
 
+    // Estilo unificado para inputs e select
+    const commonInputStyles = "w-full p-4 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all";
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-1">
@@ -256,13 +258,13 @@ const ReportsPage: React.FC = () => {
                 </button>
             </div>
 
-            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6 overflow-hidden">
-                <div className="w-full">
+            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6">
+                <div>
                     <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência do Mês</label>
                     <select 
                         value={selectedOptionIndex}
                         onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))} 
-                        className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none"
+                        className={`${commonInputStyles} appearance-none`}
                     >
                         {monthOptions.map((o, i) => (
                             <option key={i} value={i}>{o.label}</option>
@@ -270,34 +272,28 @@ const ReportsPage: React.FC = () => {
                     </select>
                 </div>
 
-                <div className="space-y-4 w-full">
-                    <div className="w-full">
+                <div className="space-y-4">
+                    <div>
                         <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
-                        <div className="relative w-full">
-                            <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
-                            <input 
-                                type="date" 
-                                value={startDate} 
-                                onChange={e => setStartDate(e.target.value)} 
-                                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-base font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20 transition-all box-border" 
-                            />
-                        </div>
+                        <input 
+                            type="date" 
+                            value={startDate} 
+                            onChange={e => setStartDate(e.target.value)} 
+                            className={commonInputStyles} 
+                        />
                     </div>
-                    <div className="w-full">
+                    <div>
                         <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Fim do Período</label>
-                        <div className="relative w-full">
-                            <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
-                            <input 
-                                type="date" 
-                                value={endDate} 
-                                onChange={e => setEndDate(e.target.value)} 
-                                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-base font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-primary/20 transition-all box-border" 
-                            />
-                        </div>
+                        <input 
+                            type="date" 
+                            value={endDate} 
+                            onChange={e => setEndDate(e.target.value)} 
+                            className={commonInputStyles} 
+                        />
                     </div>
                 </div>
 
-                <div className="pt-2 w-full">
+                <div className="pt-2">
                     <button 
                         onClick={generatePdf} 
                         disabled={isGenerating} 
