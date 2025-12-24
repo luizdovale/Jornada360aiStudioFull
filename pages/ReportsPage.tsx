@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -102,36 +103,46 @@ const ReportsPage: React.FC = () => {
             });
 
             const margin = 14;
+            const rightMargin = 210 - margin;
             const titleColor = [30, 38, 60];
             const titleText = "Jornada360 - Relatório de Atividades";
-            const signatureText = " by luizdovaletech";
+            const signatureText = "by luizdovaletech";
 
-            // Cabeçalho com Ícone e Assinatura (Normal font for signature)
+            // Cabeçalho com Ícone e Assinatura
             try {
-                const iconBase64 = await loadImage('https://lh3.googleusercontent.com/pw/AP1GczMzevf3MtEhoqH_m88FmaGlcCRm7xNpg3sZTyDcPT6_I7jthzMtVudC4ZLUZ8kL7J0BB5Ahky7903UpG2CBHqPCrYduoiusu6KI7vfm0kFundAszoeMnmfgInqoa5TUCUVxmHOYwXWNbQl5OyxjJ_v8=w512-h512-s-no-gm?authuser=4');
+                // Tenta carregar do assets local, se falhar usa a URL remota de fallback
+                let iconBase64;
+                try {
+                    iconBase64 = await loadImage('/assets/icone_pdf.png');
+                } catch (e) {
+                    iconBase64 = await loadImage('https://lh3.googleusercontent.com/pw/AP1GczMzevf3MtEhoqH_m88FmaGlcCRm7xNpg3sZTyDcPT6_I7jthzMtVudC4ZLUZ8kL7J0BB5Ahky7903UpG2CBHqPCrYduoiusu6KI7vfm0kFundAszoeMnmfgInqoa5TUCUVxmHOYwXWNbQl5OyxjJ_v8=w512-h512-s-no-gm?authuser=4');
+                }
+                
                 doc.addImage(iconBase64, 'PNG', margin, 14, 8, 8);
                 
+                // Título em Negrito à esquerda
                 doc.setFontSize(16);
                 doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
-                
-                // Texto em Negrito
                 doc.setFont("helvetica", "bold");
                 doc.text(titleText, margin + 11, 20);
                 
-                // Assinatura em Normal
-                const titleWidth = doc.getTextWidth(titleText);
+                // Assinatura em Normal e menor à direita
+                doc.setFontSize(8);
                 doc.setFont("helvetica", "normal");
-                doc.text(signatureText, margin + 11 + titleWidth, 20);
+                doc.setTextColor(150, 150, 150);
+                doc.text(signatureText, rightMargin, 20, { align: 'right' });
+                
             } catch (e) {
+                // Fallback caso falhe imagem
                 doc.setFontSize(16);
                 doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
-                
                 doc.setFont("helvetica", "bold");
                 doc.text(titleText, margin, 20);
-                
-                const titleWidth = doc.getTextWidth(titleText);
+
+                doc.setFontSize(8);
                 doc.setFont("helvetica", "normal");
-                doc.text(signatureText, margin + titleWidth, 20);
+                doc.setTextColor(150, 150, 150);
+                doc.text(signatureText, rightMargin, 20, { align: 'right' });
             }
 
             doc.setFontSize(10);
