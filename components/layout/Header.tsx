@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
-import { Menu, User as UserIcon, Home, Loader2 } from 'lucide-react';
+import { Menu, User as UserIcon, Home, Loader2, Plus } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 
@@ -88,7 +88,11 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
                         </button>
                     </div>
                     <div className="flex items-center gap-3">
-                        {!isHomePage && (
+                        {isHomePage ? (
+                            <Link to="/journeys/new" className="w-9 h-9 rounded-full bg-accent text-primary-dark flex items-center justify-center shadow-lg transition active:scale-95">
+                                <Plus className="w-5 h-5" />
+                            </Link>
+                        ) : (
                             <Link to="/" className="w-9 h-9 rounded-full bg-primary-dark/40 flex items-center justify-center text-white transition hover:bg-primary-dark/60">
                                 <Home className="w-5 h-5" />
                             </Link>

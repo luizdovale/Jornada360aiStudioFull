@@ -105,19 +105,19 @@ const ReportsPage: React.FC = () => {
             const margin = 14;
             const titleColor = [30, 38, 60];
 
-            // Cabeçalho com Ícone
+            // Cabeçalho com Ícone e Assinatura
             try {
-                const iconBase64 = await loadImage('/assets/icone_pdf.png');
+                const iconBase64 = await loadImage('https://lh3.googleusercontent.com/pw/AP1GczMzevf3MtEhoqH_m88FmaGlcCRm7xNpg3sZTyDcPT6_I7jthzMtVudC4ZLUZ8kL7J0BB5Ahky7903UpG2CBHqPCrYduoiusu6KI7vfm0kFundAszoeMnmfgInqoa5TUCUVxmHOYwXWNbQl5OyxjJ_v8=w512-h512-s-no-gm?authuser=4');
                 doc.addImage(iconBase64, 'PNG', margin, 14, 8, 8);
                 doc.setFontSize(16);
                 doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
                 doc.setFont("helvetica", "bold");
-                doc.text("Jornada360 - Relatório de Atividades", margin + 11, 20);
+                doc.text("Jornada360 - Relatório de Atividades by luizdovaletech", margin + 11, 20);
             } catch (e) {
                 doc.setFontSize(16);
                 doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
                 doc.setFont("helvetica", "bold");
-                doc.text("Jornada360 - Relatório de Atividades", margin, 20);
+                doc.text("Jornada360 - Relatório de Atividades by luizdovaletech", margin, 20);
             }
 
             doc.setFontSize(10);
@@ -140,7 +140,7 @@ const ReportsPage: React.FC = () => {
                 doc.text("RESUMO DO PERÍODO:", margin, 48);
                 
                 doc.setFont("helvetica", "normal");
-                const summaryText = `HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
+                const summaryText = `Dias Trabalhados: ${summary.totalDiasTrabalhados} | HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
                 doc.text(summaryText, margin, 53);
 
                 const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Noturno", "Obs"];
@@ -189,7 +189,7 @@ const ReportsPage: React.FC = () => {
                 doc.text("ESTATÍSTICAS DE VIAGEM:", margin, 48);
                 
                 doc.setFont("helvetica", "normal");
-                const summaryText = `Distância Total: ${summary.kmRodados.toFixed(1)} km  |  Total de Entregas: ${summary.totalDeliveries}  |  Dias com Viagem: ${summary.totalDiasTrabalhados}`;
+                const summaryText = `Distância Total: ${summary.kmRodados.toFixed(1)} km  |  Total de Entregas: ${summary.totalDeliveries}  |  Dias Trabalhados: ${summary.totalDiasTrabalhados}`;
                 doc.text(summaryText, margin, 53);
 
                 const tableColumn = ["Data", "RV", "Entregas", "KM Inicial", "KM Final", "Total KM"];
@@ -272,33 +272,26 @@ const ReportsPage: React.FC = () => {
                     </select>
                 </div>
 
-            <div className="space-y-4 w-full">
-                <div className="w-full overflow-hidden">
-                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                        Início do Período
-                    </label>
-                    <input 
-                        type="date" 
-                        value={startDate} 
-                        onChange={e => setStartDate(e.target.value)} 
-                        className={`${commonInputStyles} max-w-full`} 
-                    />
+                <div className="space-y-4 w-full">
+                    <div className="w-full">
+                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
+                        <input 
+                            type="date" 
+                            value={startDate} 
+                            onChange={e => setStartDate(e.target.value)} 
+                            className={commonInputStyles} 
+                        />
+                    </div>
+                    <div className="w-full">
+                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Fim do Período</label>
+                        <input 
+                            type="date" 
+                            value={endDate} 
+                            onChange={e => setEndDate(e.target.value)} 
+                            className={commonInputStyles} 
+                        />
+                    </div>
                 </div>
-            
-                <div className="w-full overflow-hidden">
-                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">
-                        Fim do Período
-                    </label>
-                    <input 
-                        type="date" 
-                        value={endDate} 
-                        onChange={e => setEndDate(e.target.value)} 
-                        className={`${commonInputStyles} max-w-full`} 
-                    />
-                </div>
-            </div>
-
-
 
                 <div className="pt-2 w-full">
                     <button 
