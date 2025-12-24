@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -104,20 +103,35 @@ const ReportsPage: React.FC = () => {
 
             const margin = 14;
             const titleColor = [30, 38, 60];
+            const titleText = "Jornada360 - Relatório de Atividades";
+            const signatureText = " by luizdovaletech";
 
-            // Cabeçalho com Ícone e Assinatura
+            // Cabeçalho com Ícone e Assinatura (Normal font for signature)
             try {
                 const iconBase64 = await loadImage('https://lh3.googleusercontent.com/pw/AP1GczMzevf3MtEhoqH_m88FmaGlcCRm7xNpg3sZTyDcPT6_I7jthzMtVudC4ZLUZ8kL7J0BB5Ahky7903UpG2CBHqPCrYduoiusu6KI7vfm0kFundAszoeMnmfgInqoa5TUCUVxmHOYwXWNbQl5OyxjJ_v8=w512-h512-s-no-gm?authuser=4');
                 doc.addImage(iconBase64, 'PNG', margin, 14, 8, 8);
+                
                 doc.setFontSize(16);
                 doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+                
+                // Texto em Negrito
                 doc.setFont("helvetica", "bold");
-                doc.text("Jornada360 - Relatório de Atividades by luizdovaletech", margin + 11, 20);
+                doc.text(titleText, margin + 11, 20);
+                
+                // Assinatura em Normal
+                const titleWidth = doc.getTextWidth(titleText);
+                doc.setFont("helvetica", "normal");
+                doc.text(signatureText, margin + 11 + titleWidth, 20);
             } catch (e) {
                 doc.setFontSize(16);
                 doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+                
                 doc.setFont("helvetica", "bold");
-                doc.text("Jornada360 - Relatório de Atividades by luizdovaletech", margin, 20);
+                doc.text(titleText, margin, 20);
+                
+                const titleWidth = doc.getTextWidth(titleText);
+                doc.setFont("helvetica", "normal");
+                doc.text(signatureText, margin + titleWidth, 20);
             }
 
             doc.setFontSize(10);
@@ -233,7 +247,6 @@ const ReportsPage: React.FC = () => {
         }
     };
 
-    // Estilo unificado e seguro contra overflow: box-border e w-full garantem que padding não aumente o tamanho
     const commonInputStyles = "block w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all box-border min-w-0";
 
     return (
