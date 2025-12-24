@@ -3,7 +3,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Jornada360 - Controle de Jornada para Motoristas</title>
     <link rel="manifest" href="/manifest.json" />
     
@@ -11,37 +11,17 @@
     <meta name="theme-color" content="#1E263C">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Jornada360">
+    <meta name="mobile-web-app-capable" content="yes">
     
     <!-- Primárias (SEO) -->
     <meta name="title" content="Jornada360 - Controle de Jornada para Motoristas">
-    <meta name="description" content="Gestão inteligente de horários, folgas e KM rodados. Otimizado para motoristas profissionais, com relatórios em PDF.">
-
-    <!-- Open Graph / Facebook / WhatsApp / Compartilhamento -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://jornada360.vercel.app/">
-    <meta property="og:title" content="Jornada360 - Sua Jornada sob Controle">
-    <meta property="og:description" content="Controle de ponto, horas extras e KM rodados com visual moderno e intuitivo.">
-    <meta property="og:image" content="https://jornada360.vercel.app/og-image.jpg">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:type" content="assets/opengraph.jpg">
-    <meta property="og:site_name" content="Jornada360">
-
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://jornada360.vercel.app/">
-    <meta property="twitter:title" content="Jornada360 - Sua Jornada sob Controle">
-    <meta property="twitter:description" content="Gestão inteligente de horários, folgas e KM. Feito para motoristas.">
-    <meta property="twitter:image" content="https://lh3.googleusercontent.com/pw/AP1GczMzevf3MtEhoqH_m88FmaGlcCRm7xNpg3sZTyDcPT6_I7jthzMtVudC4ZLUZ8kL7J0BB5Ahky7903UpG2CBHqPCrYduoiusu6KI7vfm0kFundAszoeMnmfgInqoa5TUCUVxmHOYwXWNbQl5OyxjJ_v8=w512-h512-s-no-gm?authuser=4">
+    <meta name="description" content="Gestão inteligente de horários, folgas e KM rodados. Otimizado para motoristas profissionais.">
 
     <!-- Ícones para iOS (Apple) -->
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/icon-180.png">
-    
-    <!-- Favicons para navegadores e Android -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-72.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/assets/icons/icon-512.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/assets/icons/icon-167.png">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -83,10 +63,6 @@
                         soft: "0 6px 16px rgba(0,0,0,0.06)",
                         floating: "0 18px 35px rgba(0,0,0,0.18)",
                     },
-                    spacing: {
-                        18: "4.5rem",
-                        22: "5.5rem",
-                    },
                     fontSize: {
                         "title-lg": ["1.6rem", { fontWeight: "700" }],
                         "card-label": ["0.85rem", { letterSpacing: "0.02em" }],
@@ -99,13 +75,18 @@
         }
     </script>
 <style>
-    input:-webkit-autofill,
-    input:-webkit-autofill:hover,
-    input:-webkit-autofill:focus,
-    input:-webkit-autofill:active {
+    /* Desabilita o "pull-to-refresh" no Android para parecer mais nativo */
+    body {
+        overscroll-behavior-y: contain;
+    }
+    input:-webkit-autofill {
         -webkit-text-fill-color: #1E263C !important;
         -webkit-box-shadow: 0 0 0 30px #f3f4f6 inset !important;
-        background-clip: content-box !important;
+    }
+    /* Estilo para evitar seleção de texto indesejada em botões nativos */
+    button, a {
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
     }
 </style>
 <script type="importmap">
