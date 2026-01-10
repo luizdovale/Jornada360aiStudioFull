@@ -31,9 +31,30 @@ const AppContent: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // LÓGICA DE RESGATE DE TOKEN (SUPABASE + HASHROUTER)
     useEffect(() => {
-        // Intercepta eventos de recuperação de senha globalmente
+        const handleInitialHash = async () => {
+            const hash = window.location.hash;
+            
+            // Se o hash contém dados do Supabase mas NÃO está na nossa rota de reset
+            if (hash.includes('access_token=') && !hash.includes('/password-reset')) {
+                console.log("Detectado token de recuperação fora da rota. Corrigindo...");
+                
+                // Extrai os parâmetros do hash (ex: access_token=abc&type=recovery)
+                // Remove o '#' inicial se ele não for seguido por '/'
+                const params = hash.startsWith('#/') ? hash.split('?')[1] : hash.replace('#', '');
+                
+                // Redireciona forçadamente para a nossa página de reset dentro do HashRouter
+                if (params) {
+                    navigate(`/password-reset?${params}`, { replace: true });
+                }
+            }
+        };
+
+        handleInitialHash();
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            console.log("Evento Auth:", event);
             if (event === 'PASSWORD_RECOVERY') {
                 navigate('/password-reset');
             }
@@ -42,8 +63,11 @@ const AppContent: React.FC = () => {
         return () => subscription.unsubscribe();
     }, [navigate]);
 
+    // Redirecionamento para Onboarding
     useEffect(() => {
-        if (!authLoading && !journeyLoading && user && !settings && location.pathname !== '/onboarding' && location.pathname !== '/password-reset') {
+        const isPublicRoute = ['/login', '/cadastro', '/recuperar-senha', '/password-reset'].includes(location.pathname);
+        
+        if (!authLoading && !journeyLoading && user && !settings && !isPublicRoute) {
             navigate('/onboarding');
         }
     }, [user, settings, authLoading, journeyLoading, location.pathname, navigate]);
@@ -54,8 +78,8 @@ const AppContent: React.FC = () => {
             <Route path="/cadastro" element={<SignUpPage />} />
             <Route path="/recuperar-senha" element={<ForgotPasswordPage />} />
             <Route path="/password-reset" element={<UpdatePasswordPage />} />
+            
             <Route path="/premium" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
-
             <Route path="/" element={<ProtectedRoute><MainLayout><HomePage /></MainLayout></ProtectedRoute>} />
             <Route path="/journeys" element={<ProtectedRoute><MainLayout><JourneysPage /></MainLayout></ProtectedRoute>} />
             <Route path="/journeys/new" element={<ProtectedRoute><MainLayout><JourneyFormPage /></MainLayout></ProtectedRoute>} />
