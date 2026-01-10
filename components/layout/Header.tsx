@@ -2,16 +2,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
-import { Menu, User as UserIcon, Home, Loader2, Plus } from 'lucide-react';
+import { Menu, User as UserIcon, Home, Loader2, Plus, Crown } from 'lucide-react';
+// @ts-ignore
 import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 
 const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
-    const { user, updateUserMetadata } = useAuth();
+    const { user, updateUserMetadata, isPro } = useAuth();
     const { toast } = useToast();
     const location = useLocation();
     
-    // Extrai apenas o primeiro nome para a saudação
     const fullUserName = user?.user_metadata?.nome || 'Usuário';
     const userName = fullUserName.trim().split(' ')[0];
     
@@ -38,43 +38,20 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
         try {
             const file = event.target.files?.[0];
             if (!file || !user) return;
-
-            if (!file.type.startsWith('image/')) {
-                toast({ title: "Arquivo inválido", description: "Por favor, selecione uma imagem.", variant: 'destructive' });
-                return;
-            }
-            if (file.size > 2 * 1024 * 1024) { // 2MB
-                toast({ title: "Muito grande", description: "A imagem deve ter no máximo 2MB.", variant: 'destructive' });
-                return;
-            }
-
+            if (!file.type.startsWith('image/')) return;
             setUploading(true);
-
             const fileExt = file.name.split('.').pop();
             const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-            const filePath = `${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from('avatars')
-                .upload(filePath, file, { upsert: true });
-
+            const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
             if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('avatars')
-                .getPublicUrl(filePath);
-
+            const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
             await updateUserMetadata({ avatar_url: publicUrl });
             setAvatarUrl(publicUrl);
-
-            toast({ title: "Sucesso", description: "Foto de perfil atualizada." });
-
+            toast({ title: "Sucesso", description: "Foto atualizada." });
         } catch (error: any) {
-            console.error('Erro no upload:', error);
-            toast({ title: "Erro", description: "Falha ao atualizar foto. Tente novamente.", variant: 'destructive' });
+            toast({ title: "Erro", description: "Falha ao atualizar foto.", variant: 'destructive' });
         } finally {
             setUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -103,7 +80,7 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
                 <div className="flex items-center gap-4">
                     <div 
                         onClick={handleAvatarClick}
-                        className={`w-14 h-14 rounded-full bg-primary-light flex items-center justify-center text-primary-dark overflow-hidden cursor-pointer relative border-2 border-transparent hover:border-accent transition-all ${uploading ? 'opacity-70' : ''}`}
+                        className={`w-14 h-14 rounded-full bg-primary-light flex items-center justify-center text-primary-dark overflow-hidden cursor-pointer relative border-2 ${isPro ? 'border-accent shadow-[0_0_10px_rgba(248,196,0,0.4)]' : 'border-transparent'} hover:border-accent transition-all ${uploading ? 'opacity-70' : ''}`}
                     >
                        {uploading ? (
                            <Loader2 className="w-6 h-6 animate-spin text-primary-dark" />
@@ -112,19 +89,16 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
                        ) : (
                            <UserIcon className="w-8 h-8" />
                        )}
-                       
-                       <input 
-                           type="file" 
-                           ref={fileInputRef} 
-                           onChange={handleFileChange} 
-                           className="hidden" 
-                           accept="image/*"
-                           disabled={uploading}
-                       />
+                       <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" disabled={uploading} />
                     </div>
                     <div>
-                        <p className="text-sm text-muted-foreground">Olá,</p>
-                        <p className="text-xl font-bold">{userName}</p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                            Olá, {isPro && <Crown className="w-3 h-3 text-accent fill-accent" />}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-xl font-bold">{userName}</p>
+                            {isPro && <span className="text-[10px] bg-accent text-primary-dark font-black px-1.5 py-0.5 rounded uppercase">Pro</span>}
+                        </div>
                     </div>
                 </div>
             </div>

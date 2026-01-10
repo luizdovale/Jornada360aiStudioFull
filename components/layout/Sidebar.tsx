@@ -1,11 +1,12 @@
 
 import React from 'react';
+// @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Home, List, Settings, FileText, LogOut, X, User, CalendarDays } from 'lucide-react';
+import { Home, List, Settings, FileText, LogOut, X, User, CalendarDays, Crown } from 'lucide-react';
 import Jornada360Icon from '../ui/Jornada360Icon';
 
-const NavItem = ({ icon: Icon, label, path, onClick }: { icon: React.ElementType, label: string, path?: string, onClick?: () => void }) => {
+const NavItem = ({ icon: Icon, label, path, onClick, highlight = false }: { icon: any, label: string, path?: string, onClick?: () => void, highlight?: boolean }) => {
     const navigate = useNavigate();
     const handleClick = () => {
         if (path) navigate(path);
@@ -13,15 +14,15 @@ const NavItem = ({ icon: Icon, label, path, onClick }: { icon: React.ElementType
     };
 
     return (
-        <button onClick={handleClick} className="w-full flex items-center gap-4 px-3 py-3 rounded-xl hover:bg-primary/15 text-sm font-medium transition-colors">
-            <Icon className="w-5 h-5 text-accent" />
-            <span className="text-white">{label}</span>
+        <button onClick={handleClick} className={`w-full flex items-center gap-4 px-3 py-3 rounded-xl transition-colors ${highlight ? 'bg-accent/10 border border-accent/20' : 'hover:bg-primary/15'}`}>
+            <Icon className={`w-5 h-5 ${highlight ? 'text-accent' : 'text-accent'}`} />
+            <span className={`text-sm font-medium ${highlight ? 'text-accent font-bold' : 'text-white'}`}>{label}</span>
         </button>
     );
 };
 
 const Sidebar: React.FC<{ isOpen: boolean; setIsOpen: (isOpen: boolean) => void; }> = ({ isOpen, setIsOpen }) => {
-    const { signOut } = useAuth();
+    const { signOut, isPro } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -54,6 +55,12 @@ const Sidebar: React.FC<{ isOpen: boolean; setIsOpen: (isOpen: boolean) => void;
                     <NavItem icon={Settings} label="Configurações" path="/settings" onClick={() => setIsOpen(false)}/>
                     <NavItem icon={FileText} label="Exportar PDF" path="/reports" onClick={() => setIsOpen(false)}/>
                     <NavItem icon={User} label="Meu Perfil" path="/profile" onClick={() => setIsOpen(false)}/>
+                    
+                    {!isPro && (
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                            <NavItem icon={Crown} label="Seja Premium Pro" path="/premium" highlight={true} onClick={() => setIsOpen(false)}/>
+                        </div>
+                    )}
                 </nav>
 
                 <div>

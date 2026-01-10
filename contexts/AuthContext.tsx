@@ -3,94 +3,95 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { supabase } from '../lib/supabaseClient';
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 
-// Definindo a interface para o valor do contexto
 interface AuthContextType {
     user: User | null;
     session: Session | null;
     loading: boolean;
+    isPro: boolean;
     signOut: () => Promise<void>;
     updateUserMetadata: (data: object) => Promise<void>;
+    refreshSubscription: () => Promise<void>;
 }
 
-// Criando o contexto com um valor padrão
 const AuthContext = createContext<AuthContextType>({
     user: null,
     session: null,
     loading: true,
+    isPro: false,
     signOut: async () => {},
     updateUserMetadata: async (data: object) => {},
+    refreshSubscription: async () => {},
 });
 
-// Criando o provedor do contexto
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
+    const [isPro, setIsPro] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    const checkSubscription = async (userId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('subscriptions')
+                .select('plan, status')
+                .eq('user_id', userId)
+                .single();
+            
+            if (data && data.plan === 'pro' && data.status === 'active') {
+                setIsPro(true);
+            } else {
+                setIsPro(false);
+            }
+        } catch (e) {
+            setIsPro(false);
+        }
+    };
+
     useEffect(() => {
-        // Busca a sessão inicial para evitar a tela de login piscando.
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
             setUser(session?.user ?? null);
+            if (session?.user) checkSubscription(session.user.id);
             setLoading(false);
         });
 
-        // O onAuthStateChange é o listener em tempo real para eventos de autenticação.
-        // Ele lida com SIGNED_IN, SIGNED_OUT, e crucialmente, USER_UPDATED.
-        // Quando você atualiza os metadados do usuário em um dispositivo, o Supabase
-        // dispara o evento USER_UPDATED para todos os clientes logados, garantindo
-        // a sincronização em tempo real.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (_event: AuthChangeEvent, session: Session | null) => {
                 setSession(session);
                 setUser(session?.user ?? null);
+                if (session?.user) {
+                    checkSubscription(session.user.id);
+                } else {
+                    setIsPro(false);
+                }
                 setLoading(false);
             }
         );
 
-        // Limpa o listener quando o componente é desmontado para evitar memory leaks.
         return () => {
             subscription.unsubscribe();
         };
     }, []);
 
     const signOut = async () => {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            console.error('Error signing out:', error);
-        }
+        await supabase.auth.signOut();
     };
     
     const updateUserMetadata = async (data: object) => {
         const { data: { user: updatedUser }, error } = await supabase.auth.updateUser({ data });
-        if (error) {
-            console.error('Error updating user metadata:', error);
-            throw error;
-        }
-        // Atualiza o estado local imediatamente para uma resposta de UI mais rápida no
-        // dispositivo que fez a alteração. Os outros dispositivos serão atualizados
-        // pelo listener onAuthStateChange.
-        if (updatedUser) {
-            setUser(updatedUser);
-        }
+        if (error) throw error;
+        if (updatedUser) setUser(updatedUser);
     };
 
-    const value = {
-        user,
-        session,
-        loading,
-        signOut,
-        updateUserMetadata,
+    const refreshSubscription = async () => {
+        if (user) await checkSubscription(user.id);
     };
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={{ user, session, loading, isPro, signOut, updateUserMetadata, refreshSubscription }}>
+            {children}
+        </AuthContext.Provider>
+    );
 };
 
-// Hook customizado para usar o contexto de autenticação
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
-};
+export const useAuth = () => useContext(AuthContext);

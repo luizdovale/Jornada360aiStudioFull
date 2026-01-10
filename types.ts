@@ -33,11 +33,19 @@ export interface Settings {
   escala_start_date?: string; // YYYY-MM-DD
 }
 
+export interface Subscription {
+  id: string;
+  user_id: string;
+  status: 'active' | 'inactive' | 'trial';
+  plan: 'free' | 'pro';
+  expires_at?: string;
+}
+
 export interface JourneyCalculations {
   totalTrabalhado: number; // minutes
   horasExtras50: number; // minutes
   horasExtras100: number; // minutes
-  adicionalNoturno: number; // minutes (22:00 - 05:00)
+  adicionalNoturno: number; // minutes
   kmRodados: number;
 }
 

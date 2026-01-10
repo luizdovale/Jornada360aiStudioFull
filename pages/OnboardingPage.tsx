@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+// @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';

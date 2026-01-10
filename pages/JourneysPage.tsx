@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+// @ts-ignore
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { Journey } from '../types';

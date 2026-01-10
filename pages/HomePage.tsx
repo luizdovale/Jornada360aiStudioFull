@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+// @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysForDisplayMonth, getJourneysForCalendarMonth } from '../lib/utils';

@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+// @ts-ignore
 import { HashRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { JourneyProvider, useJourneys } from './contexts/JourneyContext';
@@ -19,10 +20,10 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import CalendarPage from './pages/CalendarPage';
+import SubscriptionPage from './pages/SubscriptionPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { Toaster } from './components/ui/Toaster';
 
-// Componente auxiliar para verificar configurações e redirecionar
 const AppContent: React.FC = () => {
     const { user, loading: authLoading } = useAuth();
     const { settings, loading: journeyLoading } = useJourneys();
@@ -30,14 +31,7 @@ const AppContent: React.FC = () => {
     const location = useLocation();
 
     useEffect(() => {
-        // Se estiver autenticado, carregou dados, não tem settings e não está na página de onboarding
-        if (
-            !authLoading && 
-            !journeyLoading && 
-            user && 
-            !settings && 
-            location.pathname !== '/onboarding'
-        ) {
+        if (!authLoading && !journeyLoading && user && !settings && location.pathname !== '/onboarding') {
             navigate('/onboarding');
         }
     }, [user, settings, authLoading, journeyLoading, location.pathname, navigate]);
@@ -47,96 +41,19 @@ const AppContent: React.FC = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/cadastro" element={<SignUpPage />} />
             <Route path="/recuperar-senha" element={<ForgotPasswordPage />} />
-            <Route path="/update-password" element={<UpdatePasswordPage />} />
+            {/* Rota unificada para reset de senha baseada na SPA */}
+            <Route path="/password-reset" element={<UpdatePasswordPage />} />
+            <Route path="/premium" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
 
-            <Route
-                path="/"
-                element={
-                    <ProtectedRoute>
-                        <MainLayout>
-                            <HomePage />
-                        </MainLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/journeys"
-                element={
-                    <ProtectedRoute>
-                        <MainLayout>
-                            <JourneysPage />
-                        </MainLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/journeys/new"
-                element={
-                    <ProtectedRoute>
-                        <MainLayout>
-                            <JourneyFormPage />
-                        </MainLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/journeys/edit/:id"
-                element={
-                    <ProtectedRoute>
-                        <MainLayout>
-                            <JourneyFormPage />
-                        </MainLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/settings"
-                element={
-                    <ProtectedRoute>
-                        <MainLayout>
-                            <SettingsPage />
-                        </MainLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/reports"
-                element={
-                    <ProtectedRoute>
-                        <MainLayout>
-                            <ReportsPage />
-                        </MainLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/profile"
-                element={
-                    <ProtectedRoute>
-                        <MainLayout>
-                            <ProfilePage />
-                        </MainLayout>
-                    </ProtectedRoute>
-                }
-            />
-             <Route
-                path="/calendar"
-                element={
-                    <ProtectedRoute>
-                        <MainLayout>
-                            <CalendarPage />
-                        </MainLayout>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/onboarding"
-                element={
-                    <ProtectedRoute>
-                        <OnboardingPage />
-                    </ProtectedRoute>
-                }
-            />
+            <Route path="/" element={<ProtectedRoute><MainLayout><HomePage /></MainLayout></ProtectedRoute>} />
+            <Route path="/journeys" element={<ProtectedRoute><MainLayout><JourneysPage /></MainLayout></ProtectedRoute>} />
+            <Route path="/journeys/new" element={<ProtectedRoute><MainLayout><JourneyFormPage /></MainLayout></ProtectedRoute>} />
+            <Route path="/journeys/edit/:id" element={<ProtectedRoute><MainLayout><JourneyFormPage /></MainLayout></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><MainLayout><SettingsPage /></MainLayout></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><MainLayout><ReportsPage /></MainLayout></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><MainLayout><ProfilePage /></MainLayout></ProtectedRoute>} />
+            <Route path="/calendar" element={<ProtectedRoute><MainLayout><CalendarPage /></MainLayout></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
