@@ -23,7 +23,7 @@ A proposta do projeto é entregar uma UI limpa, responsiva e otimizada, servindo
 ## 🌐 Acesso ao Site
 
 👉 **Site oficial do projeto:**  
-https://jornada360ai.vercel.app/
+https://jornada360.vercel.app/
 
 ---
 
