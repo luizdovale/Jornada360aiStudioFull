@@ -1,245 +1,349 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getMonthSummary, calculateJourney, formatMinutesToHours } from '../lib/utils';
-import { FileDown } from 'lucide-react';
+import { FileDown, Clock, Map, CalendarDays, AlertCircle } from 'lucide-react';
 import PdfPreviewModal from '../components/ui/PdfPreviewModal';
+
+type ReportType = 'hours' | 'km';
 
 const ReportsPage: React.FC = () => {
     const { journeys, settings } = useJourneys();
     const { user } = useAuth();
-    
+    const [reportType, setReportType] = useState<ReportType>('hours');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [selectedOptionIndex, setSelectedOptionIndex] = useState<number>(1);
 
-    const getCurrentAccountingPeriod = () => {
-        if (!settings) {
-            const today = new Date();
-            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            return {
-                start: firstDay.toISOString().split('T')[0],
-                end: lastDay.toISOString().split('T')[0],
+    const monthOptions = useMemo(() => {
+        const options = [];
+        const today = new Date();
+        const startDay = settings?.month_start_day || 1;
+        
+        for (let i = -1; i < 11; i++) {
+            const ref = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            
+            const cycleStart = new Date(ref.getFullYear(), ref.getMonth() - 1, startDay);
+            const cycleEnd = new Date(ref.getFullYear(), ref.getMonth(), startDay - 1);
+            
+            const calendarStart = new Date(ref.getFullYear(), ref.getMonth(), 1);
+            const calendarEnd = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
+            
+            const label = ref.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            options.push({ 
+                label: label.charAt(0).toUpperCase() + label.slice(1), 
+                cycleStart: cycleStart.toISOString().split('T')[0], 
+                cycleEnd: cycleEnd.toISOString().split('T')[0],
+                calendarStart: calendarStart.toISOString().split('T')[0],
+                calendarEnd: calendarEnd.toISOString().split('T')[0],
+                value: i 
+            });
+        }
+        return options;
+    }, [settings]);
+
+    useEffect(() => {
+        if (monthOptions.length > 0) {
+            const currentOption = monthOptions[selectedOptionIndex];
+            if (reportType === 'hours') {
+                setStartDate(currentOption.cycleStart);
+                setEndDate(currentOption.cycleEnd);
+            } else {
+                setStartDate(currentOption.calendarStart);
+                setEndDate(currentOption.calendarEnd);
+            }
+        }
+    }, [selectedOptionIndex, monthOptions, reportType]);
+
+    const loadImage = (url: string): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
             };
-        }
-        
-        const now = new Date();
-        const startDay = settings.month_start_day || 1;
-
-        let startDate = new Date(now.getFullYear(), now.getMonth(), startDay);
-
-        if (now.getDate() < startDay) {
-            startDate = new Date(now.getFullYear(), now.getMonth() - 1, startDay);
-        }
-
-        let endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDay - 1);
-        
-        return {
-            start: startDate.toISOString().split('T')[0],
-            end: endDate.toISOString().split('T')[0],
-        };
-    };
-    
-    const [startDate, setStartDate] = useState(getCurrentAccountingPeriod().start);
-    const [endDate, setEndDate] = useState(getCurrentAccountingPeriod().end);
-
-    const filteredJourneys = useMemo(() => {
-        const start = new Date(startDate + 'T00:00:00');
-        const end = new Date(endDate + 'T23:59:59');
-
-        return journeys.filter(j => {
-            const date = new Date(j.date + 'T00:00:00');
-            return date >= start && date <= end;
+            img.onerror = () => reject(new Error('Falha ao carregar ícone do PDF'));
+            img.src = url;
         });
-    }, [journeys, startDate, endDate]);
+    };
 
-
-    const generateAndPreviewPdf = () => {
-        if (!filteredJourneys.length || !settings) {
-            alert('Não há dados no período selecionado para gerar o relatório.');
+    const generatePdf = async () => {
+        const filtered = journeys.filter(j => j.date >= startDate && j.date <= endDate);
+        
+        if (!filtered.length) {
+            alert('Nenhum registro encontrado para o período selecionado.');
             return;
         }
 
-        // @ts-ignore
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-
-        const userName = user?.user_metadata?.nome || 'Usuário';
-        const period = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
-
-        // CABEÇALHO
-        doc.setFont("helvetica", "bold"); 
-        doc.setFontSize(14);
-        doc.setTextColor("#0C2344");
-        doc.text("Jornada 360 — Relatório de Jornada", 14, 15);
-
-        doc.setFontSize(8);
-        doc.setTextColor("#9CA3AF");
-        doc.text("by luizdovaletech", doc.internal.pageSize.getWidth() - 14, 15, { align: "right" });
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.setTextColor("#6B7280");
-        doc.text(`${userName} | ${period}`, 14, 21);
-
-        // RESUMO - Removido "Total Trabalhado" conforme solicitado
-        const summary = getMonthSummary(filteredJourneys, settings);
-        
-        doc.setFontSize(10);
-        doc.setTextColor("#374151");
-        
-        const summaryY = 30;
-        doc.text(`Dias Trabalhados: ${summary.totalDiasTrabalhados}`, 14, summaryY);
-        // Mantendo apenas Extras e KM
-        doc.text(`Extras 50%: ${formatMinutesToHours(summary.horasExtras50)}`, 60, summaryY);
-        doc.text(`Extras 100%: ${formatMinutesToHours(summary.horasExtras100)}`, 110, summaryY);
-
-        if (settings.km_enabled) {
-            doc.text(`KM: ${summary.kmRodados.toFixed(1)}`, 160, summaryY);
+        if (!settings) {
+            alert('Configurações não encontradas.');
+            return;
         }
 
-        // TABELA
-        // Removido "Total" e atualizado "RV" para "Refeição"
-        const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "KM", "RV", "Observações"];
-        const tableRows: any[] = [];
+        setIsGenerating(true);
+        
+        try {
+            // @ts-ignore
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF) throw new Error("Biblioteca jsPDF não carregada.");
 
-        const sortedJourneys = [...filteredJourneys].sort(
-            (a, b) => new Date(a.date + "T00:00:00").getTime() - new Date(b.date + "T00:00:00").getTime()
-        );
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
 
-        sortedJourneys.forEach(journey => {
-            const calcs = calculateJourney(journey, settings);
-            const dateFormatted = new Date(journey.date + "T00:00:00").toLocaleDateString('pt-BR');
+            const margin = 14;
+            const rightMargin = 210 - margin;
+            const titleColor = [30, 38, 60];
+            const titleText = "Jornada360 - Relatório de Atividades";
+            const signatureText = "by luizdovaletech";
 
-            if (journey.is_day_off) {
-                const style = { textColor: [220, 38, 38], fontStyle: "bold", fontSize: 6 };
-                tableRows.push([
-                    { content: dateFormatted, styles: style },
-                    { content: "Folga", styles: style },
-                    { content: "Folga", styles: style },
-                    { content: "Folga", styles: style }, // Refeição vira Folga
-                    { content: "-", styles: style }, // HE 50
-                    { content: "-", styles: style }, // HE 100
-                    { content: settings.km_enabled ? (calcs.kmRodados > 0 ? calcs.kmRodados.toFixed(1) : "-") : "-", styles: {} },
-                    { content: journey.rv_number || "-", styles: {} },
-                    { content: journey.notes || "-", styles: {} }
-                ]);
-            } else {
-                // Formata o intervalo de refeição (ex: 12:00 - 13:00)
-                const mealStart = journey.meal_start ? journey.meal_start.slice(0, 5) : "??:??";
-                const mealEnd = journey.meal_end ? journey.meal_end.slice(0, 5) : "??:??";
-                const mealInterval = `${mealStart} - ${mealEnd}`;
-
-                tableRows.push([
-                    dateFormatted,
-                    journey.start_at?.slice(0, 5) || "-",
-                    journey.end_at?.slice(0, 5) || "-",
-                    mealInterval, // Nova coluna de intervalo de refeição
-                    formatMinutesToHours(calcs.horasExtras50),
-                    formatMinutesToHours(calcs.horasExtras100),
-                    settings.km_enabled ? calcs.kmRodados.toFixed(1) : "-",
-                    journey.rv_number || "-",
-                    journey.notes || "-"
-                ]);
-            }
-        });
-
-        // @ts-ignore
-        doc.autoTable({
-            head: [tableColumn],
-            body: tableRows,
-            startY: 38,
-            theme: "grid",
-            headStyles: { fillColor: "#0C2344", fontSize: 8 },
-            styles: { fontSize: 8, cellPadding: 2, halign: "center" },
-            // Ajuste nas larguras das colunas para acomodar o intervalo de refeição
-            columnStyles: { 
-                0: { cellWidth: 18 }, // Data
-                1: { cellWidth: 12 }, // Início
-                2: { cellWidth: 12 }, // Fim
-                3: { cellWidth: 22 }, // Refeição (Aumentado)
-                4: { cellWidth: 15 }, // HE 50
-                5: { cellWidth: 15 }, // HE 100
-                6: { cellWidth: 15 }, // KM
-                7: { cellWidth: 20 }, // RV
-                8: { halign: "left", cellWidth: "auto" } // Obs
-            },
-            didParseCell: function(data: any) {
-                if (data.row.raw && data.row.raw[1] && data.row.raw[1].content === 'Folga') {
-                   data.cell.styles.fillColor = [255, 235, 235];
+            // Cabeçalho com Ícone e Assinatura
+            try {
+                // Tenta carregar do assets local, se falhar usa a URL remota de fallback
+                let iconBase64;
+                try {
+                    iconBase64 = await loadImage('/assets/icone_pdf.png');
+                } catch (e) {
+                    iconBase64 = await loadImage('https://lh3.googleusercontent.com/pw/AP1GczMzevf3MtEhoqH_m88FmaGlcCRm7xNpg3sZTyDcPT6_I7jthzMtVudC4ZLUZ8kL7J0BB5Ahky7903UpG2CBHqPCrYduoiusu6KI7vfm0kFundAszoeMnmfgInqoa5TUCUVxmHOYwXWNbQl5OyxjJ_v8=w512-h512-s-no-gm?authuser=4');
                 }
+                
+                doc.addImage(iconBase64, 'PNG', margin, 14, 8, 8);
+                
+                // Título em Negrito à esquerda
+                doc.setFontSize(16);
+                doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+                doc.setFont("helvetica", "bold");
+                doc.text(titleText, margin + 11, 20);
+                
+                // Assinatura em Normal e menor à direita
+                doc.setFontSize(8);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(150, 150, 150);
+                doc.text(signatureText, rightMargin, 20, { align: 'right' });
+                
+            } catch (e) {
+                // Fallback caso falhe imagem
+                doc.setFontSize(16);
+                doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+                doc.setFont("helvetica", "bold");
+                doc.text(titleText, margin, 20);
+
+                doc.setFontSize(8);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(150, 150, 150);
+                doc.text(signatureText, rightMargin, 20, { align: 'right' });
             }
-        });
 
-        // RODAPÉ
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor("#BDC6D1");
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100, 100, 100);
+            const periodLabel = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
+            doc.text(`Colaborador: ${user?.user_metadata?.nome || 'Usuário'}`, margin, 28);
+            doc.text(`Período: ${periodLabel}`, margin, 33);
+            doc.text(`Tipo: ${reportType === 'hours' ? 'Ponto e Horas Extras' : 'Controle de KM e Entregas'}`, margin, 38);
 
-            doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.getWidth() / 2, 287, { align: "center" });
-            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 287);
+            const summary = getMonthSummary(filtered, settings);
+
+            if (reportType === 'hours') {
+                doc.setDrawColor(230, 230, 230);
+                doc.line(margin, 42, 210 - margin, 42);
+                
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+                doc.text("RESUMO DO PERÍODO:", margin, 48);
+                
+                doc.setFont("helvetica", "normal");
+                const summaryText = `Dias Trabalhados: ${summary.totalDiasTrabalhados} | HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
+                doc.text(summaryText, margin, 53);
+
+                const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Noturno", "Obs"];
+                const tableRows = filtered
+                    .sort((a, b) => a.date.localeCompare(b.date))
+                    .map(j => {
+                        const c = calculateJourney(j, settings);
+                        const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", j.notes || ""];
+                        const mealLabel = j.is_plantao ? "PLANTÃO" : `${j.meal_start || '00:00'} - ${j.meal_end || '00:00'}`;
+                        return [d, j.start_at || '00:00', j.end_at || '00:00', mealLabel, formatMinutesToHours(c.horasExtras50), formatMinutesToHours(c.horasExtras100), formatMinutesToHours(c.adicionalNoturno), j.notes || ""];
+                    });
+
+                // @ts-ignore
+                doc.autoTable({ 
+                    head: [tableColumn], 
+                    body: tableRows, 
+                    startY: 58, 
+                    theme: 'grid', 
+                    headStyles: { fillColor: titleColor, fontSize: 8, halign: 'center' },
+                    bodyStyles: { fontSize: 7, halign: 'center' },
+                    columnStyles: {
+                        0: { cellWidth: 15 },
+                        1: { cellWidth: 15 },
+                        2: { cellWidth: 15 },
+                        3: { cellWidth: 30 },
+                        4: { cellWidth: 20 },
+                        5: { cellWidth: 20 },
+                        6: { cellWidth: 20 },
+                        7: { halign: 'left' }
+                    },
+                    didParseCell: (data: any) => {
+                        if (data.cell.text && data.cell.text.includes('FOLGA')) {
+                            data.cell.styles.textColor = [220, 38, 38]; // Red-600
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+            } else {
+                doc.setDrawColor(230, 230, 230);
+                doc.line(margin, 42, 210 - margin, 42);
+                
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "bold");
+                doc.text("ESTATÍSTICAS DE VIAGEM:", margin, 48);
+                
+                doc.setFont("helvetica", "normal");
+                const summaryText = `Distância Total: ${summary.kmRodados.toFixed(1)} km  |  Total de Entregas: ${summary.totalDeliveries}  |  Dias Trabalhados: ${summary.totalDiasTrabalhados}`;
+                doc.text(summaryText, margin, 53);
+
+                const tableColumn = ["Data", "RV", "Entregas", "KM Inicial", "KM Final", "Total KM"];
+                const tableRows = filtered
+                    .sort((a, b) => a.date.localeCompare(b.date))
+                    .map(j => {
+                        const c = calculateJourney(j, settings);
+                        const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR');
+                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", c.kmRodados > 0 ? c.kmRodados.toFixed(1) : "FOLGA"];
+                        return [d, j.rv_number || "-", j.deliveries || "0", j.km_start || "0", j.km_end || "0", c.kmRodados.toFixed(1)];
+                    });
+
+                // @ts-ignore
+                doc.autoTable({ 
+                    head: [tableColumn], 
+                    body: tableRows, 
+                    startY: 58, 
+                    theme: 'grid', 
+                    headStyles: { fillColor: titleColor, fontSize: 8, halign: 'center' },
+                    bodyStyles: { fontSize: 7, halign: 'center' },
+                    columnStyles: {
+                        5: { fontStyle: 'bold' }
+                    },
+                    didParseCell: (data: any) => {
+                        if (data.cell.text && data.cell.text.includes('FOLGA')) {
+                            data.cell.styles.textColor = [220, 38, 38]; // Red-600
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+            }
+
+            setPdfPreviewUrl(doc.output("datauristring")); 
+            setIsModalOpen(true);
+        } catch (e: any) { 
+            console.error("Erro PDF:", e);
+            alert(`Erro ao gerar o relatório: ${e.message}`); 
+        } finally { 
+            setIsGenerating(false); 
         }
-
-        const uri = doc.output("datauristring");
-        setPdfPreviewUrl(uri);
-        setIsModalOpen(true);
     };
 
-
-    const inputStyle =
-        "w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition";
+    const commonInputStyles = "block w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all box-border min-w-0";
 
     return (
         <div className="space-y-6">
-            <h1 className="text-title-lg text-primary-dark">Exportar Relatório</h1>
+            <div className="flex flex-col gap-1">
+                <h1 className="text-title-lg text-primary-dark">Relatórios</h1>
+                <p className="text-sm text-muted-foreground">Exporte seus dados em PDF para conferência.</p>
+            </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-soft">
-                <p className="text-muted-foreground mb-4 text-center">
-                    Selecione o período desejado para gerar seu relatório em PDF.
-                </p>
+            <div className="flex bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200">
+                <button 
+                    onClick={() => setReportType('hours')} 
+                    className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'hours' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
+                >
+                    <Clock className="w-4 h-4" /> Ponto & Horas
+                </button>
+                <button 
+                    onClick={() => setReportType('km')} 
+                    className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'km' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
+                >
+                    <Map className="w-4 h-4" /> KM Rodado
+                </button>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label className="text-sm font-medium">Data de Início</label>
+            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6 overflow-hidden">
+                <div className="w-full">
+                    <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência do Mês</label>
+                    <select 
+                        value={selectedOptionIndex}
+                        onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))} 
+                        className={`${commonInputStyles} appearance-none`}
+                    >
+                        {monthOptions.map((o, i) => (
+                            <option key={i} value={i}>{o.label}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-4 w-full">
+                    <div className="w-full">
+                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
                         <input 
                             type="date" 
                             value={startDate} 
                             onChange={e => setStartDate(e.target.value)} 
-                            className={inputStyle} 
+                            className={commonInputStyles} 
                         />
                     </div>
-
-                    <div>
-                        <label className="text-sm font-medium">Data Final</label>
+                    <div className="w-full">
+                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Fim do Período</label>
                         <input 
                             type="date" 
                             value={endDate} 
                             onChange={e => setEndDate(e.target.value)} 
-                            className={inputStyle} 
+                            className={commonInputStyles} 
                         />
                     </div>
                 </div>
 
-                <div className="text-center">
-                    <button
-                        onClick={generateAndPreviewPdf}
-                        disabled={!filteredJourneys.length}
-                        className="inline-flex items-center gap-2 justify-center rounded-lg bg-primary py-3 px-6 text-base font-medium text-white shadow hover:bg-primary-dark active:scale-95 disabled:bg-opacity-50"
+                <div className="pt-2 w-full">
+                    <button 
+                        onClick={generatePdf} 
+                        disabled={isGenerating} 
+                        className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark transition active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70"
                     >
-                        <FileDown className="w-5 h-5" />
-                        Gerar Relatório ({filteredJourneys.length} {filteredJourneys.length === 1 ? "dia" : "dias"})
+                        {isGenerating ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <FileDown className="w-5 h-5" />
+                        )}
+                        {isGenerating ? "Processando..." : "Gerar Relatório PDF"}
                     </button>
                 </div>
             </div>
 
-            <PdfPreviewModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                pdfUrl={pdfPreviewUrl}
-                fileName={`relatorio_${user?.user_metadata?.nome?.split(' ')[0]?.toLowerCase() || "jornada360"}_${startDate}_a_${endDate}.pdf`}
+            <div className="flex items-start gap-3 p-4 bg-primary-light/50 rounded-xl border border-primary/10">
+                <AlertCircle className="w-5 h-5 text-primary-dark/60 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-primary-dark/70 leading-relaxed">
+                    <strong>Dica:</strong> Para o relatório de KM, utilizamos o período civil (dia 01 ao dia 30/31). Para o relatório de Ponto, seguimos o ciclo de fechamento configurado.
+                </p>
+            </div>
+
+            <PdfPreviewModal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                pdfUrl={pdfPreviewUrl} 
+                fileName={`Jornada360_${reportType === 'hours' ? 'Ponto' : 'KM'}_${startDate}_${endDate}.pdf`} 
             />
         </div>
     );
