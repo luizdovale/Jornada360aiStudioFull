@@ -1,134 +1,246 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
-// @ts-ignore
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getMonthSummary, calculateJourney, formatMinutesToHours } from '../lib/utils';
-import { FileDown, Clock, Map } from 'lucide-react';
+import { FileDown } from 'lucide-react';
 import PdfPreviewModal from '../components/ui/PdfPreviewModal';
-
-type ReportType = 'hours' | 'km';
 
 const ReportsPage: React.FC = () => {
     const { journeys, settings } = useJourneys();
     const { user } = useAuth();
-    const navigate = useNavigate();
     
-    const [reportType, setReportType] = useState<ReportType>('hours');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [selectedOptionIndex, setSelectedOptionIndex] = useState<number>(1);
 
-    const monthOptions = useMemo(() => {
-        const options = [];
-        const today = new Date();
-        const startDay = settings?.month_start_day || 1;
+    const getCurrentAccountingPeriod = () => {
+        if (!settings) {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            return {
+                start: firstDay.toISOString().split('T')[0],
+                end: lastDay.toISOString().split('T')[0],
+            };
+        }
         
-        for (let i = -1; i < 11; i++) {
-            const ref = new Date(today.getFullYear(), today.getMonth() - i, 1);
-            const cycleStart = new Date(ref.getFullYear(), ref.getMonth() - 1, startDay);
-            const cycleEnd = new Date(ref.getFullYear(), ref.getMonth(), startDay - 1);
-            const calendarStart = new Date(ref.getFullYear(), ref.getMonth(), 1);
-            const calendarEnd = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
-            const label = ref.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-            options.push({ 
-                label: label.charAt(0).toUpperCase() + label.slice(1), 
-                cycleStart: cycleStart.toISOString().split('T')[0], 
-                cycleEnd: cycleEnd.toISOString().split('T')[0],
-                calendarStart: calendarStart.toISOString().split('T')[0],
-                calendarEnd: calendarEnd.toISOString().split('T')[0],
-                value: i 
-            });
-        }
-        return options;
-    }, [settings]);
+        const now = new Date();
+        const startDay = settings.month_start_day || 1;
 
-    useEffect(() => {
-        if (monthOptions.length > 0) {
-            const currentOption = monthOptions[selectedOptionIndex];
-            if (reportType === 'hours') {
-                setStartDate(currentOption.cycleStart);
-                setEndDate(currentOption.cycleEnd);
-            } else {
-                setStartDate(currentOption.calendarStart);
-                setEndDate(currentOption.calendarEnd);
-            }
-        }
-    }, [selectedOptionIndex, monthOptions, reportType]);
+        let startDate = new Date(now.getFullYear(), now.getMonth(), startDay);
 
-    const generatePdf = async () => {
-        const filtered = journeys.filter(j => j.date >= startDate && j.date <= endDate);
-        if (!filtered.length) {
-            alert('Nenhum registro encontrado.');
+        if (now.getDate() < startDay) {
+            startDate = new Date(now.getFullYear(), now.getMonth() - 1, startDay);
+        }
+
+        let endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDay - 1);
+        
+        return {
+            start: startDate.toISOString().split('T')[0],
+            end: endDate.toISOString().split('T')[0],
+        };
+    };
+    
+    const [startDate, setStartDate] = useState(getCurrentAccountingPeriod().start);
+    const [endDate, setEndDate] = useState(getCurrentAccountingPeriod().end);
+
+    const filteredJourneys = useMemo(() => {
+        const start = new Date(startDate + 'T00:00:00');
+        const end = new Date(endDate + 'T23:59:59');
+
+        return journeys.filter(j => {
+            const date = new Date(j.date + 'T00:00:00');
+            return date >= start && date <= end;
+        });
+    }, [journeys, startDate, endDate]);
+
+
+    const generateAndPreviewPdf = () => {
+        if (!filteredJourneys.length || !settings) {
+            alert('Não há dados no período selecionado para gerar o relatório.');
             return;
         }
 
-        setIsGenerating(true);
-        try {
-            // @ts-ignore
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("Relatório Jornada360", 14, 20);
-            doc.text(`Colaborador: ${user?.user_metadata?.nome}`, 14, 30);
-            setPdfPreviewUrl(doc.output("datauristring")); 
-            setIsModalOpen(true);
-        } catch (e: any) { 
-            alert(`Erro ao gerar: ${e.message}`); 
-        } finally { 
-            setIsGenerating(false); 
+        // @ts-ignore
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const userName = user?.user_metadata?.nome || 'Usuário';
+        const period = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
+
+        // CABEÇALHO
+        doc.setFont("helvetica", "bold"); 
+        doc.setFontSize(14);
+        doc.setTextColor("#0C2344");
+        doc.text("Jornada 360 — Relatório de Jornada", 14, 15);
+
+        doc.setFontSize(8);
+        doc.setTextColor("#9CA3AF");
+        doc.text("by luizdovaletech", doc.internal.pageSize.getWidth() - 14, 15, { align: "right" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor("#6B7280");
+        doc.text(`${userName} | ${period}`, 14, 21);
+
+        // RESUMO - Removido "Total Trabalhado" conforme solicitado
+        const summary = getMonthSummary(filteredJourneys, settings);
+        
+        doc.setFontSize(10);
+        doc.setTextColor("#374151");
+        
+        const summaryY = 30;
+        doc.text(`Dias Trabalhados: ${summary.totalDiasTrabalhados}`, 14, summaryY);
+        // Mantendo apenas Extras e KM
+        doc.text(`Extras 50%: ${formatMinutesToHours(summary.horasExtras50)}`, 60, summaryY);
+        doc.text(`Extras 100%: ${formatMinutesToHours(summary.horasExtras100)}`, 110, summaryY);
+
+        if (settings.km_enabled) {
+            doc.text(`KM: ${summary.kmRodados.toFixed(1)}`, 160, summaryY);
         }
+
+        // TABELA
+        // Removido "Total" e atualizado "RV" para "Refeição"
+        const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "KM", "RV", "Observações"];
+        const tableRows: any[] = [];
+
+        const sortedJourneys = [...filteredJourneys].sort(
+            (a, b) => new Date(a.date + "T00:00:00").getTime() - new Date(b.date + "T00:00:00").getTime()
+        );
+
+        sortedJourneys.forEach(journey => {
+            const calcs = calculateJourney(journey, settings);
+            const dateFormatted = new Date(journey.date + "T00:00:00").toLocaleDateString('pt-BR');
+
+            if (journey.is_day_off) {
+                const style = { textColor: [220, 38, 38], fontStyle: "bold", fontSize: 6 };
+                tableRows.push([
+                    { content: dateFormatted, styles: style },
+                    { content: "Folga", styles: style },
+                    { content: "Folga", styles: style },
+                    { content: "Folga", styles: style }, // Refeição vira Folga
+                    { content: "-", styles: style }, // HE 50
+                    { content: "-", styles: style }, // HE 100
+                    { content: settings.km_enabled ? (calcs.kmRodados > 0 ? calcs.kmRodados.toFixed(1) : "-") : "-", styles: {} },
+                    { content: journey.rv_number || "-", styles: {} },
+                    { content: journey.notes || "-", styles: {} }
+                ]);
+            } else {
+                // Formata o intervalo de refeição (ex: 12:00 - 13:00)
+                const mealStart = journey.meal_start ? journey.meal_start.slice(0, 5) : "??:??";
+                const mealEnd = journey.meal_end ? journey.meal_end.slice(0, 5) : "??:??";
+                const mealInterval = `${mealStart} - ${mealEnd}`;
+
+                tableRows.push([
+                    dateFormatted,
+                    journey.start_at?.slice(0, 5) || "-",
+                    journey.end_at?.slice(0, 5) || "-",
+                    mealInterval, // Nova coluna de intervalo de refeição
+                    formatMinutesToHours(calcs.horasExtras50),
+                    formatMinutesToHours(calcs.horasExtras100),
+                    settings.km_enabled ? calcs.kmRodados.toFixed(1) : "-",
+                    journey.rv_number || "-",
+                    journey.notes || "-"
+                ]);
+            }
+        });
+
+        // @ts-ignore
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 38,
+            theme: "grid",
+            headStyles: { fillColor: "#0C2344", fontSize: 8 },
+            styles: { fontSize: 8, cellPadding: 2, halign: "center" },
+            // Ajuste nas larguras das colunas para acomodar o intervalo de refeição
+            columnStyles: { 
+                0: { cellWidth: 18 }, // Data
+                1: { cellWidth: 12 }, // Início
+                2: { cellWidth: 12 }, // Fim
+                3: { cellWidth: 22 }, // Refeição (Aumentado)
+                4: { cellWidth: 15 }, // HE 50
+                5: { cellWidth: 15 }, // HE 100
+                6: { cellWidth: 15 }, // KM
+                7: { cellWidth: 20 }, // RV
+                8: { halign: "left", cellWidth: "auto" } // Obs
+            },
+            didParseCell: function(data: any) {
+                if (data.row.raw && data.row.raw[1] && data.row.raw[1].content === 'Folga') {
+                   data.cell.styles.fillColor = [255, 235, 235];
+                }
+            }
+        });
+
+        // RODAPÉ
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor("#BDC6D1");
+
+            doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.getWidth() / 2, 287, { align: "center" });
+            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 287);
+        }
+
+        const uri = doc.output("datauristring");
+        setPdfPreviewUrl(uri);
+        setIsModalOpen(true);
     };
 
-    const commonInputStyles = "block w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark outline-none transition-all";
+
+    const inputStyle =
+        "w-full mt-1 p-3 bg-white border border-gray-300 rounded-lg text-primary-dark focus:ring-2 focus:ring-primary-dark/50 focus:border-primary-dark transition";
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-title-lg text-primary-dark">Relatórios</h1>
-                <p className="text-sm text-muted-foreground">Exporte seus dados em PDF para conferência.</p>
-            </div>
+            <h1 className="text-title-lg text-primary-dark">Exportar Relatório</h1>
 
-            <div className="flex bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200">
-                <button onClick={() => setReportType('hours')} className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'hours' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}>
-                    <Clock className="w-4 h-4" /> Ponto & Horas
-                </button>
-                <button onClick={() => setReportType('km')} className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'km' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}>
-                    <Map className="w-4 h-4" /> KM Rodado
-                </button>
-            </div>
+            <div className="bg-white p-6 rounded-2xl shadow-soft">
+                <p className="text-muted-foreground mb-4 text-center">
+                    Selecione o período desejado para gerar seu relatório em PDF.
+                </p>
 
-            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6 relative overflow-hidden">
-                <div className="w-full">
-                    <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência do Mês</label>
-                    <select value={selectedOptionIndex} onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))} className={commonInputStyles}>
-                        {monthOptions.map((o, i) => <option key={i} value={i}>{o.label}</option>)}
-                    </select>
-                </div>
-
-                <div className="space-y-4 w-full">
-                    <div className="w-full">
-                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={commonInputStyles} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label className="text-sm font-medium">Data de Início</label>
+                        <input 
+                            type="date" 
+                            value={startDate} 
+                            onChange={e => setStartDate(e.target.value)} 
+                            className={inputStyle} 
+                        />
                     </div>
-                    <div className="w-full">
-                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Fim do Período</label>
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={commonInputStyles} />
+
+                    <div>
+                        <label className="text-sm font-medium">Data Final</label>
+                        <input 
+                            type="date" 
+                            value={endDate} 
+                            onChange={e => setEndDate(e.target.value)} 
+                            className={inputStyle} 
+                        />
                     </div>
                 </div>
 
-                <div className="pt-2 w-full">
-                    <button onClick={generatePdf} disabled={isGenerating} className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark transition active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70">
-                        {isGenerating ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <FileDown className="w-5 h-5" />}
-                        Gerar Relatório PDF
+                <div className="text-center">
+                    <button
+                        onClick={generateAndPreviewPdf}
+                        disabled={!filteredJourneys.length}
+                        className="inline-flex items-center gap-2 justify-center rounded-lg bg-primary py-3 px-6 text-base font-medium text-white shadow hover:bg-primary-dark active:scale-95 disabled:bg-opacity-50"
+                    >
+                        <FileDown className="w-5 h-5" />
+                        Gerar Relatório ({filteredJourneys.length} {filteredJourneys.length === 1 ? "dia" : "dias"})
                     </button>
                 </div>
             </div>
 
-            <PdfPreviewModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} pdfUrl={pdfPreviewUrl} fileName={`Jornada360_${startDate}_${endDate}.pdf`} />
+            <PdfPreviewModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                pdfUrl={pdfPreviewUrl}
+                fileName={`relatorio_${user?.user_metadata?.nome?.split(' ')[0]?.toLowerCase() || "jornada360"}_${startDate}_a_${endDate}.pdf`}
+            />
         </div>
     );
 };
