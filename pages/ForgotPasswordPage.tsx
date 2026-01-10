@@ -17,9 +17,9 @@ const ForgotPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // O redirecionamento agora aponta diretamente para a rota controlada pelo React Router.
-        // Como usamos HashRouter, o Supabase vai anexar o token após o #, o que é perfeito para SPAs.
-        const redirectTo = `${window.location.origin}/#/password-reset`;
+        // APONTAMENTO CRUCIAL: Aponta para o arquivo físico .html
+        // Isso evita que o link enviado pelo Supabase venha com "##" (dois hashes)
+        const redirectTo = `${window.location.origin}/password-reset`;
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: redirectTo,

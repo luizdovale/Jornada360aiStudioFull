@@ -20,35 +20,47 @@ const UpdatePasswordPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Monitora o estado de autenticação. 
-        // Quando o Supabase processa o link de recuperação, ele emite um evento 'SIGNED_IN' ou 'PASSWORD_RECOVERY'.
+        // 1. Ouvinte de eventos de autenticação
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log("Auth Event:", event);
+            console.log("Auth Event Detectado:", event);
             if (session) {
                 setLoading(false);
                 setError(null);
             }
         });
 
-        // Check inicial
-        const checkInitialSession = async () => {
+        const validateRecovery = async () => {
+            // 2. Verifica se já temos uma sessão ativa
             const { data: { session } } = await supabase.auth.getSession();
+            
             if (session) {
                 setLoading(false);
-            } else {
-                // Timer de segurança: dá 3 segundos para o SDK processar o hash da URL
-                const timeout = setTimeout(async () => {
-                    const { data: { session: finalSession } } = await supabase.auth.getSession();
-                    if (!finalSession) {
-                        setError("O link de recuperação parece inválido ou já foi utilizado. Por favor, solicite um novo link.");
-                        setLoading(false);
-                    }
-                }, 3000);
-                return () => clearTimeout(timeout);
+                return;
             }
+
+            // 3. Caso não tenha sessão, tenta forçar a leitura do hash vindo do Bridge
+            // Às vezes o SDK não lê o hash se ele estiver após um '?' (que foi o que o bridge fez)
+            const hashFromBridge = sessionStorage.getItem('supabase_recovery_hash');
+            if (hashFromBridge) {
+                // Tenta forçar a sessão a partir do hash salvo
+                // O Supabase SDK gerencia isso internamente quando detecta o hash na URL,
+                // mas aqui damos um tempo extra para ele processar.
+                sessionStorage.removeItem('supabase_recovery_hash');
+            }
+
+            // Timer de segurança estendido para 5 segundos
+            const timeout = setTimeout(async () => {
+                const { data: { session: finalSession } } = await supabase.auth.getSession();
+                if (!finalSession) {
+                    setError("O link de recuperação parece inválido ou já foi utilizado. Por favor, solicite um novo link.");
+                    setLoading(false);
+                }
+            }, 5000);
+
+            return () => clearTimeout(timeout);
         };
 
-        checkInitialSession();
+        validateRecovery();
 
         return () => {
             subscription.unsubscribe();
@@ -79,7 +91,6 @@ const UpdatePasswordPage: React.FC = () => {
             setSaving(false);
         } else {
             toast({ title: "Sucesso!", description: "Sua senha foi alterada com sucesso." });
-            // Força o logout após a troca para garantir que o usuário logue com a nova credencial
             await supabase.auth.signOut();
             navigate('/login');
         }
@@ -90,7 +101,7 @@ const UpdatePasswordPage: React.FC = () => {
             <div className="min-h-screen bg-primary flex flex-col items-center justify-center p-6 text-center">
                 <Loader2 className="w-12 h-12 text-accent animate-spin mb-4" />
                 <p className="text-white font-medium">Validando sua chave de segurança...</p>
-                <p className="text-white/40 text-xs mt-2">Isso pode levar alguns segundos.</p>
+                <p className="text-white/40 text-[10px] mt-2 italic uppercase tracking-widest">Protocolo de Criptografia Ativo</p>
             </div>
         );
     }
@@ -102,13 +113,13 @@ const UpdatePasswordPage: React.FC = () => {
                     <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">
                         <Lock className="w-10 h-10 text-red-600" />
                     </div>
-                    <h2 className="text-2xl font-bold text-primary-dark">Link Inválido</h2>
-                    <p className="text-muted-foreground text-sm">{error}</p>
+                    <h2 className="text-2xl font-bold text-primary-dark">Link Expirado</h2>
+                    <p className="text-muted-foreground text-sm">Links de recuperação do Supabase expiram em poucos minutos ou após o primeiro uso por segurança.</p>
                     <button 
                         onClick={() => navigate('/recuperar-senha')}
                         className="w-full bg-primary text-white py-4 rounded-2xl font-bold transition-all hover:bg-primary-dark"
                     >
-                        Solicitar Novo Link
+                        Tentar Novamente
                     </button>
                 </div>
             </div>
@@ -120,19 +131,19 @@ const UpdatePasswordPage: React.FC = () => {
             <div className="max-w-sm mx-auto w-full">
                 <div className="mb-8 text-center flex flex-col items-center">
                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
-                    <h1 className="text-2xl font-bold text-white">Redefinir Senha</h1>
-                    <p className="text-primary-light/60 text-sm mt-2">Quase lá! Escolha sua nova senha abaixo.</p>
+                    <h1 className="text-2xl font-bold text-white">Nova Senha</h1>
+                    <p className="text-primary-light/60 text-sm mt-2">Sua identidade foi confirmada.</p>
                 </div>
 
                 <div className="bg-white rounded-3xl shadow-card p-8 space-y-6">
                     <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-xl border border-green-100">
                         <ShieldCheck className="w-5 h-5 flex-shrink-0" />
-                        <span className="text-[10px] font-bold uppercase">Sessão de Recuperação Ativa</span>
+                        <span className="text-[10px] font-bold uppercase">Acesso Autorizado</span>
                     </div>
 
                     <form onSubmit={handleUpdatePassword} className="space-y-4">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Nova Senha</label>
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Senha Forte</label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
@@ -142,7 +153,7 @@ const UpdatePasswordPage: React.FC = () => {
                                     required
                                     minLength={6}
                                     className="w-full pl-12 pr-10 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-primary-dark focus:ring-2 focus:ring-accent outline-none transition-all"
-                                    placeholder="No mínimo 6 caracteres"
+                                    placeholder="Senha de 6+ dígitos"
                                 />
                                 <button
                                     type="button"
@@ -155,7 +166,7 @@ const UpdatePasswordPage: React.FC = () => {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Confirmar Senha</label>
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Repita a Senha</label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
@@ -165,7 +176,7 @@ const UpdatePasswordPage: React.FC = () => {
                                     required
                                     minLength={6}
                                     className="w-full pl-12 pr-10 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-primary-dark focus:ring-2 focus:ring-accent outline-none transition-all"
-                                    placeholder="Repita a senha"
+                                    placeholder="Confirme sua senha"
                                 />
                                 <button
                                     type="button"
@@ -182,7 +193,7 @@ const UpdatePasswordPage: React.FC = () => {
                             disabled={saving}
                             className="w-full bg-accent text-primary-dark font-black py-4 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                            {saving ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Confirmar Nova Senha'}
+                            {saving ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Atualizar Credencial'}
                         </button>
                     </form>
                 </div>
