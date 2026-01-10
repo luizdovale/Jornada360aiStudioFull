@@ -17,9 +17,9 @@ const ForgotPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // APONTAMENTO CRUCIAL: Aponta para o arquivo físico .html
-        // Isso evita que o link enviado pelo Supabase venha com "##" (dois hashes)
-        const redirectTo = `${window.location.origin}/password-reset`;
+        // Ao usar HashRouter, o melhor é redirecionar para a raiz.
+        // O Supabase enviará: seu-site.com/#access_token=...&type=recovery
+        const redirectTo = window.location.origin;
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: redirectTo,
@@ -28,9 +28,9 @@ const ForgotPasswordPage: React.FC = () => {
         setLoading(false);
 
         if (error) {
-            toast({ title: "Erro", description: "Não foi possível enviar o email. Verifique o endereço digitado.", variant: 'destructive' });
+            toast({ title: "Erro", description: error.message, variant: 'destructive' });
         } else {
-            toast({ title: "Email enviado!", description: "Verifique sua caixa de entrada para o link de redefinição." });
+            toast({ title: "Email enviado!", description: "Verifique sua caixa de entrada." });
             setSent(true);
         }
     };
@@ -49,8 +49,8 @@ const ForgotPasswordPage: React.FC = () => {
                             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                                 <Mail className="w-8 h-8 text-green-600" />
                             </div>
-                            <h2 className="text-2xl font-bold text-primary-dark">Tudo pronto!</h2>
-                            <p className="text-muted-foreground">Enviamos as instruções para <strong>{email}</strong>. Verifique sua caixa de entrada e spam.</p>
+                            <h2 className="text-2xl font-bold text-primary-dark">Verifique seu E-mail</h2>
+                            <p className="text-muted-foreground text-sm">Enviamos instruções de recuperação para <strong>{email}</strong>.</p>
                             <Link to="/login" className="block w-full bg-primary text-white py-4 rounded-2xl font-bold transition-all hover:bg-primary-dark">
                                 Voltar para o Login
                             </Link>
@@ -58,8 +58,8 @@ const ForgotPasswordPage: React.FC = () => {
                     ) : (
                         <>
                             <div className="space-y-2">
-                                <h2 className="text-xl font-bold text-primary-dark">Esqueceu sua senha?</h2>
-                                <p className="text-sm text-muted-foreground">Não se preocupe! Insira seu e-mail abaixo para receber o link de recuperação.</p>
+                                <h2 className="text-xl font-bold text-primary-dark">Esqueceu a senha?</h2>
+                                <p className="text-sm text-muted-foreground">Insira seu e-mail para receber um link de redefinição seguro.</p>
                             </div>
                             
                             <form onSubmit={handlePasswordReset} className="space-y-5">
@@ -83,7 +83,7 @@ const ForgotPasswordPage: React.FC = () => {
                                     disabled={loading}
                                     className="w-full bg-accent text-primary-dark font-black py-4 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
-                                    {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Enviar Link'}
+                                    {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Enviar Link de Acesso'}
                                 </button>
                             </form>
                         </>

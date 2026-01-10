@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { JourneyProvider, useJourneys } from './contexts/JourneyContext';
+import { supabase } from './lib/supabaseClient';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/layout/MainLayout';
@@ -31,7 +32,18 @@ const AppContent: React.FC = () => {
     const location = useLocation();
 
     useEffect(() => {
-        if (!authLoading && !journeyLoading && user && !settings && location.pathname !== '/onboarding') {
+        // Intercepta eventos de recuperação de senha globalmente
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                navigate('/password-reset');
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [navigate]);
+
+    useEffect(() => {
+        if (!authLoading && !journeyLoading && user && !settings && location.pathname !== '/onboarding' && location.pathname !== '/password-reset') {
             navigate('/onboarding');
         }
     }, [user, settings, authLoading, journeyLoading, location.pathname, navigate]);
@@ -41,7 +53,6 @@ const AppContent: React.FC = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/cadastro" element={<SignUpPage />} />
             <Route path="/recuperar-senha" element={<ForgotPasswordPage />} />
-            {/* Rota unificada para reset de senha baseada na SPA */}
             <Route path="/password-reset" element={<UpdatePasswordPage />} />
             <Route path="/premium" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
 
