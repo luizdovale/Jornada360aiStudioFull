@@ -21,7 +21,6 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import UpdatePasswordPage from './pages/UpdatePasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import CalendarPage from './pages/CalendarPage';
-import SubscriptionPage from './pages/SubscriptionPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { Toaster } from './components/ui/Toaster';
 
@@ -36,15 +35,8 @@ const AppContent: React.FC = () => {
         const handleInitialHash = async () => {
             const hash = window.location.hash;
             
-            // Se o hash contém dados do Supabase mas NÃO está na nossa rota de reset
             if (hash.includes('access_token=') && !hash.includes('/password-reset')) {
-                console.log("Detectado token de recuperação fora da rota. Corrigindo...");
-                
-                // Extrai os parâmetros do hash (ex: access_token=abc&type=recovery)
-                // Remove o '#' inicial se ele não for seguido por '/'
                 const params = hash.startsWith('#/') ? hash.split('?')[1] : hash.replace('#', '');
-                
-                // Redireciona forçadamente para a nossa página de reset dentro do HashRouter
                 if (params) {
                     navigate(`/password-reset?${params}`, { replace: true });
                 }
@@ -54,7 +46,6 @@ const AppContent: React.FC = () => {
         handleInitialHash();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-            console.log("Evento Auth:", event);
             if (event === 'PASSWORD_RECOVERY') {
                 navigate('/password-reset');
             }
@@ -79,7 +70,6 @@ const AppContent: React.FC = () => {
             <Route path="/recuperar-senha" element={<ForgotPasswordPage />} />
             <Route path="/password-reset" element={<UpdatePasswordPage />} />
             
-            <Route path="/premium" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><MainLayout><HomePage /></MainLayout></ProtectedRoute>} />
             <Route path="/journeys" element={<ProtectedRoute><MainLayout><JourneysPage /></MainLayout></ProtectedRoute>} />
             <Route path="/journeys/new" element={<ProtectedRoute><MainLayout><JourneyFormPage /></MainLayout></ProtectedRoute>} />

@@ -1,15 +1,19 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
+
+// Fix: Locally define Supabase types as any to avoid 'no exported member' errors in environments where types are missing or incompatible
+type AuthChangeEvent = any;
+type Session = any;
+type User = any;
 
 interface AuthContextType {
     user: User | null;
     session: Session | null;
     loading: boolean;
-    isPro: boolean;
     signOut: () => Promise<void>;
     updateUserMetadata: (data: object) => Promise<void>;
+    isPro: boolean;
     refreshSubscription: () => Promise<void>;
 }
 
@@ -17,32 +21,38 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     session: null,
     loading: true,
-    isPro: false,
     signOut: async () => {},
     updateUserMetadata: async (data: object) => {},
+    isPro: false,
     refreshSubscription: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
-    const [isPro, setIsPro] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [isPro, setIsPro] = useState(false);
 
-    const checkSubscription = async (userId: string) => {
+    // Fix: Implement refreshSubscription to check the user's current subscription status in Supabase
+    const refreshSubscription = async () => {
+        if (!user) {
+            setIsPro(false);
+            return;
+        }
         try {
             const { data, error } = await supabase
                 .from('subscriptions')
-                .select('plan, status')
-                .eq('user_id', userId)
+                .select('status, plan')
+                .eq('user_id', user.id)
                 .single();
             
-            if (data && data.plan === 'pro' && data.status === 'active') {
+            if (!error && data && data.status === 'active' && data.plan === 'pro') {
                 setIsPro(true);
             } else {
                 setIsPro(false);
             }
         } catch (e) {
+            console.error("Error refreshing subscription:", e);
             setIsPro(false);
         }
     };
@@ -51,7 +61,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
             setUser(session?.user ?? null);
-            if (session?.user) checkSubscription(session.user.id);
             setLoading(false);
         });
 
@@ -59,11 +68,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             (_event: AuthChangeEvent, session: Session | null) => {
                 setSession(session);
                 setUser(session?.user ?? null);
-                if (session?.user) {
-                    checkSubscription(session.user.id);
-                } else {
-                    setIsPro(false);
-                }
                 setLoading(false);
             }
         );
@@ -72,6 +76,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             subscription.unsubscribe();
         };
     }, []);
+
+    // Fix: Trigger a subscription check whenever the logged-in user changes to keep state consistent
+    useEffect(() => {
+        if (user) {
+            refreshSubscription();
+        } else {
+            setIsPro(false);
+        }
+    }, [user]);
 
     const signOut = async () => {
         await supabase.auth.signOut();
@@ -83,12 +96,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updatedUser) setUser(updatedUser);
     };
 
-    const refreshSubscription = async () => {
-        if (user) await checkSubscription(user.id);
-    };
-
     return (
-        <AuthContext.Provider value={{ user, session, loading, isPro, signOut, updateUserMetadata, refreshSubscription }}>
+        <AuthContext.Provider value={{ user, session, loading, signOut, updateUserMetadata, isPro, refreshSubscription }}>
             {children}
         </AuthContext.Provider>
     );

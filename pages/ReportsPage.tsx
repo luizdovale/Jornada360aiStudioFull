@@ -5,14 +5,14 @@ import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getMonthSummary, calculateJourney, formatMinutesToHours } from '../lib/utils';
-import { FileDown, Clock, Map, AlertCircle, Lock, Crown } from 'lucide-react';
+import { FileDown, Clock, Map } from 'lucide-react';
 import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
 type ReportType = 'hours' | 'km';
 
 const ReportsPage: React.FC = () => {
     const { journeys, settings } = useJourneys();
-    const { user, isPro } = useAuth();
+    const { user } = useAuth();
     const navigate = useNavigate();
     
     const [reportType, setReportType] = useState<ReportType>('hours');
@@ -61,11 +61,6 @@ const ReportsPage: React.FC = () => {
     }, [selectedOptionIndex, monthOptions, reportType]);
 
     const generatePdf = async () => {
-        if (!isPro) {
-            navigate('/premium');
-            return;
-        }
-
         const filtered = journeys.filter(j => j.date >= startDate && j.date <= endDate);
         if (!filtered.length) {
             alert('Nenhum registro encontrado.');
@@ -107,22 +102,6 @@ const ReportsPage: React.FC = () => {
             </div>
 
             <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6 relative overflow-hidden">
-                {!isPro && (
-                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-6 text-center">
-                        <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mb-4 shadow-lg ring-4 ring-accent/20">
-                            <Lock className="w-8 h-8 text-primary-dark" />
-                        </div>
-                        <h3 className="text-xl font-black text-primary-dark mb-2">Recurso Premium</h3>
-                        <p className="text-sm text-gray-600 mb-6">A exportação de relatórios em PDF está disponível apenas para assinantes PRO.</p>
-                        <button 
-                            onClick={() => navigate('/premium')}
-                            className="bg-accent text-primary-dark font-black px-8 py-3 rounded-2xl flex items-center gap-2 shadow-lg hover:scale-105 transition-transform"
-                        >
-                            <Crown className="w-5 h-5" /> Ver Planos
-                        </button>
-                    </div>
-                )}
-
                 <div className="w-full">
                     <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência do Mês</label>
                     <select value={selectedOptionIndex} onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))} className={commonInputStyles}>

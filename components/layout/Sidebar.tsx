@@ -3,7 +3,7 @@ import React from 'react';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Home, List, Settings, FileText, LogOut, X, User, CalendarDays, Crown } from 'lucide-react';
+import { Home, List, Settings, FileText, LogOut, X, User, CalendarDays } from 'lucide-react';
 import Jornada360Icon from '../ui/Jornada360Icon';
 
 const NavItem = ({ icon: Icon, label, path, onClick, highlight = false }: { icon: any, label: string, path?: string, onClick?: () => void, highlight?: boolean }) => {
@@ -22,7 +22,7 @@ const NavItem = ({ icon: Icon, label, path, onClick, highlight = false }: { icon
 };
 
 const Sidebar: React.FC<{ isOpen: boolean; setIsOpen: (isOpen: boolean) => void; }> = ({ isOpen, setIsOpen }) => {
-    const { signOut, isPro } = useAuth();
+    const { signOut } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -55,12 +55,6 @@ const Sidebar: React.FC<{ isOpen: boolean; setIsOpen: (isOpen: boolean) => void;
                     <NavItem icon={Settings} label="Configurações" path="/settings" onClick={() => setIsOpen(false)}/>
                     <NavItem icon={FileText} label="Exportar PDF" path="/reports" onClick={() => setIsOpen(false)}/>
                     <NavItem icon={User} label="Meu Perfil" path="/profile" onClick={() => setIsOpen(false)}/>
-                    
-                    {!isPro && (
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                            <NavItem icon={Crown} label="Seja Premium Pro" path="/premium" highlight={true} onClick={() => setIsOpen(false)}/>
-                        </div>
-                    )}
                 </nav>
 
                 <div>

@@ -2,13 +2,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
-import { Menu, User as UserIcon, Home, Loader2, Plus, Crown } from 'lucide-react';
+import { Menu, User as UserIcon, Home, Loader2, Plus } from 'lucide-react';
 // @ts-ignore
 import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 
 const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
-    const { user, updateUserMetadata, isPro } = useAuth();
+    const { user, updateUserMetadata } = useAuth();
     const { toast } = useToast();
     const location = useLocation();
     
@@ -80,7 +80,7 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
                 <div className="flex items-center gap-4">
                     <div 
                         onClick={handleAvatarClick}
-                        className={`w-14 h-14 rounded-full bg-primary-light flex items-center justify-center text-primary-dark overflow-hidden cursor-pointer relative border-2 ${isPro ? 'border-accent shadow-[0_0_10px_rgba(248,196,0,0.4)]' : 'border-transparent'} hover:border-accent transition-all ${uploading ? 'opacity-70' : ''}`}
+                        className={`w-14 h-14 rounded-full bg-primary-light flex items-center justify-center text-primary-dark overflow-hidden cursor-pointer relative border-2 border-transparent hover:border-accent transition-all ${uploading ? 'opacity-70' : ''}`}
                     >
                        {uploading ? (
                            <Loader2 className="w-6 h-6 animate-spin text-primary-dark" />
@@ -93,11 +93,10 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
-                            Olá, {isPro && <Crown className="w-3 h-3 text-accent fill-accent" />}
+                            Olá,
                         </p>
                         <div className="flex items-center gap-2">
                             <p className="text-xl font-bold">{userName}</p>
-                            {isPro && <span className="text-[10px] bg-accent text-primary-dark font-black px-1.5 py-0.5 rounded uppercase">Pro</span>}
                         </div>
                     </div>
                 </div>
