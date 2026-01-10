@@ -84,9 +84,14 @@ const UpdatePasswordPage: React.FC = () => {
             toast({ title: "Erro ao atualizar", description: updateError.message, variant: 'destructive' });
             setSaving(false);
         } else {
-            toast({ title: "Sucesso!", description: "Sua senha foi atualizada. Faça login novamente." });
-            await supabase.auth.signOut();
-            navigate('/login');
+            toast({ 
+                title: "Sucesso!", 
+                description: "Sua senha foi atualizada. Bem-vindo de volta ao Jornada360!" 
+            });
+            
+            // O usuário já está autenticado via token de recuperação.
+            // Redirecionamos direto para a Home. O App.tsx cuidará de mandar para o Onboarding se necessário.
+            navigate('/', { replace: true });
         }
     };
 
