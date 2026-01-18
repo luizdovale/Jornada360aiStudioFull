@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 // @ts-ignore
 import { HashRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -23,45 +23,66 @@ import ProfilePage from './pages/ProfilePage';
 import CalendarPage from './pages/CalendarPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { Toaster } from './components/ui/Toaster';
+import { Loader2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
     const { user, loading: authLoading } = useAuth();
     const { settings, loading: journeyLoading } = useJourneys();
     const navigate = useNavigate();
     const location = useLocation();
+    
+    // Verificação SÍNCRONA de token para evitar 404 imediato
+    const hasRecoveryToken = useMemo(() => {
+        const hash = window.location.hash;
+        return hash.includes('access_token=') || hash.includes('type=recovery');
+    }, []);
 
-    // LÓGICA DE RESGATE DE TOKEN (SUPABASE + HASHROUTER)
+    const [isIntercepting, setIsIntercepting] = useState(hasRecoveryToken);
+
     useEffect(() => {
-        const handleInitialHash = async () => {
+        if (hasRecoveryToken) {
+            console.log("Token de recuperação detectado. Redirecionando internamente...");
             const hash = window.location.hash;
+            const rawParams = hash.includes('?') ? hash.split('?')[1] : hash.replace(/^#\/?/, '');
             
-            if (hash.includes('access_token=') && !hash.includes('/password-reset')) {
-                const params = hash.startsWith('#/') ? hash.split('?')[1] : hash.replace('#', '');
-                if (params) {
-                    navigate(`/password-reset?${params}`, { replace: true });
-                }
-            }
-        };
+            // Forçamos a navegação para a rota correta do React
+            navigate(`/password-reset?${rawParams}`, { replace: true });
+            
+            // Pequeno delay para o Router processar a nova rota antes de tirar o loader
+            const timer = setTimeout(() => setIsIntercepting(false), 500);
+            return () => clearTimeout(timer);
+        }
+    }, [hasRecoveryToken, navigate]);
 
-        handleInitialHash();
-
+    // Escuta eventos globais de auth (caso o token seja processado pelo SDK em background)
+    useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
             if (event === 'PASSWORD_RECOVERY') {
-                navigate('/password-reset');
+                navigate('/password-reset', { replace: true });
+                setIsIntercepting(false);
             }
         });
-
         return () => subscription.unsubscribe();
     }, [navigate]);
 
-    // Redirecionamento para Onboarding
+    // Lógica de Onboarding
     useEffect(() => {
         const isPublicRoute = ['/login', '/cadastro', '/recuperar-senha', '/password-reset'].includes(location.pathname);
-        
         if (!authLoading && !journeyLoading && user && !settings && !isPublicRoute) {
             navigate('/onboarding');
         }
     }, [user, settings, authLoading, journeyLoading, location.pathname, navigate]);
+
+    // Se estiver interceptando o token ou em carregamento crítico, mostra o Loader Global
+    if (isIntercepting || (authLoading && !user)) {
+        return (
+            <div className="min-h-screen bg-primary flex flex-col items-center justify-center p-6 text-center">
+                <Loader2 className="w-12 h-12 text-accent animate-spin mb-4" />
+                <p className="text-white font-medium">Validando sua identidade...</p>
+                <p className="text-white/40 text-[10px] mt-2 italic">Acesso seguro Jornada360</p>
+            </div>
+        );
+    }
 
     return (
         <Routes>

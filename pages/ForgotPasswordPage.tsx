@@ -17,8 +17,8 @@ const ForgotPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // Ao usar HashRouter, o melhor é redirecionar para a raiz.
-        // O Supabase enviará: seu-site.com/#access_token=...&type=recovery
+        // Apontamos para a raiz. O Supabase anexará o token como fragmento (#access_token=...)
+        // O App.tsx cuidará de capturar esse fragmento antes que o Router o interprete errado.
         const redirectTo = window.location.origin;
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -30,7 +30,7 @@ const ForgotPasswordPage: React.FC = () => {
         if (error) {
             toast({ title: "Erro", description: error.message, variant: 'destructive' });
         } else {
-            toast({ title: "Email enviado!", description: "Verifique sua caixa de entrada." });
+            toast({ title: "Email enviado!", description: "Verifique sua caixa de entrada para redefinir sua senha." });
             setSent(true);
         }
     };
@@ -83,7 +83,7 @@ const ForgotPasswordPage: React.FC = () => {
                                     disabled={loading}
                                     className="w-full bg-accent text-primary-dark font-black py-4 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
-                                    {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Enviar Link de Acesso'}
+                                    {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Enviar Link de Recuperação'}
                                 </button>
                             </form>
                         </>
