@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 // @ts-ignore
 import { HashRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -33,46 +33,47 @@ const AppContent: React.FC = () => {
     
     const [isIntercepting, setIsIntercepting] = useState(false);
 
-    // ESCUDO DE INTERCEPTAÇÃO DE TOKEN (Executa apenas na montagem inicial)
+    // INTERCEPTADOR DE SESSÃO MANUAL
     useEffect(() => {
-        const hash = window.location.hash;
-        
-        // Verifica se a URL contém um token do Supabase mas NÃO está na rota do React
-        // Exemplo de problema: /#access_token=...
-        // Formato corrigido: /#/password-reset#access_token=...
-        if (hash.includes('access_token=') && !hash.includes('/password-reset')) {
-            console.log("Detectado token de recuperação fora da rota. Corrigindo...");
-            setIsIntercepting(true);
+        const handleAuthToken = async () => {
+            const hash = window.location.hash;
             
-            // Remove o # inicial e reconstrói a URL para o HashRouter
-            const cleanHash = hash.replace(/^#/, '');
-            
-            // O segredo aqui é manter o token visível para o Supabase Client
-            // mas colocar o caminho do React Router antes dele.
-            window.location.hash = `#/password-reset#${cleanHash}`;
-            
-            // Dá tempo para o navegador processar a mudança de hash antes de liberar a renderização
-            const timer = setTimeout(() => {
-                setIsIntercepting(false);
-            }, 500);
-            return () => clearTimeout(timer);
-        }
-    }, []);
+            // Verifica se há um token de acesso na URL (formato do Supabase: #access_token=...)
+            if (hash.includes('access_token=') || hash.includes('type=recovery')) {
+                setIsIntercepting(true);
+                console.log("Token detectado. Iniciando validação manual...");
 
-    // Monitor de eventos do Supabase
-    useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log("Auth Event:", event);
-            if (event === 'PASSWORD_RECOVERY') {
-                // Se o evento disparar, garantimos que estamos na página certa
-                if (window.location.hash.includes('password-reset')) {
-                    setIsIntercepting(false);
-                } else {
-                    navigate('/password-reset', { replace: true });
+                try {
+                    // Extrai os parâmetros do hash transformando-o em uma query string legível
+                    const searchParams = new URLSearchParams(hash.replace(/^#\/?/, '').replace('#', '&'));
+                    const accessToken = searchParams.get('access_token');
+                    const refreshToken = searchParams.get('refresh_token');
+
+                    if (accessToken && refreshToken) {
+                        // Força o Supabase a aceitar essa sessão
+                        const { error } = await supabase.auth.setSession({
+                            access_token: accessToken,
+                            refresh_token: refreshToken
+                        });
+
+                        if (!error) {
+                            console.log("Sessão injetada com sucesso.");
+                            // Limpa a URL e vai para a página de troca de senha dentro do Router
+                            navigate('/password-reset', { replace: true });
+                        } else {
+                            console.error("Erro ao injetar sessão:", error.message);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Erro no processamento do token:", err);
+                } finally {
+                    // Pequeno delay para garantir que o navigate foi processado
+                    setTimeout(() => setIsIntercepting(false), 800);
                 }
             }
-        });
-        return () => subscription.unsubscribe();
+        };
+
+        handleAuthToken();
     }, [navigate]);
 
     // Redirecionamento para Onboarding
@@ -83,7 +84,7 @@ const AppContent: React.FC = () => {
         }
     }, [user, settings, authLoading, journeyLoading, location.pathname, navigate]);
 
-    // Carregamento Global
+    // Carregamento Global / Interceptação
     if (isIntercepting || (authLoading && !user && !window.location.hash.includes('access_token'))) {
         return (
             <div className="min-h-screen bg-primary flex flex-col items-center justify-center p-6 text-center">
@@ -93,8 +94,8 @@ const AppContent: React.FC = () => {
                         <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                     </div>
                 </div>
-                <p className="text-white font-bold tracking-tight">AUTENTICANDO ACESSO</p>
-                <p className="text-white/40 text-[10px] mt-2 uppercase tracking-widest">Segurança Jornada360</p>
+                <p className="text-white font-bold tracking-tight">VALIDANDO IDENTIDADE</p>
+                <p className="text-white/40 text-[10px] mt-2 uppercase tracking-widest">Acesso Seguro Jornada360</p>
             </div>
         );
     }
