@@ -4,7 +4,7 @@
   </a>
 </p>
 
-[![Website](https://img.shields.io/badge/Acessar-Jornada360-0ea5e9?style=for-the-badge)](https://jornada360ai-studio-full.vercel.app)
+[![Website](https://img.shields.io/badge/Acessar-Jornada360-0ea5e9?style=for-the-badge)](https://jornada360.vercel.app)
 [![Stack](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge)]()
 [![Stack](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge)]()
 [![Stack](https://img.shields.io/badge/TailwindCSS-3-38bdf8?style=for-the-badge)]()
@@ -23,7 +23,7 @@ A proposta do projeto é entregar uma UI limpa, responsiva e otimizada, servindo
 ## 🌐 Acesso ao Site
 
 👉 **Site oficial do projeto:**  
-https://jornada360ai-studio-full.vercel.app/
+https://jornada360.vercel.app/
 
 ---
 
