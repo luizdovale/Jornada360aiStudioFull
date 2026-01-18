@@ -31,41 +31,51 @@ const AppContent: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     
-    // Verificação SÍNCRONA de token para evitar 404 imediato
-    const hasRecoveryToken = useMemo(() => {
-        const hash = window.location.hash;
-        return hash.includes('access_token=') || hash.includes('type=recovery');
-    }, []);
+    const [isIntercepting, setIsIntercepting] = useState(false);
 
-    const [isIntercepting, setIsIntercepting] = useState(hasRecoveryToken);
-
+    // ESCUDO DE INTERCEPTAÇÃO DE TOKEN (Executa apenas na montagem inicial)
     useEffect(() => {
-        if (hasRecoveryToken) {
-            console.log("Token de recuperação detectado. Redirecionando internamente...");
-            const hash = window.location.hash;
-            const rawParams = hash.includes('?') ? hash.split('?')[1] : hash.replace(/^#\/?/, '');
+        const hash = window.location.hash;
+        
+        // Verifica se a URL contém um token do Supabase mas NÃO está na rota do React
+        // Exemplo de problema: /#access_token=...
+        // Formato corrigido: /#/password-reset#access_token=...
+        if (hash.includes('access_token=') && !hash.includes('/password-reset')) {
+            console.log("Detectado token de recuperação fora da rota. Corrigindo...");
+            setIsIntercepting(true);
             
-            // Forçamos a navegação para a rota correta do React
-            navigate(`/password-reset?${rawParams}`, { replace: true });
+            // Remove o # inicial e reconstrói a URL para o HashRouter
+            const cleanHash = hash.replace(/^#/, '');
             
-            // Pequeno delay para o Router processar a nova rota antes de tirar o loader
-            const timer = setTimeout(() => setIsIntercepting(false), 500);
+            // O segredo aqui é manter o token visível para o Supabase Client
+            // mas colocar o caminho do React Router antes dele.
+            window.location.hash = `#/password-reset#${cleanHash}`;
+            
+            // Dá tempo para o navegador processar a mudança de hash antes de liberar a renderização
+            const timer = setTimeout(() => {
+                setIsIntercepting(false);
+            }, 500);
             return () => clearTimeout(timer);
         }
-    }, [hasRecoveryToken, navigate]);
+    }, []);
 
-    // Escuta eventos globais de auth (caso o token seja processado pelo SDK em background)
+    // Monitor de eventos do Supabase
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log("Auth Event:", event);
             if (event === 'PASSWORD_RECOVERY') {
-                navigate('/password-reset', { replace: true });
-                setIsIntercepting(false);
+                // Se o evento disparar, garantimos que estamos na página certa
+                if (window.location.hash.includes('password-reset')) {
+                    setIsIntercepting(false);
+                } else {
+                    navigate('/password-reset', { replace: true });
+                }
             }
         });
         return () => subscription.unsubscribe();
     }, [navigate]);
 
-    // Lógica de Onboarding
+    // Redirecionamento para Onboarding
     useEffect(() => {
         const isPublicRoute = ['/login', '/cadastro', '/recuperar-senha', '/password-reset'].includes(location.pathname);
         if (!authLoading && !journeyLoading && user && !settings && !isPublicRoute) {
@@ -73,13 +83,18 @@ const AppContent: React.FC = () => {
         }
     }, [user, settings, authLoading, journeyLoading, location.pathname, navigate]);
 
-    // Se estiver interceptando o token ou em carregamento crítico, mostra o Loader Global
-    if (isIntercepting || (authLoading && !user)) {
+    // Carregamento Global
+    if (isIntercepting || (authLoading && !user && !window.location.hash.includes('access_token'))) {
         return (
             <div className="min-h-screen bg-primary flex flex-col items-center justify-center p-6 text-center">
-                <Loader2 className="w-12 h-12 text-accent animate-spin mb-4" />
-                <p className="text-white font-medium">Validando sua identidade...</p>
-                <p className="text-white/40 text-[10px] mt-2 italic">Acesso seguro Jornada360</p>
+                <div className="relative">
+                    <Loader2 className="w-12 h-12 text-accent animate-spin mb-4" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                    </div>
+                </div>
+                <p className="text-white font-bold tracking-tight">AUTENTICANDO ACESSO</p>
+                <p className="text-white/40 text-[10px] mt-2 uppercase tracking-widest">Segurança Jornada360</p>
             </div>
         );
     }
