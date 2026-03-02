@@ -7,7 +7,7 @@ import { useToast } from '../../hooks/useToast';
 import { Journey } from '../../types';
 import {
     Play, Coffee, CheckCircle2, Square, Edit2,
-    AlertTriangle, AlertCircle, Clock, Plus, ChevronRight
+    AlertTriangle, AlertCircle, Clock, Plus, ChevronRight, Map
 } from 'lucide-react';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
@@ -104,6 +104,8 @@ const TodayJourneyWidget: React.FC = () => {
     const { toast } = useToast();
 
     const [loading, setLoading] = useState(false);
+    const [isEnteringKm, setIsEnteringKm] = useState(false);
+    const [tempKm, setTempKm] = useState('');
     const [, setTick] = useState(0); // força re-render a cada minuto para alertas
 
     // Atualiza a cada minuto para os alertas ficarem em tempo real
@@ -147,6 +149,11 @@ const TodayJourneyWidget: React.FC = () => {
     // ── Ações dos botões ─────────────────────────────────────────────────────
 
     const handleIniciarJornada = async () => {
+        if (settings?.km_enabled && !isEnteringKm) {
+            setIsEnteringKm(true);
+            return;
+        }
+
         setLoading(true);
         const now = getNowTime();
         await addJourney({
@@ -160,12 +167,14 @@ const TodayJourneyWidget: React.FC = () => {
             is_feriado: false,
             is_day_off: false,
             is_plantao: false,
-            km_start: 0,
+            km_start: tempKm ? Number(tempKm.replace(',', '.')) : 0,
             km_end: 0,
             deliveries: 0,
             rv_number: '',
             notes: '',
         });
+        setIsEnteringKm(false);
+        setTempKm('');
         setLoading(false);
     };
 
@@ -189,9 +198,19 @@ const TodayJourneyWidget: React.FC = () => {
     };
 
     const handleEncerrar = async () => {
-        if (!todayJourney) return;
+        if (settings?.km_enabled && !isEnteringKm) {
+            setIsEnteringKm(true);
+            return;
+        }
+
         setLoading(true);
-        await updateJourney({ ...todayJourney, end_at: getNowTime() });
+        await updateJourney({
+            ...todayJourney!,
+            end_at: getNowTime(),
+            km_end: tempKm ? Number(tempKm.replace(',', '.')) : (todayJourney?.km_end || 0)
+        });
+        setIsEnteringKm(false);
+        setTempKm('');
         setLoading(false);
     };
 
@@ -237,21 +256,56 @@ const TodayJourneyWidget: React.FC = () => {
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Hoje</p>
                         <p className="text-sm font-bold text-gray-800">Nenhuma jornada iniciada</p>
                     </div>
-                    <button
-                        onClick={() => navigate('/journeys/new')}
-                        className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
-                    >
-                        Manual <ChevronRight className="w-3 h-3" />
-                    </button>
+                    {!isEnteringKm && (
+                        <button
+                            onClick={() => navigate('/journeys/new')}
+                            className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
+                        >
+                            Manual <ChevronRight className="w-3 h-3" />
+                        </button>
+                    )}
                 </div>
-                <button
-                    onClick={handleIniciarJornada}
-                    disabled={loading}
-                    className="w-full bg-[#1c3152] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50"
-                >
-                    <Play className="w-4 h-4" />
-                    {loading ? 'Iniciando...' : 'Iniciar Jornada'}
-                </button>
+
+                {isEnteringKm ? (
+                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="relative">
+                            <Map className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                                type="text"
+                                inputMode="decimal"
+                                placeholder="KM Inicial (Opcional)"
+                                value={tempKm}
+                                onChange={(e) => setTempKm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1c3152] focus:border-transparent outline-none text-sm transition-all"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => { setIsEnteringKm(false); setTempKm(''); }}
+                                className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl text-sm hover:bg-gray-200 transition-all"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleIniciarJornada}
+                                disabled={loading}
+                                className="flex-[2] bg-[#1c3152] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50"
+                            >
+                                {loading ? 'Iniciando...' : 'Confirmar Início'}
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        onClick={handleIniciarJornada}
+                        disabled={loading}
+                        className="w-full bg-[#1c3152] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50"
+                    >
+                        <Play className="w-4 h-4" />
+                        {loading ? 'Iniciando...' : 'Iniciar Jornada'}
+                    </button>
+                )}
             </div>
         );
     }
@@ -366,14 +420,46 @@ const TodayJourneyWidget: React.FC = () => {
             </div>
 
             {/* Botão de ação principal */}
-            <button
-                onClick={config.action}
-                disabled={loading}
-                className={`w-full ${config.color} text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] disabled:opacity-50`}
-            >
-                <config.Icon className="w-4 h-4" />
-                {loading ? 'Salvando...' : config.label}
-            </button>
+            {isEnteringKm && step === 'meal_ended' ? (
+                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="relative">
+                        <Map className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="KM Final (Opcional)"
+                            value={tempKm}
+                            onChange={(e) => setTempKm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none text-sm transition-all"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => { setIsEnteringKm(false); setTempKm(''); }}
+                            className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl text-sm hover:bg-gray-200 transition-all"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleEncerrar}
+                            disabled={loading}
+                            className="flex-[2] bg-red-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50"
+                        >
+                            {loading ? 'Encerrando...' : 'Confirmar Fim'}
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <button
+                    onClick={config.action}
+                    disabled={loading}
+                    className={`w-full ${config.color} text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] disabled:opacity-50`}
+                >
+                    <config.Icon className="w-4 h-4" />
+                    {loading ? 'Salvando...' : config.label}
+                </button>
+            )}
         </div>
     );
 };
