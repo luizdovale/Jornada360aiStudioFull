@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useToast } from '../hooks/useToast';
 import { Journey } from '../types';
-import { X, Coffee, Clock, Map, FileText, Calendar, Check, ArrowLeft, Shield, Package } from 'lucide-react';
+import { X, Coffee, Clock, Map, FileText, Calendar, Check, ArrowLeft, Shield, Package, FileInput } from 'lucide-react';
 
 const DRAFT_KEY = 'jornada360_journey_draft';
 
@@ -54,7 +54,7 @@ const JourneyFormPage: React.FC = () => {
                 }
             }
         }
-        
+
         return {
             date: getTodayString(),
             start_at: '08:00',
@@ -75,6 +75,12 @@ const JourneyFormPage: React.FC = () => {
     });
 
     const [loading, setLoading] = useState(false);
+    const [draftRestored, setDraftRestored] = useState(() => {
+        // Só considera restaurado se não for edição e existir rascunho salvo
+        if (isEditing) return false;
+        const savedDraft = localStorage.getItem(DRAFT_KEY);
+        return !!savedDraft;
+    });
 
     useEffect(() => {
         if (!isEditing) {
@@ -109,7 +115,7 @@ const JourneyFormPage: React.FC = () => {
 
     const handleChange = (e: any) => {
         const { name, value, type, checked } = e.target;
-        
+
         setFormData(prev => {
             let nextState = { ...prev, [name]: type === 'checkbox' ? checked : value };
 
@@ -117,7 +123,7 @@ const JourneyFormPage: React.FC = () => {
             if (name === 'is_day_off' && checked) {
                 nextState.is_plantao = false;
             }
-            
+
             // Se marcar Plantão, desmarca Folga mas MANTÉM Feriado se já estiver marcado
             if (name === 'is_plantao' && checked) {
                 nextState.is_day_off = false;
@@ -136,7 +142,7 @@ const JourneyFormPage: React.FC = () => {
         const ms = timeToMinutes(formData.meal_start);
         const me = timeToMinutes(formData.meal_end);
         let calculatedMealDuration = me - ms;
-        if (calculatedMealDuration < 0) calculatedMealDuration += 24 * 60; 
+        if (calculatedMealDuration < 0) calculatedMealDuration += 24 * 60;
 
         const hideDetails = formData.is_day_off || formData.is_plantao;
 
@@ -198,6 +204,43 @@ const JourneyFormPage: React.FC = () => {
                     {isEditing ? 'Editar Jornada' : 'Nova Jornada'}
                 </h1>
             </div>
+
+            {/* Banner de rascunho restaurado */}
+            {draftRestored && !isEditing && (
+                <div className="mb-4 flex items-center justify-between gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-2">
+                        <FileInput className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                        <span className="text-sm font-semibold text-blue-700">Rascunho restaurado. Seus dados foram mantidos.</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            localStorage.removeItem(DRAFT_KEY);
+                            setFormData({
+                                date: getTodayString(),
+                                start_at: '08:00',
+                                end_at: '17:00',
+                                meal_start: '12:00',
+                                meal_end: '13:00',
+                                meal_duration: 60,
+                                rest_duration: '',
+                                is_feriado: false,
+                                is_day_off: false,
+                                is_plantao: false,
+                                km_start: '',
+                                km_end: '',
+                                deliveries: '',
+                                rv_number: '',
+                                notes: '',
+                            });
+                            setDraftRestored(false);
+                        }}
+                        className="text-xs font-bold text-blue-500 hover:text-blue-700 whitespace-nowrap flex-shrink-0"
+                    >
+                        Descartar
+                    </button>
+                </div>
+            )}
 
             <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-soft w-full box-border">
                 <form id="journey-form" onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">

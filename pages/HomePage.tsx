@@ -9,6 +9,8 @@ import Skeleton from '../components/ui/Skeleton';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
 import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft, Map, Clock, Edit2, Trash2, ChevronDown, Coffee, FileText, StickyNote, Package, Shield, Moon } from 'lucide-react';
 import { MonthSummary, Journey } from '../types';
+import TodayJourneyWidget from '../components/ui/TodayJourneyWidget';
+import IncompleteJourneysAlert, { detectIncomplete } from '../components/ui/IncompleteJourneysAlert';
 
 const SummaryItem: React.FC<{ label: string; value: string; colorClass?: string }> = ({ label, value, colorClass = 'text-white' }) => (
     <div className="flex flex-col items-center text-center">
@@ -27,20 +29,20 @@ const ActionCard: React.FC<{ icon: React.ElementType; title: string; subtitle: s
     </button>
 );
 
-const RecentJourneyItem: React.FC<{ 
-    journey: Journey, 
-    isExpanded: boolean, 
+const RecentJourneyItem: React.FC<{
+    journey: Journey,
+    isExpanded: boolean,
     onToggle: () => void,
-    onDelete: (id: string) => void 
+    onDelete: (id: string) => void
 }> = ({ journey, isExpanded, onToggle, onDelete }) => {
     const { settings } = useJourneys();
     const navigate = useNavigate();
-    
+
     if (!settings) return null;
-    
+
     const calcs = calculateJourney(journey, settings);
     const date = new Date(journey.date + 'T00:00:00');
-    
+
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
         navigate(`/journeys/edit/${journey.id}`);
@@ -52,11 +54,11 @@ const RecentJourneyItem: React.FC<{
     };
 
     return (
-        <div 
+        <div
             className={`w-full bg-white rounded-2xl shadow-soft border border-transparent transition-all duration-300 ${isExpanded ? 'ring-1 ring-primary/10 shadow-md' : 'hover:shadow-md'}`}
         >
             {/* Header do Item */}
-            <button 
+            <button
                 onClick={onToggle}
                 className="w-full text-left flex items-center justify-between p-3 outline-none"
             >
@@ -70,7 +72,7 @@ const RecentJourneyItem: React.FC<{
                         {journey.is_day_off ? (
                             <p className="text-xs text-red-600 font-bold uppercase tracking-tighter">FOLGA</p>
                         ) : journey.is_plantao ? (
-                            <p className="text-xs text-blue-600 font-bold uppercase tracking-tighter flex items-center gap-1"><Shield className="w-3 h-3"/> PLANTÃO</p>
+                            <p className="text-xs text-blue-600 font-bold uppercase tracking-tighter flex items-center gap-1"><Shield className="w-3 h-3" /> PLANTÃO</p>
                         ) : (
                             <p className="text-xs text-muted-foreground">{formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas</p>
                         )}
@@ -97,7 +99,7 @@ const RecentJourneyItem: React.FC<{
                                 <p className="text-[10px] text-muted-foreground uppercase font-bold">Extra 100%</p>
                                 <p className="text-sm font-bold text-yellow-600">{formatMinutesToHours(calcs.horasExtras100)}</p>
                             </div>
-                             <div className="bg-gray-50 p-2 rounded-xl text-center">
+                            <div className="bg-gray-50 p-2 rounded-xl text-center">
                                 <p className="text-[10px] text-muted-foreground uppercase font-bold">Noturno (Red.)</p>
                                 <p className="text-sm font-bold text-indigo-600">{formatMinutesToHours(calcs.adicionalNoturno)}</p>
                             </div>
@@ -106,7 +108,7 @@ const RecentJourneyItem: React.FC<{
                                     <p className="text-[10px] text-muted-foreground uppercase font-bold">KM Rodados</p>
                                     <p className="text-sm font-bold text-primary-dark">{calcs.kmRodados.toFixed(1)} km</p>
                                 </div>
-                            ) : <div className="bg-gray-50 p-2 rounded-xl text-center flex items-center justify-center"><Clock className="w-4 h-4 text-muted-foreground opacity-30"/></div>}
+                            ) : <div className="bg-gray-50 p-2 rounded-xl text-center flex items-center justify-center"><Clock className="w-4 h-4 text-muted-foreground opacity-30" /></div>}
                         </div>
                     ) : (
                         settings.km_enabled && calcs.kmRodados > 0 && (
@@ -120,7 +122,7 @@ const RecentJourneyItem: React.FC<{
                     {/* Detalhes de Texto */}
                     <div className="space-y-2 text-xs text-muted-foreground">
                         {journey.deliveries !== undefined && journey.deliveries > 0 && (
-                             <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
                                 <Package className="w-3.5 h-3.5 text-primary" />
                                 <span>Entregas: <strong>{journey.deliveries}</strong></span>
                             </div>
@@ -147,13 +149,13 @@ const RecentJourneyItem: React.FC<{
 
                     {/* Botões de Ação */}
                     <div className="flex gap-2 pt-2 border-t border-gray-50">
-                        <button 
+                        <button
                             onClick={handleEdit}
                             className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"
                         >
                             <Edit2 className="w-3.5 h-3.5" /> Editar
                         </button>
-                        <button 
+                        <button
                             onClick={handleDelete}
                             className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors"
                         >
@@ -211,9 +213,11 @@ const HomePage: React.FC = () => {
             .slice(0, 3);
     }, [journeys]);
 
+    const incompleteJourneys = useMemo(() => detectIncomplete(journeys), [journeys]);
+
     const summary: MonthSummary = useMemo(() => {
         if (!settings || !displayDate) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, adicionalNoturno: 0, kmRodados: 0, totalDiasTrabalhados: 0, totalDeliveries: 0 };
-        
+
         const accountingJourneys = getJourneysForDisplayMonth(journeys, displayDate, settings);
         const accountingSummary = getMonthSummary(accountingJourneys, settings);
 
@@ -243,7 +247,7 @@ const HomePage: React.FC = () => {
             return newDate;
         });
     };
-    
+
     const isCurrentAccountingMonth = () => {
         if (!settings || !displayDate) return false;
         const now = new Date();
@@ -253,7 +257,7 @@ const HomePage: React.FC = () => {
             currentMonthStartDate.setMonth(currentMonthStartDate.getMonth() - 1);
         }
         return currentMonthStartDate.getFullYear() === displayDate.getFullYear() &&
-               currentMonthStartDate.getMonth() === displayDate.getMonth();
+            currentMonthStartDate.getMonth() === displayDate.getMonth();
     };
 
     const toggleJourney = (id: string) => {
@@ -271,7 +275,7 @@ const HomePage: React.FC = () => {
             setJourneyToDelete(null);
         }
     };
-    
+
     if (loading || !displayDate) {
         return (
             <div className="-mt-16 space-y-5 pb-4">
@@ -279,25 +283,25 @@ const HomePage: React.FC = () => {
             </div>
         );
     }
-    
+
     const formattedMonth = displayDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
     const formattedCalendarMonth = displayDate.toLocaleDateString('pt-BR', { month: 'long' });
 
     return (
         <div className="-mt-16 space-y-5 pb-4">
-            <ConfirmationModal 
-                isOpen={isConfirmOpen} 
-                onClose={() => setIsConfirmOpen(false)} 
-                onConfirm={handleConfirmDelete} 
-                title="Excluir Jornada" 
-                message="Tem certeza que deseja apagar este registro?" 
+            <ConfirmationModal
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={handleConfirmDelete}
+                title="Excluir Jornada"
+                message="Tem certeza que deseja apagar este registro?"
             />
 
             <>
                 <OverlappingCard>
                     {settings ? (
                         <div className="space-y-4">
-                             <div className="flex items-center justify-between text-center mb-4">
+                            <div className="flex items-center justify-between text-center mb-4">
                                 <button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-white/10 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
                                 <div className="flex-1">
                                     <span className="text-card-label font-semibold text-accent uppercase flex items-center justify-center gap-1">
@@ -317,11 +321,11 @@ const HomePage: React.FC = () => {
                                 <SummaryItem label="100%" value={formatMinutesToHours(summary.horasExtras100)} colorClass="text-yellow-400" />
                                 <SummaryItem label="Noturno" value={formatMinutesToHours(summary.adicionalNoturno)} colorClass="text-indigo-400" />
                             </div>
-                            
+
                             {settings.km_enabled && (
                                 <>
                                     <div className="my-2 border-t border-white/10"></div>
-                                    
+
                                     <div className="flex items-center justify-between px-2 pt-1">
                                         <div className="flex items-center gap-2 text-accent/80">
                                             <Map className="w-4 h-4" />
@@ -342,19 +346,32 @@ const HomePage: React.FC = () => {
                     )}
                 </OverlappingCard>
 
+                {/* Widget de jornada rápida do dia */}
+                <div className="pt-2">
+                    <h3 className="text-lg font-bold text-primary-dark mb-3">Jornada de Hoje</h3>
+                    <TodayJourneyWidget />
+                </div>
+
                 <div className="pt-2 space-y-3">
                     <div className="flex justify-between items-center">
                         <h3 className="text-lg font-bold text-primary-dark">Últimas Jornadas</h3>
-                         {journeys.length > 3 && (
+                        {journeys.length > 3 && (
                             <button onClick={() => navigate('/journeys')} className="text-sm font-semibold text-primary hover:underline">Ver Todas</button>
                         )}
                     </div>
+
+                    {/* Alertas de jornadas incompletas */}
+                    {incompleteJourneys.length > 0 && (
+                        <div className="pt-2">
+                            <IncompleteJourneysAlert items={incompleteJourneys} />
+                        </div>
+                    )}
                     {recentJourneys.length > 0 ? (
                         <div className="space-y-3">
                             {recentJourneys.map(j => (
-                                <RecentJourneyItem 
-                                    key={j.id} 
-                                    journey={j} 
+                                <RecentJourneyItem
+                                    key={j.id}
+                                    journey={j}
                                     isExpanded={expandedJourneyId === j.id}
                                     onToggle={() => toggleJourney(j.id)}
                                     onDelete={handleDeleteRequest}
@@ -362,7 +379,7 @@ const HomePage: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                         <div className="text-center py-6 bg-white rounded-2xl shadow-soft flex flex-col items-center gap-3">
+                        <div className="text-center py-6 bg-white rounded-2xl shadow-soft flex flex-col items-center gap-3">
                             <ListChecks className="w-10 h-10 text-muted-foreground" />
                             <p className="text-sm text-muted-foreground">Nenhuma jornada registrada ainda.</p>
                             <button onClick={() => navigate('/journeys/new')} className="bg-accent text-primary-dark font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm">
@@ -373,7 +390,7 @@ const HomePage: React.FC = () => {
                 </div>
 
                 <div className="pt-2">
-                     <h3 className="text-lg font-bold text-primary-dark mb-3">Ações Rápidas</h3>
+                    <h3 className="text-lg font-bold text-primary-dark mb-3">Ações Rápidas</h3>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="relative">
                             <ActionCard icon={BarChart} title="Minhas Jornadas" subtitle="Ver histórico completo" onClick={() => navigate('/journeys')} />

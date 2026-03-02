@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-// @ts-ignore
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
-import { ArrowLeft, Mail, Loader2 } from 'lucide-react';
-import Jornada360Icon from '../components/ui/Jornada360Icon';
+import AuthLayout from '../components/layout/AuthLayout';
+import AuthInput from '../components/ui/AuthInput';
+import { ArrowLeft, Mail, Loader2, CheckCircle2 } from 'lucide-react';
 
 const ForgotPasswordPage: React.FC = () => {
     const { toast } = useToast();
@@ -17,87 +17,78 @@ const ForgotPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // Apontamos para a raiz. O Supabase anexará o token como fragmento (#access_token=...)
-        // O App.tsx cuidará de capturar esse fragmento antes que o Router o interprete errado.
         const redirectTo = window.location.origin;
 
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: redirectTo,
-        });
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
 
         setLoading(false);
 
         if (error) {
-            toast({ title: "Erro", description: error.message, variant: 'destructive' });
+            toast({ title: 'Erro', description: error.message, variant: 'destructive' });
         } else {
-            toast({ title: "Email enviado!", description: "Verifique sua caixa de entrada para redefinir sua senha." });
             setSent(true);
         }
     };
 
-    return (
-        <div className="min-h-screen bg-primary flex flex-col justify-center py-12 px-6">
-            <div className="max-w-sm mx-auto w-full">
-                <div className="mb-8 text-center flex flex-col items-center">
-                     <Jornada360Icon className="w-20 h-20 mb-4 text-accent" />
-                    <h1 className="text-2xl font-bold text-white">Recuperar Senha</h1>
-                </div>
-
-                <div className="bg-white rounded-3xl shadow-card p-8 space-y-6">
-                    {sent ? (
-                        <div className="text-center space-y-4">
-                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                                <Mail className="w-8 h-8 text-green-600" />
-                            </div>
-                            <h2 className="text-2xl font-bold text-primary-dark">Verifique seu E-mail</h2>
-                            <p className="text-muted-foreground text-sm">Enviamos instruções de recuperação para <strong>{email}</strong>.</p>
-                            <Link to="/login" className="block w-full bg-primary text-white py-4 rounded-2xl font-bold transition-all hover:bg-primary-dark">
-                                Voltar para o Login
-                            </Link>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="space-y-2">
-                                <h2 className="text-xl font-bold text-primary-dark">Esqueceu a senha?</h2>
-                                <p className="text-sm text-muted-foreground">Insira seu e-mail para receber um link de redefinição seguro.</p>
-                            </div>
-                            
-                            <form onSubmit={handlePasswordReset} className="space-y-5">
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">E-mail</label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                        <input
-                                            type="email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            required
-                                            className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-primary-dark focus:ring-2 focus:ring-accent outline-none transition-all"
-                                            placeholder="seu@email.com"
-                                        />
-                                    </div>
-                                </div>
-                                
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full bg-accent text-primary-dark font-black py-4 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                >
-                                    {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Enviar Link de Recuperação'}
-                                </button>
-                            </form>
-                        </>
-                    )}
-                </div>
-
-                <div className="mt-8 text-center">
-                    <Link to="/login" className="text-accent font-bold hover:underline inline-flex items-center gap-2">
-                        <ArrowLeft className="w-4 h-4" />
+    if (sent) {
+        return (
+            <AuthLayout title="Email Enviado!">
+                <div className="text-center space-y-4 py-2">
+                    <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto">
+                        <CheckCircle2 className="w-7 h-7 text-green-500" />
+                    </div>
+                    <p className="text-sm text-gray-500">
+                        Enviamos instruções de recuperação para{' '}
+                        <strong className="text-gray-800">{email}</strong>.
+                    </p>
+                    <Link
+                        to="/login"
+                        className="block w-full bg-[#1c3152] text-white font-bold py-3 rounded-xl text-sm text-center hover:brightness-110 transition-all active:scale-[0.98]"
+                    >
                         Voltar para o Login
                     </Link>
                 </div>
+            </AuthLayout>
+        );
+    }
+
+    return (
+        <AuthLayout
+            title="Recuperar Senha"
+            subtitle="Insira seu e-mail para receber um link de redefinição seguro"
+        >
+            <form onSubmit={handlePasswordReset} className="space-y-4">
+                <AuthInput
+                    id="email"
+                    label="E-mail"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                    required
+                    autoComplete="email"
+                    icon={<Mail className="w-4 h-4" />}
+                />
+
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full mt-2 bg-[#1c3152] text-white font-bold py-3 rounded-xl hover:brightness-110 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                >
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Enviar Link de Recuperação'}
+                </button>
+            </form>
+
+            <div className="mt-6 text-center">
+                <Link
+                    to="/login"
+                    className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Voltar para o Login
+                </Link>
             </div>
-        </div>
+        </AuthLayout>
     );
 };
 
