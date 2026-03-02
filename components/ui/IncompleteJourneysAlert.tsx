@@ -15,7 +15,7 @@ interface IncompleteJourney {
     missing: IncompleteField[];
 }
 
-const isBlank = (val?: string) => !val || val === '00:00';
+const isBlank = (val?: string) => !val || val === '00:00' || val === '00:00:00';
 
 export const detectIncomplete = (journeys: Journey[]): IncompleteJourney[] => {
     const cutoff = new Date();

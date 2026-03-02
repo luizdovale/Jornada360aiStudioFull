@@ -19,10 +19,18 @@ const getNowTime = () => {
     return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 };
 
+const isSet = (t?: string) => !!t && t !== '00:00' && t !== '00:00:00';
+
+const formatDisplayTime = (t?: string) => {
+    if (!isSet(t)) return '';
+    const parts = t!.split(':');
+    return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+};
+
 const timeToMinutes = (t?: string): number => {
-    if (!t || t === '00:00' || !t.includes(':')) return 0;
+    if (!isSet(t) || !t?.includes(':')) return 0;
     const [h, m] = t.split(':').map(Number);
-    return h * 60 + m;
+    return (h || 0) * 60 + (m || 0);
 };
 
 const minutesSince = (timeStr?: string): number => {
@@ -47,9 +55,9 @@ type JourneyStep = 'idle' | 'started' | 'meal_started' | 'meal_ended' | 'done';
 
 const getStep = (j?: Journey): JourneyStep => {
     if (!j) return 'idle';
-    if (j.end_at && j.end_at !== '00:00') return 'done';
-    if (j.meal_end && j.meal_end !== '00:00') return 'meal_ended';
-    if (j.meal_start && j.meal_start !== '00:00') return 'meal_started';
+    if (isSet(j.end_at)) return 'done';
+    if (isSet(j.meal_end)) return 'meal_ended';
+    if (isSet(j.meal_start)) return 'meal_started';
     return 'started';
 };
 
@@ -278,11 +286,11 @@ const TodayJourneyWidget: React.FC = () => {
                 {/* Timeline */}
                 <div className="flex items-start justify-between relative px-2 mb-1">
                     <div className="absolute top-4 left-6 right-6 h-px bg-gray-100 -z-0" />
-                    <TimelineEvent label="Início" time={todayJourney!.start_at} icon={<Play className="w-3 h-3" />} done />
-                    {todayJourney!.meal_start && todayJourney!.meal_start !== '00:00' && (
-                        <TimelineEvent label="Refeição" time={`${todayJourney!.meal_start} - ${todayJourney!.meal_end}`} icon={<Coffee className="w-3 h-3" />} done />
+                    <TimelineEvent label="Início" time={formatDisplayTime(todayJourney!.start_at)} icon={<Play className="w-3 h-3" />} done />
+                    {isSet(todayJourney!.meal_start) && (
+                        <TimelineEvent label="Refeição" time={`${formatDisplayTime(todayJourney!.meal_start)} - ${formatDisplayTime(todayJourney!.meal_end)}`} icon={<Coffee className="w-3 h-3" />} done />
                     )}
-                    <TimelineEvent label="Fim" time={todayJourney!.end_at} icon={<Square className="w-3 h-3" />} done />
+                    <TimelineEvent label="Fim" time={formatDisplayTime(todayJourney!.end_at)} icon={<Square className="w-3 h-3" />} done />
                 </div>
 
                 <div className="mt-3 bg-gray-50 rounded-xl px-3 py-2 text-center">
@@ -321,16 +329,16 @@ const TodayJourneyWidget: React.FC = () => {
             {/* Timer */}
             <div className="flex items-center gap-2 text-xs text-gray-500">
                 <Clock className="w-3.5 h-3.5" />
-                <span>Jornada iniciada há <strong className="text-gray-700">{formatHM(elapsedMins)}</strong> • desde <strong className="text-gray-700">{todayJourney!.start_at}</strong></span>
+                <span>Jornada iniciada há <strong className="text-gray-700">{formatHM(elapsedMins)}</strong> • desde <strong className="text-gray-700">{formatDisplayTime(todayJourney!.start_at)}</strong></span>
             </div>
 
             {/* Timeline */}
             <div className="flex items-start justify-between relative px-2">
                 <div className="absolute top-4 left-6 right-6 h-px bg-gray-100" />
-                <TimelineEvent label="Início" time={todayJourney!.start_at} icon={<Play className="w-3 h-3" />} done />
+                <TimelineEvent label="Início" time={formatDisplayTime(todayJourney!.start_at)} icon={<Play className="w-3 h-3" />} done />
                 <TimelineEvent
                     label="Refeição"
-                    time={todayJourney!.meal_start !== '00:00' ? todayJourney!.meal_start : undefined}
+                    time={isSet(todayJourney!.meal_start) ? formatDisplayTime(todayJourney!.meal_start) : undefined}
                     icon={<Coffee className="w-3 h-3" />}
                     done={step === 'meal_started' || step === 'meal_ended'}
                 />
