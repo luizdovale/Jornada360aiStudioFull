@@ -118,7 +118,7 @@ const TodayJourneyWidget: React.FC = () => {
 
     // ── Verifica alertas trabalhistas ────────────────────────────────────────
     const getAlerts = useCallback(() => {
-        if (!todayJourney || step === 'done') return [];
+        if (!todayJourney || step === 'done' || todayJourney.is_day_off) return [];
         const alerts: { type: 'warning' | 'danger'; message: string }[] = [];
 
         // Alerta de refeição (só se ainda não iniciou)
@@ -257,9 +257,29 @@ const TodayJourneyWidget: React.FC = () => {
     }
 
     // ────────────────────────────────────────────────────────────────────────
-    // Render: jornada CONCLUÍDA
+    // Render: jornada CONCLUÍDA ou FOLGA
     // ────────────────────────────────────────────────────────────────────────
-    if (step === 'done') {
+    if (step === 'done' || todayJourney?.is_day_off) {
+        if (todayJourney?.is_day_off) {
+            return (
+                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            <p className="text-sm font-bold text-gray-800">Hoje é sua folga 🌴</p>
+                        </div>
+                        <button
+                            onClick={() => navigate(`/journeys/edit/${todayJourney!.id}`)}
+                            className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#1c3152] transition-colors"
+                        >
+                            <Edit2 className="w-3.5 h-3.5" /> Editar
+                        </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2 italic">Aproveite o descanso!</p>
+                </div>
+            );
+        }
+
         const totalMins = (() => {
             const s = timeToMinutes(todayJourney!.start_at);
             const e = timeToMinutes(todayJourney!.end_at);
