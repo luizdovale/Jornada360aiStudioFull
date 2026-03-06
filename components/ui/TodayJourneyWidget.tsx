@@ -7,7 +7,7 @@ import { useToast } from '../../hooks/useToast';
 import { Journey } from '../../types';
 import {
     Play, Coffee, CheckCircle2, Square, Edit2,
-    AlertTriangle, AlertCircle, Clock, Plus, ChevronRight, Map
+    AlertTriangle, AlertCircle, Clock, Plus, ChevronRight, Map, Package, FileText
 } from 'lucide-react';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
@@ -106,6 +106,9 @@ const TodayJourneyWidget: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [isEnteringKm, setIsEnteringKm] = useState(false);
     const [tempKm, setTempKm] = useState('');
+    const [tempRv, setTempRv] = useState('');
+    const [tempDeliveries, setTempDeliveries] = useState('');
+    const [tempNotes, setTempNotes] = useState('');
     const [, setTick] = useState(0); // força re-render a cada minuto para alertas
 
     // Atualiza a cada minuto para os alertas ficarem em tempo real
@@ -169,12 +172,14 @@ const TodayJourneyWidget: React.FC = () => {
             is_plantao: false,
             km_start: tempKm ? Number(tempKm.replace(',', '.')) : 0,
             km_end: 0,
-            deliveries: 0,
-            rv_number: '',
+            deliveries: tempDeliveries ? Number(tempDeliveries) : 0,
+            rv_number: tempRv,
             notes: '',
         });
         setIsEnteringKm(false);
         setTempKm('');
+        setTempRv('');
+        setTempDeliveries('');
         setLoading(false);
     };
 
@@ -207,10 +212,12 @@ const TodayJourneyWidget: React.FC = () => {
         await updateJourney({
             ...todayJourney!,
             end_at: getNowTime(),
-            km_end: tempKm ? Number(tempKm.replace(',', '.')) : (todayJourney?.km_end || 0)
+            km_end: tempKm ? Number(tempKm.replace(',', '.')) : (todayJourney?.km_end || 0),
+            notes: tempNotes ? `${todayJourney?.notes ? todayJourney.notes + '\n' : ''}${tempNotes}` : todayJourney?.notes
         });
         setIsEnteringKm(false);
         setTempKm('');
+        setTempNotes('');
         setLoading(false);
     };
 
@@ -280,9 +287,30 @@ const TodayJourneyWidget: React.FC = () => {
                                 autoFocus
                             />
                         </div>
+                        <div className="relative">
+                            <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                                type="text"
+                                placeholder="Número da RV (Opcional)"
+                                value={tempRv}
+                                onChange={(e) => setTempRv(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1c3152] focus:border-transparent outline-none text-sm transition-all"
+                            />
+                        </div>
+                        <div className="relative">
+                            <Package className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                                type="number"
+                                inputMode="numeric"
+                                placeholder="Quantidade de Entregas (Opcional)"
+                                value={tempDeliveries}
+                                onChange={(e) => setTempDeliveries(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1c3152] focus:border-transparent outline-none text-sm transition-all"
+                            />
+                        </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => { setIsEnteringKm(false); setTempKm(''); }}
+                                onClick={() => { setIsEnteringKm(false); setTempKm(''); setTempRv(''); setTempDeliveries(''); }}
                                 className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl text-sm hover:bg-gray-200 transition-all"
                             >
                                 Cancelar
@@ -434,9 +462,18 @@ const TodayJourneyWidget: React.FC = () => {
                             autoFocus
                         />
                     </div>
+                    <div className="relative">
+                        <FileText className="absolute left-4 top-3 text-gray-400 w-4 h-4" />
+                        <textarea
+                            placeholder="Observações (Opcional)"
+                            value={tempNotes}
+                            onChange={(e) => setTempNotes(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none text-sm transition-all resize-none h-24"
+                        />
+                    </div>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => { setIsEnteringKm(false); setTempKm(''); }}
+                            onClick={() => { setIsEnteringKm(false); setTempKm(''); setTempNotes(''); }}
                             className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl text-sm hover:bg-gray-200 transition-all"
                         >
                             Cancelar
