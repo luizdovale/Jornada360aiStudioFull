@@ -24,6 +24,7 @@ import CalendarPage from './pages/CalendarPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { Toaster } from './components/ui/Toaster';
 import { Loader2 } from 'lucide-react';
+import SplashScreen from './components/ui/SplashScreen';
 
 const AppContent: React.FC = () => {
     const { user, loading: authLoading } = useAuth();
@@ -32,6 +33,15 @@ const AppContent: React.FC = () => {
     const location = useLocation();
     
     const [isIntercepting, setIsIntercepting] = useState(false);
+    const [showSplash, setShowSplash] = useState(true);
+
+    // Tempo mínimo para a Splash Screen
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowSplash(false);
+        }, 2000); // 2 segundos mínimo
+        return () => clearTimeout(timer);
+    }, []);
 
     // INTERCEPTADOR DE SESSÃO MANUAL
     useEffect(() => {
@@ -91,20 +101,11 @@ const AppContent: React.FC = () => {
         }
     }, [user, settings, authLoading, journeyLoading, location.pathname, navigate]);
 
-    // Carregamento Global / Interceptação
-    if (isIntercepting || (authLoading && !user && !window.location.hash.includes('access_token'))) {
-        return (
-            <div className="min-h-screen bg-primary flex flex-col items-center justify-center p-6 text-center">
-                <div className="relative">
-                    <Loader2 className="w-12 h-12 text-accent animate-spin mb-4" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                    </div>
-                </div>
-                <p className="text-white font-bold tracking-tight">VALIDANDO IDENTIDADE</p>
-                <p className="text-white/40 text-[10px] mt-2 uppercase tracking-widest">Acesso Seguro Jornada360</p>
-            </div>
-        );
+    // Carregamento Global / Interceptação / Splash Screen
+    const shouldShowSplash = showSplash || isIntercepting || (authLoading && !user && !window.location.hash.includes('access_token'));
+
+    if (shouldShowSplash) {
+        return <SplashScreen />;
     }
 
     return (
