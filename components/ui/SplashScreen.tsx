@@ -26,7 +26,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
           {/* App Icon - Direct usage as it's transparent */}
           <div className="relative w-40 h-40 md:w-52 md:h-52 flex items-center justify-center">
             <img 
-              src="/assets/icon/icon_app.png" 
+              src="/assets/icon_splash.png" 
               alt="Jornada360" 
               className="w-full h-full object-contain drop-shadow-[0_10px_30px_rgba(248,196,0,0.3)] animate-float"
             />
