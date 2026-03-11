@@ -39,7 +39,7 @@ const AppContent: React.FC = () => {
     useEffect(() => {
         const timer = setTimeout(() => {
             setShowSplash(false);
-        }, 2000); // 2 segundos mínimo
+        }, 3000); // 3 segundos mínimo
         return () => clearTimeout(timer);
     }, []);
 
