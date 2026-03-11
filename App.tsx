@@ -39,7 +39,7 @@ const AppContent: React.FC = () => {
             const hash = window.location.hash;
             
             // Verifica se há um token de acesso na URL (formato do Supabase: #access_token=...)
-            if (hash.includes('access_token=') || hash.includes('type=recovery')) {
+            if (hash.includes('access_token=')) {
                 setIsIntercepting(true);
                 console.log("Token detectado. Iniciando validação manual...");
 
@@ -48,6 +48,7 @@ const AppContent: React.FC = () => {
                     const searchParams = new URLSearchParams(hash.replace(/^#\/?/, '').replace('#', '&'));
                     const accessToken = searchParams.get('access_token');
                     const refreshToken = searchParams.get('refresh_token');
+                    const type = searchParams.get('type');
 
                     if (accessToken && refreshToken) {
                         // Força o Supabase a aceitar essa sessão
@@ -57,9 +58,15 @@ const AppContent: React.FC = () => {
                         });
 
                         if (!error) {
-                            console.log("Sessão injetada com sucesso.");
-                            // Limpa a URL e vai para a página de troca de senha dentro do Router
-                            navigate('/password-reset', { replace: true });
+                            console.log(`Sessão injetada com sucesso. Tipo: ${type}`);
+                            
+                            // SE FOR RECUPERAÇÃO DE SENHA, VAI PARA A PÁGINA DE TROCA
+                            if (type === 'recovery') {
+                                navigate('/password-reset', { replace: true });
+                            } else {
+                                // SE FOR CONFIRMAÇÃO DE CADASTRO OU OUTRO, VAI PARA A HOME
+                                navigate('/', { replace: true });
+                            }
                         } else {
                             console.error("Erro ao injetar sessão:", error.message);
                         }
