@@ -72,6 +72,7 @@
   "start_url": "/index.html#/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "minimal-ui"],
   "orientation": "portrait",
   "theme_color": "#1E263C",
   "background_color": "#1E263C",
