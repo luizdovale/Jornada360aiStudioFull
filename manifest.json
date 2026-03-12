@@ -1,8 +1,12 @@
 {
   "short_name": "Jornada360",
-  "name": "Jornada360 - Controle de Jornada",
+  "name": "Jornada360",
   "description": "Gestão inteligente de horários, folgas e KM rodados para motoristas profissionais.",
-  "categories": ["productivity", "business", "utilities"],
+  "categories": [
+    "productivity",
+    "business",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "/assets/icons/icon-48.png",
@@ -77,7 +81,12 @@
       "short_name": "Adicionar",
       "description": "Registrar nova jornada de trabalho",
       "url": "/index.html#/journeys/new",
-      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
