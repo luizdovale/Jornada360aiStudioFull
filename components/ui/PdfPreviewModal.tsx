@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { X, Download, Share2 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 interface PdfPreviewModalProps {
     isOpen: boolean;
@@ -28,12 +31,16 @@ const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({ isOpen, onClose, pdfU
 
     useEffect(() => {
         const checkShareability = async () => {
-            // Verifica se a API de compartilhamento existe e se há uma URL de PDF
-            if (navigator.share && pdfUrl) {
-                const file = dataURIToFile(pdfUrl, fileName);
-                // Verifica se o navegador suporta o compartilhamento do tipo 'file'
-                if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+            if (pdfUrl) {
+                if (Capacitor.isNativePlatform()) {
                     setCanShare(true);
+                } else if (navigator.share) {
+                    const file = dataURIToFile(pdfUrl, fileName);
+                    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        setCanShare(true);
+                    } else {
+                        setCanShare(false);
+                    }
                 } else {
                     setCanShare(false);
                 }
@@ -47,34 +54,70 @@ const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({ isOpen, onClose, pdfU
 
     if (!isOpen) return null;
 
-    const handleDownload = () => {
-        const link = document.createElement('a');
-        link.href = pdfUrl;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const handleDownload = async () => {
+        if (!pdfUrl) return;
+
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const base64Data = pdfUrl.split(',')[1];
+                await Filesystem.writeFile({
+                    path: fileName,
+                    data: base64Data,
+                    directory: Directory.Documents,
+                    recursive: true
+                });
+                alert('Arquivo salvo com sucesso na pasta Documentos!');
+            } catch (error) {
+                console.error('Erro ao salvar PDF:', error);
+                alert('Erro ao salvar o arquivo PDF.');
+            }
+        } else {
+            const link = document.createElement('a');
+            link.href = pdfUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     };
 
     const handleShare = async () => {
-        if (!canShare) {
-            alert('Seu navegador não suporta o compartilhamento de arquivos.');
-            return;
-        }
-        try {
-            const file = dataURIToFile(pdfUrl, fileName);
-            if (file) {
-                 await navigator.share({
-                    files: [file],
+        if (!canShare || !pdfUrl) return;
+
+        if (Capacitor.isNativePlatform()) {
+            try {
+                const base64Data = pdfUrl.split(',')[1];
+                const savedFile = await Filesystem.writeFile({
+                    path: fileName,
+                    data: base64Data,
+                    directory: Directory.Cache,
+                    recursive: true
+                });
+                await Share.share({
                     title: 'Relatório de Jornada',
                     text: `Aqui está o relatório de jornada: ${fileName}`,
+                    url: savedFile.uri,
+                    dialogTitle: 'Compartilhar Relatório'
                 });
-            }
-        } catch (error) {
-            console.error('Erro ao compartilhar:', error);
-            // Ignora o erro se o usuário simplesmente fechar a caixa de diálogo de compartilhamento
-            if (!(error instanceof DOMException && error.name === 'AbortError')) {
+            } catch (error) {
+                console.error('Erro ao compartilhar PDF:', error);
                 alert('Não foi possível compartilhar o arquivo.');
+            }
+        } else {
+            try {
+                const file = dataURIToFile(pdfUrl, fileName);
+                if (file) {
+                     await navigator.share({
+                        files: [file],
+                        title: 'Relatório de Jornada',
+                        text: `Aqui está o relatório de jornada: ${fileName}`,
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao compartilhar:', error);
+                if (!(error instanceof DOMException && error.name === 'AbortError')) {
+                    alert('Não foi possível compartilhar o arquivo.');
+                }
             }
         }
     };
