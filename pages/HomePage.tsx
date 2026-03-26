@@ -7,7 +7,7 @@ import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysFor
 import OverlappingCard from '../components/ui/OverlappingCard';
 import Skeleton from '../components/ui/Skeleton';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
-import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft, Map, Clock, Edit2, Trash2, ChevronDown, Coffee, FileText, StickyNote, Package, Shield, Moon } from 'lucide-react';
+import { Plus, BarChart, Settings, Route, CalendarDays, ChevronRight, ListChecks, ChevronLeft, Map, Clock, Edit2, Trash2, ChevronDown, Coffee, FileText, StickyNote, Package, Shield, Moon, RefreshCw } from 'lucide-react';
 import { MonthSummary, Journey } from '../types';
 import TodayJourneyWidget from '../components/ui/TodayJourneyWidget';
 import IncompleteJourneysAlert, { detectIncomplete } from '../components/ui/IncompleteJourneysAlert';
@@ -189,11 +189,53 @@ const HomePageSkeleton: React.FC = () => (
 
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
-    const { journeys, settings, loading, deleteJourney } = useJourneys();
+    const { journeys, settings, loading, deleteJourney, fetchData } = useJourneys();
     const [displayDate, setDisplayDate] = useState<Date | null>(null);
     const [expandedJourneyId, setExpandedJourneyId] = useState<string | null>(null);
     const [journeyToDelete, setJourneyToDelete] = useState<string | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+    const [pullStartY, setPullStartY] = useState(0);
+    const [pullMoveY, setPullMoveY] = useState(0);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const PULL_THRESHOLD = 70;
+
+    const onTouchStart = (e: React.TouchEvent) => {
+        if (window.scrollY === 0) {
+            setPullStartY(e.touches[0].clientY);
+        }
+    };
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        if (pullStartY > 0 && !isRefreshing) {
+            const currentY = e.touches[0].clientY;
+            if (currentY > pullStartY) {
+                setPullMoveY(currentY);
+            } else {
+                setPullStartY(0);
+                setPullMoveY(0);
+            }
+        }
+    };
+
+    const onTouchEnd = async () => {
+        if (pullStartY > 0 && pullMoveY > pullStartY && !isRefreshing) {
+            const distance = pullMoveY - pullStartY;
+            if (distance >= PULL_THRESHOLD) {
+                setIsRefreshing(true);
+                await fetchData();
+                setIsRefreshing(false);
+            }
+            setPullStartY(0);
+            setPullMoveY(0);
+        } else {
+            setPullStartY(0);
+            setPullMoveY(0);
+        }
+    };
+
+    const pullDistance = Math.max(0, pullMoveY - pullStartY);
+    const visualDistance = Math.min(pullDistance, PULL_THRESHOLD + 20);
 
     useEffect(() => {
         if (settings) {
@@ -276,7 +318,7 @@ const HomePage: React.FC = () => {
         }
     };
 
-    if (loading || !displayDate) {
+    if ((loading && journeys.length === 0) || !displayDate) {
         return (
             <div className="-mt-16 space-y-5 pb-4">
                 <HomePageSkeleton />
@@ -288,7 +330,28 @@ const HomePage: React.FC = () => {
     const formattedCalendarMonth = displayDate.toLocaleDateString('pt-BR', { month: 'long' });
 
     return (
-        <div className="-mt-16 space-y-5 pb-4">
+        <div 
+            className="-mt-16 space-y-5 pb-4"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+        >
+            {/* Indicador de Pull to Refresh */}
+            <div 
+                className="w-full flex justify-center items-center overflow-hidden transition-all duration-200 ease-out"
+                style={{ 
+                    height: isRefreshing ? `${PULL_THRESHOLD}px` : `${Math.max(0, visualDistance - 20)}px`,
+                    opacity: isRefreshing ? 1 : Math.min(visualDistance / PULL_THRESHOLD, 1)
+                }}
+            >
+                <div 
+                    className={`bg-white rounded-full p-2 shadow-md flex items-center justify-center transition-transform duration-300 ${isRefreshing ? 'animate-spin' : ''}`}
+                    style={{ transform: !isRefreshing ? `rotate(${visualDistance * 4}deg)` : 'none' }}
+                >
+                    <RefreshCw className="w-5 h-5 text-primary" />
+                </div>
+            </div>
+
             <ConfirmationModal
                 isOpen={isConfirmOpen}
                 onClose={() => setIsConfirmOpen(false)}

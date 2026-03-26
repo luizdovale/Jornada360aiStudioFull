@@ -14,8 +14,8 @@ export function Toaster() {
   const { toasts } = useToast();
 
   return (
-    <div className="fixed top-4 right-4 z-50 w-auto max-w-[75vw] sm:max-w-sm">
-        <div className="flex flex-col-reverse gap-2">
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[90vw] sm:w-auto sm:min-w-[320px] max-w-sm pointer-events-none">
+        <div className="flex flex-col-reverse gap-2 pointer-events-auto">
       {toasts.map(function ({ id, title, description, variant, ...props }) {
         return (
           <div
