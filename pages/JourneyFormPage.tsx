@@ -30,6 +30,7 @@ type JourneyFormState = Omit<
     deliveries: number | string;
     is_day_off: boolean;
     is_plantao: boolean;
+    no_meal: boolean;
     meal_start: string;
     meal_end: string;
 };
@@ -66,6 +67,7 @@ const JourneyFormPage: React.FC = () => {
             is_feriado: false,
             is_day_off: false,
             is_plantao: false,
+            no_meal: false,
             km_start: '',
             km_end: '',
             deliveries: '',
@@ -101,6 +103,7 @@ const JourneyFormPage: React.FC = () => {
                 is_feriado: existingJourney.is_feriado,
                 is_day_off: existingJourney.is_day_off || false,
                 is_plantao: existingJourney.is_plantao || false,
+                no_meal: existingJourney.meal_duration === 0,
                 km_start: existingJourney.km_start || '',
                 km_end: existingJourney.km_end || '',
                 deliveries: existingJourney.deliveries || '',
@@ -139,23 +142,37 @@ const JourneyFormPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        const ms = timeToMinutes(formData.meal_start);
-        const me = timeToMinutes(formData.meal_end);
+        const ms = formData.meal_start ? timeToMinutes(formData.meal_start) : 0;
+        const me = formData.meal_end ? timeToMinutes(formData.meal_end) : 0;
         let calculatedMealDuration = me - ms;
         if (calculatedMealDuration < 0) calculatedMealDuration += 24 * 60;
 
         const hideDetails = formData.is_day_off || formData.is_plantao;
 
+        const startMin = timeToMinutes(formData.start_at);
+        const endMin = timeToMinutes(formData.end_at);
+        let journeyDuration = endMin - startMin;
+        if (journeyDuration < 0) journeyDuration += 24 * 60;
+
+        const isNoMeal = formData.no_meal || (!formData.meal_start && !formData.meal_end);
+
+        if (isNoMeal && !hideDetails) {
+            calculatedMealDuration = 0;
+            if (journeyDuration >= 360) {
+                toast({ title: 'Aviso', description: 'Sua jornada ultrapassou 6 horas. É recomendada uma pausa mínima de 60 minutos para refeição.', variant: 'default' });
+            }
+        }
+
         const dataToSave = {
             ...formData,
-            meal_duration: hideDetails ? 0 : calculatedMealDuration,
+            meal_duration: hideDetails || isNoMeal ? 0 : calculatedMealDuration,
             rest_duration: hideDetails ? 0 : (formData.rest_duration ? Number(formData.rest_duration) : 0),
             km_start: hideDetails ? 0 : (formData.km_start ? Number(formData.km_start) : 0),
             km_end: hideDetails ? 0 : (formData.km_end ? Number(formData.km_end) : 0),
             deliveries: formData.deliveries ? Number(formData.deliveries) : 0,
             rv_number: hideDetails ? '' : formData.rv_number,
-            meal_start: hideDetails ? '00:00' : formData.meal_start,
-            meal_end: hideDetails ? '00:00' : formData.meal_end,
+            meal_start: hideDetails || isNoMeal ? '00:00' : formData.meal_start,
+            meal_end: hideDetails || isNoMeal ? '00:00' : formData.meal_end,
         };
 
         if (formData.is_day_off) {
@@ -227,6 +244,7 @@ const JourneyFormPage: React.FC = () => {
                                 is_feriado: false,
                                 is_day_off: false,
                                 is_plantao: false,
+                                no_meal: false,
                                 km_start: '',
                                 km_end: '',
                                 deliveries: '',
@@ -295,22 +313,35 @@ const JourneyFormPage: React.FC = () => {
 
                             {!formData.is_plantao && (
                                 <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full animate-in slide-in-from-top-2">
-                                        <div className={inputContainerStyle}>
-                                            <label className={labelStyle}>Início Refeição</label>
-                                            <div className="relative w-full">
-                                                <Coffee className={inputIconStyle} />
-                                                <input type="time" name="meal_start" value={formData.meal_start} onChange={handleChange} required className={inputStyle} />
+                                    <div className="w-full animate-in slide-in-from-top-2">
+                                        <label className="flex items-center gap-2 cursor-pointer mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition">
+                                            <div className="relative flex items-center justify-center">
+                                                <input type="checkbox" name="no_meal" checked={formData.no_meal} onChange={handleChange} className="peer sr-only" />
+                                                <div className="w-5 h-5 border-2 border-gray-300 rounded bg-white peer-checked:bg-primary peer-checked:border-primary transition-all"></div>
+                                                <Check className="w-3.5 h-3.5 text-white absolute inset-0 m-auto scale-0 peer-checked:scale-100 transition-transform" strokeWidth={3} />
                                             </div>
-                                        </div>
+                                            <span className="text-sm font-semibold text-gray-700">Não houve refeição neste dia</span>
+                                        </label>
 
-                                        <div className={inputContainerStyle}>
-                                            <label className={labelStyle}>Fim Refeição</label>
-                                            <div className="relative w-full">
-                                                <Coffee className={inputIconStyle} />
-                                                <input type="time" name="meal_end" value={formData.meal_end} onChange={handleChange} required className={inputStyle} />
+                                        {!formData.no_meal && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
+                                                <div className={inputContainerStyle}>
+                                                    <label className={labelStyle}>Início Refeição</label>
+                                                    <div className="relative w-full">
+                                                        <Coffee className={inputIconStyle} />
+                                                        <input type="time" name="meal_start" value={formData.meal_start} onChange={handleChange} className={inputStyle} />
+                                                    </div>
+                                                </div>
+
+                                                <div className={inputContainerStyle}>
+                                                    <label className={labelStyle}>Fim Refeição</label>
+                                                    <div className="relative w-full">
+                                                        <Coffee className={inputIconStyle} />
+                                                        <input type="time" name="meal_end" value={formData.meal_end} onChange={handleChange} className={inputStyle} />
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
                                     <div className={inputContainerStyle}>
                                         <label className={labelStyle}>Descanso Adicional (min)</label>
