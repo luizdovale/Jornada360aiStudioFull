@@ -163,8 +163,10 @@ const JourneyFormPage: React.FC = () => {
             }
         }
 
+        const { no_meal, ...restFormData } = formData;
+
         const dataToSave = {
-            ...formData,
+            ...restFormData,
             meal_duration: hideDetails || isNoMeal ? 0 : calculatedMealDuration,
             rest_duration: hideDetails ? 0 : (formData.rest_duration ? Number(formData.rest_duration) : 0),
             km_start: hideDetails ? 0 : (formData.km_start ? Number(formData.km_start) : 0),
