@@ -17,6 +17,12 @@ interface IncompleteJourney {
 
 const isBlank = (val?: string) => !val || val === '00:00' || val === '00:00:00';
 
+const timeToMinutes = (timeString?: string): number => {
+    if (!timeString || !timeString.includes(':')) return 0;
+    const [h, m] = timeString.split(':').map(Number);
+    return h * 60 + m;
+};
+
 export const detectIncomplete = (journeys: Journey[]): IncompleteJourney[] => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 30);
@@ -40,8 +46,18 @@ export const detectIncomplete = (journeys: Journey[]): IncompleteJourney[] => {
                 missing.push({ field: 'end_at', label: 'Fim de Jornada' });
             }
 
-            // Refeição só é obrigatória em dias normais (não plantão)
-            if (!isPlantao) {
+            const isTimeComplete = !isBlank(j.start_at) && !isBlank(j.end_at);
+            let requiresMeal = true;
+            if (isTimeComplete) {
+                const startMin = timeToMinutes(j.start_at);
+                const endMin = timeToMinutes(j.end_at);
+                let duration = endMin - startMin;
+                if (duration < 0) duration += 24 * 60;
+                requiresMeal = duration >= 360;
+            }
+
+            // Refeição só é obrigatória em dias normais (não plantão) e para > 6h
+            if (!isPlantao && requiresMeal) {
                 if (isBlank(j.meal_start)) {
                     missing.push({ field: 'meal_start', label: 'Início de Refeição' });
                 }
