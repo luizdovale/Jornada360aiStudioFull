@@ -151,7 +151,10 @@ Para contribuir:
 📧 *[luizdovaletech@gmail.com](mailto:luizdovaletech@gmail.com)*
 
 ---
+## 👨‍💻 Desenvolvedor
 
+Luiz Fernando  
+🌐 https://valetechsolucoes.com.br
 ## 📝 Licença
 
 Este projeto está licenciado sob **MIT License**.
