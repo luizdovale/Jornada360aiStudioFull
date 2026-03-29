@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://jornada360.vercel.app/">
-    <img src="https://lh3.googleusercontent.com/pw/AP1GczOx6aup6rJOQhv9sjPoF8ckgR7nYhdSI7UkdVugATvvTSVLWH0q2h6ZweYKLVQMsVMQAAQsoBLNH6l--qvw7Q33tqj5dfwOkb_SD2d4LP3gazrxpxye0zT9QMyUwaJPYRxCwT1-BpAaq31l-QN1IYs=w1366-h473-s-no-gm?authuser=4" width="100%" />
+    <img src="https://lh3.googleusercontent.com/pw/AP1GczPhGnFVCsJDN6QkM968cClyfRPNDGlNa81MhyateI-M4S5CRvcVdFuaMesaeSEn6q6ChfM8pWnPQJKLUXfA2EDta9_GfXeR0nVxp05YsKLhKu5Q1yh-vLv-lstCOVbQiEd6xmD7B7KuI8uDL1x0nj5Q=w1366-h434-s-no-gm?authuser=2" />
   </a>
 </p>
 
