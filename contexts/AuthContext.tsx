@@ -59,13 +59,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
+            console.log("AuthContext: Sessão inicial carregada:", !!session);
             setSession(session);
             setUser(session?.user ?? null);
             setLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (_event: AuthChangeEvent, session: Session | null) => {
+            (event: AuthChangeEvent, session: Session | null) => {
+                console.log(`AuthContext: Evento AuthChange: ${event}`, !!session);
+                
+                // Evita resetar para loading se apenas houver uma mudança de metadados, por exemplo
                 setSession(session);
                 setUser(session?.user ?? null);
                 setLoading(false);

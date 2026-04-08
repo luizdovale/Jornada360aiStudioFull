@@ -177,7 +177,14 @@ if (isPlaceholder) {
     };
     supabase = createFullMockClient();
 } else {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: false, // Prevents conflict with HashRouter
+            storage: window.localStorage
+        }
+    });
 }
 
 export { supabase };

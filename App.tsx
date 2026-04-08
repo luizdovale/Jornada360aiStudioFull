@@ -51,7 +51,7 @@ const AppContent: React.FC = () => {
             // Verifica se há um token de acesso na URL (formato do Supabase: #access_token=...)
             if (hash.includes('access_token=')) {
                 setIsIntercepting(true);
-                console.log("Token detectado. Iniciando validação manual...");
+                console.log("App: Token detectado na URL. Iniciando validação manual...");
 
                 try {
                     // Extrai os parâmetros do hash transformando-o em uma query string legível
