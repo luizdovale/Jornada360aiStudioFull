@@ -58,20 +58,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            console.log("AuthContext: Sessão inicial carregada:", !!session);
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLoading(false);
-        });
+        const initializeAuth = async () => {
+            try {
+                // Primeiro tenta a sessão local (rápido)
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (session) {
+                    setSession(session);
+                    // Verifica o usuário no servidor para garantir que o token é válido
+                    const { data: { user: verifiedUser }, error } = await supabase.auth.getUser();
+                    if (!error && verifiedUser) {
+                        console.log("AuthContext: Usuário verificado com sucesso via getUser()");
+                        setUser(verifiedUser);
+                    } else {
+                        console.warn("AuthContext: Sessão existia mas getUser falhou. Mantendo usuário da sessão.");
+                        setUser(session.user);
+                    }
+                } else {
+                    console.log("AuthContext: Nenhuma sessão inicial encontrada.");
+                    setUser(null);
+                }
+            } catch (err) {
+                console.error("AuthContext: Erro crítico na inicialização:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initializeAuth();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (event: AuthChangeEvent, session: Session | null) => {
-                console.log(`AuthContext: Evento AuthChange: ${event}`, !!session);
+            async (event: AuthChangeEvent, session: Session | null) => {
+                console.log(`AuthContext: Evento AuthChange [${event}]`, !!session);
                 
-                // Evita resetar para loading se apenas houver uma mudança de metadados, por exemplo
-                setSession(session);
-                setUser(session?.user ?? null);
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                    setSession(session);
+                    setUser(session?.user ?? null);
+                } else if (event === 'SIGNED_OUT') {
+                    setSession(null);
+                    setUser(null);
+                }
+                
                 setLoading(false);
             }
         );
