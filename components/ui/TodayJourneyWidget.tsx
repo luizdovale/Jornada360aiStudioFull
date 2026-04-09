@@ -9,15 +9,13 @@ import {
     Play, Coffee, CheckCircle2, Square, Edit2,
     AlertTriangle, AlertCircle, Clock, Plus, ChevronRight, Map, Package, FileText
 } from 'lucide-react';
+import { getLocalDateString, getLocalNowTime } from '../../lib/utils';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
 
-const getTodayString = () => new Date().toISOString().split('T')[0];
+const getTodayString = () => getLocalDateString();
 
-const getNowTime = () => {
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-};
+const getNowTime = () => getLocalNowTime();
 
 const isSet = (t?: string) => !!t && t !== '00:00' && t !== '00:00:00';
 
@@ -33,13 +31,16 @@ const timeToMinutes = (t?: string): number => {
     return (h || 0) * 60 + (m || 0);
 };
 
-const minutesSince = (timeStr?: string): number => {
-    if (!timeStr || timeStr === '00:00') return 0;
-    const now = new Date();
-    const nowMins = now.getHours() * 60 + now.getMinutes();
-    const tMins = timeToMinutes(timeStr);
-    const diff = nowMins - tMins;
-    return diff < 0 ? diff + 24 * 60 : diff;
+const minutesSince = (date?: string, timeStr?: string): number => {
+    if (!date || !timeStr || timeStr === '00:00') return 0;
+    try {
+        const start = new Date(`${date}T${timeStr}:00`);
+        const now = new Date();
+        const diff = Math.floor((now.getTime() - start.getTime()) / 60000);
+        return diff > 0 ? diff : 0;
+    } catch (e) {
+        return 0;
+    }
 };
 
 const formatHM = (minutes: number) => {
@@ -118,17 +119,28 @@ const TodayJourneyWidget: React.FC = () => {
     }, []);
 
     const today = getTodayString();
-    const todayJourney = journeys.find(j => j.date === today);
-    const step = getStep(todayJourney);
+    
+    // Busca jornada ativa (aberta e iniciada há no máximo 13h)
+    const activeJourney = journeys
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .find(j => {
+            if (isSet(j.end_at) || j.is_day_off) return false;
+            const diffHours = minutesSince(j.date, j.start_at) / 60;
+            return diffHours <= 13;
+        });
+
+    const displayedJourney = activeJourney || journeys.find(j => j.date === today);
+    const step = getStep(displayedJourney);
+    const isRetroactive = activeJourney && activeJourney.date !== today;
 
     // ── Verifica alertas trabalhistas ────────────────────────────────────────
     const getAlerts = useCallback(() => {
-        if (!todayJourney || step === 'done' || todayJourney.is_day_off) return [];
+        if (!displayedJourney || step === 'done' || displayedJourney.is_day_off) return [];
         const alerts: { type: 'warning' | 'danger'; message: string }[] = [];
 
         // Alerta de refeição (só se ainda não iniciou)
         if (step === 'started') {
-            const minsWorking = minutesSince(todayJourney.start_at);
+            const minsWorking = minutesSince(displayedJourney.date, displayedJourney.start_at);
             if (minsWorking >= 360) {
                 alerts.push({ type: 'danger', message: `Você já trabalhou ${formatHM(minsWorking)} sem refeição! Regra CLT: máximo 6h contínuas.` });
             } else if (minsWorking >= 330) {
@@ -138,7 +150,7 @@ const TodayJourneyWidget: React.FC = () => {
         }
 
         // Alerta de encerramento de jornada (quando jornada ainda está aberta)
-        const minsTotal = minutesSince(todayJourney.start_at);
+        const minsTotal = minutesSince(displayedJourney.date, displayedJourney.start_at);
         if (minsTotal >= 720) {
             alerts.push({ type: 'danger', message: `Sua jornada está com ${formatHM(minsTotal)}! Regra CLT: máximo 12h por dia.` });
         } else if (minsTotal >= 660) {
@@ -147,7 +159,7 @@ const TodayJourneyWidget: React.FC = () => {
         }
 
         return alerts;
-    }, [todayJourney, step]);
+    }, [displayedJourney, step]);
 
     // ── Ações dos botões ─────────────────────────────────────────────────────
 
@@ -184,21 +196,21 @@ const TodayJourneyWidget: React.FC = () => {
     };
 
     const handleIniciarRefeicao = async () => {
-        if (!todayJourney) return;
+        if (!displayedJourney) return;
         setLoading(true);
-        await updateJourney({ ...todayJourney, meal_start: getNowTime() });
+        await updateJourney({ ...displayedJourney, meal_start: getNowTime() });
         setLoading(false);
     };
 
     const handleFimRefeicao = async () => {
-        if (!todayJourney) return;
+        if (!displayedJourney) return;
         setLoading(true);
         const mealEnd = getNowTime();
-        const ms = timeToMinutes(todayJourney.meal_start);
+        const ms = timeToMinutes(displayedJourney.meal_start);
         const me = timeToMinutes(mealEnd);
         let duration = me - ms;
         if (duration < 0) duration += 24 * 60;
-        await updateJourney({ ...todayJourney, meal_end: mealEnd, meal_duration: duration });
+        await updateJourney({ ...displayedJourney, meal_end: mealEnd, meal_duration: duration });
         setLoading(false);
     };
 
@@ -210,10 +222,10 @@ const TodayJourneyWidget: React.FC = () => {
 
         setLoading(true);
         await updateJourney({
-            ...todayJourney!,
+            ...displayedJourney!,
             end_at: getNowTime(),
-            km_end: tempKm ? Number(tempKm.replace(',', '.')) : (todayJourney?.km_end || 0),
-            notes: tempNotes ? `${todayJourney?.notes ? todayJourney.notes + '\n' : ''}${tempNotes}` : todayJourney?.notes
+            km_end: tempKm ? Number(tempKm.replace(',', '.')) : (displayedJourney?.km_end || 0),
+            notes: tempNotes ? `${displayedJourney?.notes ? displayedJourney.notes + '\n' : ''}${tempNotes}` : displayedJourney?.notes
         });
         setIsEnteringKm(false);
         setTempKm('');
@@ -249,7 +261,7 @@ const TodayJourneyWidget: React.FC = () => {
     };
 
     const alerts = getAlerts();
-    const elapsedMins = todayJourney && step !== 'done' ? minutesSince(todayJourney.start_at) : 0;
+    const elapsedMins = displayedJourney && step !== 'done' ? minutesSince(displayedJourney.date, displayedJourney.start_at) : 0;
 
     // ────────────────────────────────────────────────────────────────────────
     // Render: estado IDLE (sem jornada hoje)
@@ -341,8 +353,8 @@ const TodayJourneyWidget: React.FC = () => {
     // ────────────────────────────────────────────────────────────────────────
     // Render: jornada CONCLUÍDA ou FOLGA
     // ────────────────────────────────────────────────────────────────────────
-    if (step === 'done' || todayJourney?.is_day_off) {
-        if (todayJourney?.is_day_off) {
+    if (step === 'done' || displayedJourney?.is_day_off) {
+        if (displayedJourney?.is_day_off) {
             return (
                 <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-4">
                     <div className="flex items-center justify-between">
@@ -351,7 +363,7 @@ const TodayJourneyWidget: React.FC = () => {
                             <p className="text-sm font-bold text-gray-800">Hoje é sua folga 🌴</p>
                         </div>
                         <button
-                            onClick={() => navigate(`/journeys/edit/${todayJourney!.id}`)}
+                            onClick={() => navigate(`/journeys/edit/${displayedJourney!.id}`)}
                             className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#1c3152] transition-colors"
                         >
                             <Edit2 className="w-3.5 h-3.5" /> Editar
@@ -363,8 +375,8 @@ const TodayJourneyWidget: React.FC = () => {
         }
 
         const totalMins = (() => {
-            const s = timeToMinutes(todayJourney!.start_at);
-            const e = timeToMinutes(todayJourney!.end_at);
+            const s = timeToMinutes(displayedJourney!.start_at);
+            const e = timeToMinutes(displayedJourney!.end_at);
             let diff = e - s;
             if (diff < 0) diff += 24 * 60;
             return diff;
@@ -378,7 +390,7 @@ const TodayJourneyWidget: React.FC = () => {
                         <p className="text-sm font-bold text-gray-800">Jornada encerrada</p>
                     </div>
                     <button
-                        onClick={() => navigate(`/journeys/edit/${todayJourney!.id}`)}
+                        onClick={() => navigate(`/journeys/edit/${displayedJourney!.id}`)}
                         className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#1c3152] transition-colors"
                     >
                         <Edit2 className="w-3.5 h-3.5" /> Editar
@@ -388,16 +400,16 @@ const TodayJourneyWidget: React.FC = () => {
                 {/* Timeline */}
                 <div className="flex items-start justify-between relative px-2 mb-1">
                     <div className="absolute top-4 left-6 right-6 h-px bg-gray-100 -z-0" />
-                    <TimelineEvent label="Início" time={formatDisplayTime(todayJourney!.start_at)} icon={<Play className="w-3 h-3" />} done />
-                    {isSet(todayJourney!.meal_start) && (
-                        <TimelineEvent label="Refeição" time={`${formatDisplayTime(todayJourney!.meal_start)} - ${formatDisplayTime(todayJourney!.meal_end)}`} icon={<Coffee className="w-3 h-3" />} done />
+                    <TimelineEvent label="Início" time={formatDisplayTime(displayedJourney!.start_at)} icon={<Play className="w-3 h-3" />} done />
+                    {isSet(displayedJourney!.meal_start) && (
+                        <TimelineEvent label="Refeição" time={`${formatDisplayTime(displayedJourney!.meal_start)} - ${formatDisplayTime(displayedJourney!.meal_end)}`} icon={<Coffee className="w-3 h-3" />} done />
                     )}
-                    <TimelineEvent label="Fim" time={formatDisplayTime(todayJourney!.end_at)} icon={<Square className="w-3 h-3" />} done />
+                    <TimelineEvent label="Fim" time={formatDisplayTime(displayedJourney!.end_at)} icon={<Square className="w-3 h-3" />} done />
                 </div>
 
                 <div className="mt-3 bg-gray-50 rounded-xl px-3 py-2 text-center">
                     <span className="text-xs text-gray-500">Total trabalhado: </span>
-                    <span className="text-sm font-bold text-[#1c3152]">{formatHM(totalMins - (todayJourney!.meal_duration || 0))}</span>
+                    <span className="text-sm font-bold text-[#1c3152]">{formatHM(totalMins - (displayedJourney!.meal_duration || 0))}</span>
                 </div>
             </div>
         );
@@ -417,8 +429,13 @@ const TodayJourneyWidget: React.FC = () => {
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <p className="text-sm font-bold text-gray-800">Jornada em andamento</p>
                 </div>
+                {isRetroactive && (
+                    <div className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                        INICIADA ONTEM
+                    </div>
+                )}
                 <button
-                    onClick={() => navigate(`/journeys/edit/${todayJourney!.id}`)}
+                    onClick={() => navigate(`/journeys/edit/${displayedJourney!.id}`)}
                     className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#1c3152] transition-colors"
                 >
                     <Edit2 className="w-3.5 h-3.5" /> Editar
@@ -431,16 +448,16 @@ const TodayJourneyWidget: React.FC = () => {
             {/* Timer */}
             <div className="flex items-center gap-2 text-xs text-gray-500">
                 <Clock className="w-3.5 h-3.5" />
-                <span>Jornada iniciada há <strong className="text-gray-700">{formatHM(elapsedMins)}</strong> • desde <strong className="text-gray-700">{formatDisplayTime(todayJourney!.start_at)}</strong></span>
+                <span>Jornada iniciada há <strong className="text-gray-700">{formatHM(elapsedMins)}</strong> • desde <strong className="text-gray-700">{formatDisplayTime(displayedJourney!.start_at)}</strong></span>
             </div>
 
             {/* Timeline */}
             <div className="flex items-start justify-between relative px-2">
                 <div className="absolute top-4 left-6 right-6 h-px bg-gray-100" />
-                <TimelineEvent label="Início" time={formatDisplayTime(todayJourney!.start_at)} icon={<Play className="w-3 h-3" />} done />
+                <TimelineEvent label="Início" time={formatDisplayTime(displayedJourney!.start_at)} icon={<Play className="w-3 h-3" />} done />
                 <TimelineEvent
                     label="Refeição"
-                    time={isSet(todayJourney!.meal_start) ? formatDisplayTime(todayJourney!.meal_start) : undefined}
+                    time={isSet(displayedJourney!.meal_start) ? formatDisplayTime(displayedJourney!.meal_start) : undefined}
                     icon={<Coffee className="w-3 h-3" />}
                     done={step === 'meal_started' || step === 'meal_ended'}
                 />

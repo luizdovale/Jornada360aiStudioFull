@@ -65,17 +65,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 
                 if (session) {
                     setSession(session);
-                    // Verifica o usuário no servidor para garantir que o token é válido
                     const { data: { user: verifiedUser }, error } = await supabase.auth.getUser();
                     if (!error && verifiedUser) {
-                        console.log("AuthContext: Usuário verificado com sucesso via getUser()");
                         setUser(verifiedUser);
                     } else {
-                        console.warn("AuthContext: Sessão existia mas getUser falhou. Mantendo usuário da sessão.");
                         setUser(session.user);
                     }
                 } else {
-                    console.log("AuthContext: Nenhuma sessão inicial encontrada.");
                     setUser(null);
                 }
             } catch (err) {
@@ -89,8 +85,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event: AuthChangeEvent, session: Session | null) => {
-                console.log(`AuthContext: Evento AuthChange [${event}]`, !!session);
-                
                 if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
                     setSession(session);
                     setUser(session?.user ?? null);

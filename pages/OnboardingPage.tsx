@@ -6,6 +6,7 @@ import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Clock, Map, Calendar, Briefcase, ArrowRight, ArrowLeft, Check, ChevronRight } from 'lucide-react';
 import { Settings } from '../types';
+import { getLocalDateString } from '../lib/utils';
 
 const OnboardingPage: React.FC = () => {
     const navigate = useNavigate();
@@ -23,7 +24,7 @@ const OnboardingPage: React.FC = () => {
         km_enabled: true,
         month_start_day: 21,
         escala_pattern: '6x1',
-        escala_start_date: new Date().toISOString().split('T')[0],
+        escala_start_date: getLocalDateString(),
     });
 
     // Se já tiver settings carregados, redireciona para a home

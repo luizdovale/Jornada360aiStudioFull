@@ -51,7 +51,6 @@ const AppContent: React.FC = () => {
             // Verifica se há um token de acesso na URL (formato do Supabase: #access_token=...)
             if (hash.includes('access_token=')) {
                 setIsIntercepting(true);
-                console.log("App: Token detectado na URL. Iniciando validação manual...");
 
                 try {
                     // Extrai os parâmetros do hash transformando-o em uma query string legível
@@ -68,8 +67,6 @@ const AppContent: React.FC = () => {
                         });
 
                         if (!error) {
-                            console.log(`Sessão injetada com sucesso. Tipo: ${type}`);
-                            
                             // SE FOR RECUPERAÇÃO DE SENHA, VAI PARA A PÁGINA DE TROCA
                             if (type === 'recovery') {
                                 navigate('/password-reset', { replace: true });

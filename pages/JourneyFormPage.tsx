@@ -5,13 +5,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useToast } from '../hooks/useToast';
 import { Journey } from '../types';
+import { getLocalDateString } from '../lib/utils';
 import { X, Coffee, Clock, Map, FileText, Calendar, Check, ArrowLeft, Shield, Package, FileInput } from 'lucide-react';
 
 const DRAFT_KEY = 'jornada360_journey_draft';
 
 const getTodayString = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return getLocalDateString();
 };
 
 const timeToMinutes = (timeString: string): number => {

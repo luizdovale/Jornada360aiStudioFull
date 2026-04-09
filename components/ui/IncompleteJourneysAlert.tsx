@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import { Journey } from '../../types';
+import { getLocalDateString } from '../../lib/utils';
 import { AlertTriangle, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
 
 interface IncompleteField {
@@ -26,7 +27,7 @@ const timeToMinutes = (timeString?: string): number => {
 export const detectIncomplete = (journeys: Journey[]): IncompleteJourney[] => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 30);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
+    const cutoffStr = getLocalDateString(cutoff);
 
     return journeys
         .filter(j => {

@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { getMonthSummary, calculateJourney, formatMinutesToHours } from '../lib/utils';
+import { getMonthSummary, calculateJourney, formatMinutesToHours, getLocalDateString } from '../lib/utils';
 import { FileDown, Clock, Map, CalendarDays, AlertCircle } from 'lucide-react';
 import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
@@ -36,10 +36,10 @@ const ReportsPage: React.FC = () => {
             const label = ref.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
             options.push({ 
                 label: label.charAt(0).toUpperCase() + label.slice(1), 
-                cycleStart: cycleStart.toISOString().split('T')[0], 
-                cycleEnd: cycleEnd.toISOString().split('T')[0],
-                calendarStart: calendarStart.toISOString().split('T')[0],
-                calendarEnd: calendarEnd.toISOString().split('T')[0],
+                cycleStart: getLocalDateString(cycleStart), 
+                cycleEnd: getLocalDateString(cycleEnd),
+                calendarStart: getLocalDateString(calendarStart),
+                calendarEnd: getLocalDateString(calendarEnd),
                 value: i 
             });
         }

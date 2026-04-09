@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useToast } from '../hooks/useToast';
 import { Settings } from '../types';
+import { getLocalDateString } from '../lib/utils';
 
 const SettingsPage: React.FC = () => {
     const navigate = useNavigate();
@@ -15,7 +16,7 @@ const SettingsPage: React.FC = () => {
         km_enabled: true,
         month_start_day: 21,
         escala_pattern: '6x1',
-        escala_start_date: new Date().toISOString().split('T')[0],
+        escala_start_date: getLocalDateString(),
     });
     const [loading, setLoading] = useState(false);
 
@@ -26,7 +27,7 @@ const SettingsPage: React.FC = () => {
                 km_enabled: settings.km_enabled,
                 month_start_day: settings.month_start_day,
                 escala_pattern: settings.escala_pattern,
-                escala_start_date: settings.escala_start_date || new Date().toISOString().split('T')[0],
+                escala_start_date: settings.escala_start_date || getLocalDateString(),
             });
         }
     }, [settings]);

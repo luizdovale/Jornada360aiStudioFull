@@ -17,7 +17,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
     }
 
     if (!user) {
-        console.log("ProtectedRoute: Usuário não encontrado, redirecionando para /login");
         // Redireciona para a página de login se não houver usuário
         return <Navigate to="/login" replace />;
     }

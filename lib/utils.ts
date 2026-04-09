@@ -1,5 +1,24 @@
-
 import { Journey, Settings, JourneyCalculations, MonthSummary } from '../types';
+
+/**
+ * Retorna a data atual (ou uma data específica) formatada como YYYY-MM-DD no fuso horário local.
+ * Isso evita que o dia mude às 21h (caso do UTC).
+ */
+export const getLocalDateString = (date: Date = new Date()): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+/**
+ * Retorna o horário atual (ou de uma data específica) formatado como HH:mm no fuso horário local.
+ */
+export const getLocalNowTime = (date: Date = new Date()): string => {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+};
 
 /**
  * Converte string "HH:mm" para minutos totais desde a meia-noite.
