@@ -394,13 +394,13 @@ const HomePage: React.FC = () => {
                                             <Map className="w-4 h-4" />
                                             <span className="text-xs font-medium uppercase tracking-wider">Mês Civil ({formattedCalendarMonth})</span>
                                         </div>
-                                        <div className="text-right whitespace-nowrap">
-                                            <span className="text-xl font-bold text-white">
+                                        <div className="text-right">
+                                            <div className="text-xl font-bold text-white leading-tight">
                                                 {summary.kmRodados.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">km</span>
-                                            </span>
-                                            <span className="ml-2 text-lg font-bold text-white">
-                                                (R$ {(summary.kmRodados * 0.12).toFixed(2).replace('.', ',')})
-                                            </span>
+                                            </div>
+                                            <div className="text-base font-bold text-white leading-tight">
+                                                R$ {(summary.kmRodados * 0.12).toFixed(2).replace('.', ',')}
+                                            </div>
                                         </div>
                                     </div>
                                 </>
