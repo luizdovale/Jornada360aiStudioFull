@@ -390,7 +390,7 @@ const HomePage: React.FC = () => {
                                     <div className="my-2 border-t border-white/10"></div>
 
                                     <div className="flex items-center justify-between px-2 pt-1">
-                                        <div className="flex items-center gap-2 text-green-400 font-bold">
+                                        <div className="flex items-center gap-2 text-accent/80">
                                             <Map className="w-4 h-4" />
                                             <span className="text-xs uppercase tracking-wider">Mês Civil ({formattedCalendarMonth})</span>
                                         </div>
