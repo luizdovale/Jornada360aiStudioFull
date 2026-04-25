@@ -395,14 +395,12 @@ const HomePage: React.FC = () => {
                                             <span className="text-xs font-medium uppercase tracking-wider">Mês Civil ({formattedCalendarMonth})</span>
                                         </div>
                                         <div className="text-right">
-                                            <div className="flex items-baseline justify-end gap-2">
-                                                <span className="text-xl font-bold text-white leading-none">
-                                                    {summary.kmRodados.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">km</span>
-                                                </span>
-                                                <span className="text-sm font-bold text-accent">
+                                            <span className="text-xl font-bold text-white leading-none">
+                                                {summary.kmRodados.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">km</span>
+                                                <span className="ml-2 text-base text-white">
                                                     (R$ {(summary.kmRodados * 0.12).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                                                 </span>
-                                            </div>
+                                            </span>
                                         </div>
                                     </div>
                                 </>
