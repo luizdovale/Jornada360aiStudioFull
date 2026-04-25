@@ -390,17 +390,17 @@ const HomePage: React.FC = () => {
                                     <div className="my-2 border-t border-white/10"></div>
 
                                     <div className="flex items-center justify-between px-2 pt-1">
-                                        <div className="flex items-center gap-2 text-accent/80">
+                                        <div className="flex items-center gap-2 text-green-400 font-bold">
                                             <Map className="w-4 h-4" />
-                                            <span className="text-xs font-medium uppercase tracking-wider">Mês Civil ({formattedCalendarMonth})</span>
+                                            <span className="text-xs uppercase tracking-wider">Mês Civil ({formattedCalendarMonth})</span>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-xl font-bold text-white leading-tight">
+                                            <span className="text-xl font-bold text-white whitespace-nowrap">
                                                 {summary.kmRodados.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">km</span>
-                                            </div>
-                                            <div className="text-base font-bold text-white leading-tight">
-                                                R$ {(summary.kmRodados * 0.12).toFixed(2).replace('.', ',')}
-                                            </div>
+                                                <span className="ml-2 text-white">
+                                                    (R$ {(summary.kmRodados * 0.12).toFixed(2).replace('.', ',')})
+                                                </span>
+                                            </span>
                                         </div>
                                     </div>
                                 </>
