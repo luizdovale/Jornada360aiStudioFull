@@ -10,6 +10,7 @@ const APP_SHELL_URLS = [
 // Evento de instalação do Service Worker
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Instalando...');
+    self.skipWaiting(); // Força o SW a se tornar ativo imediatamente
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             console.log('[Service Worker] Adicionando App Shell ao cache:', APP_SHELL_URLS);
@@ -44,39 +45,34 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Estratégia: Cache first, falling back to network
+    // Nova Estratégia: Network First, falling back to cache
+    // Isso garante que se houver internet, ele sempre pegue o site novo da Vercel
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-                // Se encontrar no cache, retorna a resposta do cache
-                // console.log('[Service Worker] Servindo do cache:', event.request.url);
-                return cachedResponse;
-            }
-
-            // Se não encontrar no cache, busca na rede
-            return fetch(event.request).then((networkResponse) => {
-                // console.log('[Service Worker] Buscando na rede:', event.request.url);
-
-                // Evita cache de chamadas para a API do Supabase para não servir dados antigos
-                if (event.request.url.includes('supabase.co')) {
-                    return networkResponse;
+        fetch(event.request)
+            .then((networkResponse) => {
+                // Se a rede funcionar, atualiza o cache e retorna a resposta
+                if (networkResponse.status === 200) {
+                    // Evita cache de chamadas para a API do Supabase
+                    if (!event.request.url.includes('supabase.co')) {
+                        const responseToCache = networkResponse.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    }
                 }
-
-                // Clona a resposta para poder colocar no cache e retornar ao navegador
-                const responseToCache = networkResponse.clone();
-
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseToCache);
-                });
-
                 return networkResponse;
-            }).catch(() => {
-                // Se a rede falhar, para requisições de navegação, retorna a página principal do cache
-                if (event.request.mode === 'navigate') {
-                    return caches.match('/index.html');
-                }
-                // Para outras requisições, a falha de rede será propagada
-            });
-        })
+            })
+            .catch(() => {
+                // Se a rede falhar, tenta buscar no cache
+                return caches.match(event.request).then((cachedResponse) => {
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    // Se não tiver no cache e for navegação, manda para o index.html
+                    if (event.request.mode === 'navigate') {
+                        return caches.match('/index.html');
+                    }
+                });
+            })
     );
 });
