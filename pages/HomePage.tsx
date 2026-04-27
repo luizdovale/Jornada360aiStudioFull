@@ -395,7 +395,7 @@ const HomePage: React.FC = () => {
                                             <span className="text-xs uppercase tracking-wider">Mês Civil ({formattedCalendarMonth})</span>
                                         </div>
                                         <div className="text-right whitespace-nowrap">
-                                            <span className="text-xl font-bold text-white">
+                                            <span className="text-xl font-bold text-white/80">
                                                 {summary.kmRodados.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">km</span>
                                                 <span className="ml-1 text-sm font-bold text-white/70">
                                                     (R$ {(summary.kmRodados * 0.12).toFixed(2).replace('.', ',')})
