@@ -397,7 +397,7 @@ const HomePage: React.FC = () => {
                                         <div className="text-right whitespace-nowrap">
                                             <span className="text-xl text-white">
                                                 {summary.kmRodados.toFixed(1)} <span className="text-sm font-bold text-muted-foreground">km</span>
-                                                <span className="ml-1 text-sm font-bold text-white/70">
+                                                <span className="ml-1 text-sm font-bold text-white">
                                                     (R$ {(summary.kmRodados * 0.12).toFixed(2).replace('.', ',')})
                                                 </span>
                                             </span>
