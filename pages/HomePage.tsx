@@ -330,21 +330,21 @@ const HomePage: React.FC = () => {
     const formattedCalendarMonth = displayDate.toLocaleDateString('pt-BR', { month: 'long' });
 
     return (
-        <div 
+        <div
             className="-mt-16 space-y-5 pb-4"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
         >
             {/* Indicador de Pull to Refresh */}
-            <div 
+            <div
                 className="w-full flex justify-center items-center overflow-hidden transition-all duration-200 ease-out"
-                style={{ 
+                style={{
                     height: isRefreshing ? `${PULL_THRESHOLD}px` : `${Math.max(0, visualDistance - 20)}px`,
                     opacity: isRefreshing ? 1 : Math.min(visualDistance / PULL_THRESHOLD, 1)
                 }}
             >
-                <div 
+                <div
                     className={`bg-white rounded-full p-2 shadow-md flex items-center justify-center transition-transform duration-300 ${isRefreshing ? 'animate-spin' : ''}`}
                     style={{ transform: !isRefreshing ? `rotate(${visualDistance * 4}deg)` : 'none' }}
                 >
@@ -394,14 +394,14 @@ const HomePage: React.FC = () => {
                                             <Map className="w-4 h-4" />
                                             <span className="text-xs uppercase tracking-wider">Mês Civil ({formattedCalendarMonth})</span>
                                         </div>
-                                         <div className="text-right whitespace-nowrap">
-                                             <span className="text-xl text-white">
-                                                 {summary.kmRodados.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">km</span>
-                                                 <span className="ml-2 text-base font-normal text-white/70">
-                                                     (R$ {(summary.kmRodados * 0.12).toFixed(2).replace('.', ',')})
-                                                 </span>
-                                             </span>
-                                         </div>
+                                        <div className="text-right whitespace-nowrap">
+                                            <span className="text-xl text-white">
+                                                {summary.kmRodados.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">km</span>
+                                                <span className="ml-1 text-sm font-bold text-white/70">
+                                                    (R$ {(summary.kmRodados * 0.12).toFixed(2).replace('.', ',')})
+                                                </span>
+                                            </span>
+                                        </div>
                                     </div>
                                 </>
                             )}
