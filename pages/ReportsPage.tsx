@@ -168,15 +168,15 @@ const ReportsPage: React.FC = () => {
                 const summaryText = `Dias Trabalhados: ${summary.totalDiasTrabalhados} | HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
                 doc.text(summaryText, margin, 53);
 
-                const tableColumn = ["Data", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Noturno", "Obs"];
+                const tableColumn = ["Data", "RV", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Noturno", "Obs"];
                 const tableRows = filtered
                     .sort((a, b) => a.date.localeCompare(b.date))
                     .map(j => {
                         const c = calculateJourney(j, settings);
                         const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                        if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", j.notes || ""];
+                        if (j.is_day_off) return [d, j.rv_number || "-", "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", j.notes || ""];
                         const mealLabel = j.is_plantao ? "PLANTÃO" : `${j.meal_start || '00:00'} - ${j.meal_end || '00:00'}`;
-                        return [d, j.start_at || '00:00', j.end_at || '00:00', mealLabel, formatMinutesToHours(c.horasExtras50), formatMinutesToHours(c.horasExtras100), formatMinutesToHours(c.adicionalNoturno), j.notes || ""];
+                        return [d, j.rv_number || "-", j.start_at || '00:00', j.end_at || '00:00', mealLabel, formatMinutesToHours(c.horasExtras50), formatMinutesToHours(c.horasExtras100), formatMinutesToHours(c.adicionalNoturno), j.notes || ""];
                     });
 
                 // @ts-ignore
@@ -189,13 +189,14 @@ const ReportsPage: React.FC = () => {
                     bodyStyles: { fontSize: 7, halign: 'center' },
                     columnStyles: {
                         0: { cellWidth: 15 },
-                        1: { cellWidth: 15 },
+                        1: { cellWidth: 12 },
                         2: { cellWidth: 15 },
-                        3: { cellWidth: 30 },
-                        4: { cellWidth: 20 },
-                        5: { cellWidth: 20 },
-                        6: { cellWidth: 20 },
-                        7: { halign: 'left' }
+                        3: { cellWidth: 15 },
+                        4: { cellWidth: 25 },
+                        5: { cellWidth: 18 },
+                        6: { cellWidth: 18 },
+                        7: { cellWidth: 18 },
+                        8: { halign: 'left' }
                     },
                     didParseCell: (data: any) => {
                         if (data.cell.text && data.cell.text.includes('FOLGA')) {
