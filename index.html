@@ -38,74 +38,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- jsPDF for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: "#1E263C",
-                            dark: "#151B2C",
-                            light: "#EAEFF5",
-                            medium: "#9DA8BE",
-                        },
-                        accent: {
-                            DEFAULT: "#F8C400",
-                        },
-                        muted: {
-                            DEFAULT: "#BDC6D1",
-                            foreground: "#6B7280",
-                        },
-                        background: "#F5F7FA",
-                        card: "#FFFFFF",
-                        foreground: "#1E263C",
-                    },
-                    borderRadius: {
-                        xl2: "1.5rem",
-                        xl3: "2rem",
-                    },
-                    boxShadow: {
-                        card: "0 8px 16px rgba(30, 38, 60, 0.08)",
-                        soft: "0 6px 16px rgba(0,0,0,0.06)",
-                        floating: "0 18px 35px rgba(0,0,0,0.18)",
-                    },
-                    fontSize: {
-                        "title-lg": ["1.6rem", { fontWeight: "700" }],
-                        "card-label": ["0.85rem", { letterSpacing: "0.02em" }],
-                    },
-                    fontFamily: {
-                      sans: ['Inter', 'sans-serif'],
-                    },
-                },
-            }
-        }
-    </script>
-<style>
-    /* Desabilita o "pull-to-refresh" no Android para parecer mais nativo */
-    body {
-        overscroll-behavior-y: contain;
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
-    }
-    input:-webkit-autofill {
-        -webkit-text-fill-color: #1E263C !important;
-        -webkit-box-shadow: 0 0 0 30px #f3f4f6 inset !important;
-    }
-    /* Estilo para evitar seleção de texto indesejada em botões nativos */
-    button, a {
-        -webkit-tap-highlight-color: transparent;
-        user-select: none;
-    }
-</style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.81.1",
