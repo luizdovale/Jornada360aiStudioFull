@@ -24,16 +24,39 @@ const timeToMinutes = (timeString?: string): number => {
     return h * 60 + m;
 };
 
+const minutesSince = (date?: string, timeStr?: string): number => {
+    if (!date || !timeStr || timeStr === '00:00' || timeStr === '00:00:00') return 0;
+    try {
+        const start = new Date(`${date}T${timeStr.substring(0, 5)}:00`);
+        const now = new Date();
+        const diff = Math.floor((now.getTime() - start.getTime()) / 60000);
+        return diff > 0 ? diff : 0;
+    } catch (e) {
+        return 0;
+    }
+};
+
 export const detectIncomplete = (journeys: Journey[]): IncompleteJourney[] => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 30);
     const cutoffStr = getLocalDateString(cutoff);
+    const todayStr = getLocalDateString(new Date());
 
     return journeys
         .filter(j => {
             // Ignora folgas e dias muito antigos
             if (j.is_day_off) return false;
             if (j.date < cutoffStr) return false;
+            
+            // Ignora se a jornada estiver ativamente em andamento (iniciada há menos de 14h e sem fim)
+            if (!isBlank(j.start_at) && isBlank(j.end_at)) {
+                const diffHours = minutesSince(j.date, j.start_at) / 60;
+                if (diffHours <= 14) return false;
+            }
+
+            // Ignora se for a jornada de hoje e ainda estiver totalmente em branco (ex: rascunho de início do dia)
+            if (j.date === todayStr && isBlank(j.start_at) && isBlank(j.end_at)) return false;
+
             return true;
         })
         .map(j => {
