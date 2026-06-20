@@ -154,6 +154,12 @@ const ReportsPage: React.FC = () => {
             doc.text(`Tipo: ${reportType === 'hours' ? 'Ponto e Horas Extras' : 'Controle de KM e Entregas'}`, margin, 38);
 
             const summary = getMonthSummary(filtered, settings);
+            if (reportType === 'hours') {
+                const currentOption = monthOptions[selectedOptionIndex];
+                const calendarFiltered = journeys.filter(j => j.date >= currentOption.calendarStart && j.date <= currentOption.calendarEnd);
+                const calendarSummary = getMonthSummary(calendarFiltered, settings);
+                summary.totalDiasTrabalhados = calendarSummary.totalDiasTrabalhados;
+            }
 
             if (reportType === 'hours') {
                 doc.setDrawColor(230, 230, 230);

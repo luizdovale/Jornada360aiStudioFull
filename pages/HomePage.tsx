@@ -268,7 +268,8 @@ const HomePage: React.FC = () => {
 
         return {
             ...accountingSummary,
-            kmRodados: calendarSummary.kmRodados
+            kmRodados: calendarSummary.kmRodados,
+            totalDiasTrabalhados: calendarSummary.totalDiasTrabalhados
         };
     }, [journeys, settings, displayDate]);
 
