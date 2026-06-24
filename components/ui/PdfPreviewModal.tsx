@@ -132,16 +132,29 @@ const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({ isOpen, onClose, pdfU
                 </div>
 
                 {/* PDF Viewer */}
-                <div className="flex-1 bg-gray-500 overflow-hidden">
-                    {pdfUrl ? (
-                         <iframe
-                            src={pdfUrl}
-                            title="Visualizador de PDF"
-                            className="w-full h-full border-none"
-                         />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white">Carregando PDF...</div>
-                    )}
+                <div className="flex-1 bg-gray-500 overflow-hidden flex flex-col">
+                    <div className="bg-yellow-50 p-2 text-center border-b border-yellow-200">
+                        <p className="text-[11px] text-yellow-800 font-medium">
+                            ⚠️ Em alguns celulares, a pré-visualização mostra apenas a 1ª página. <strong>Baixe ou compartilhe</strong> para ver o PDF completo.
+                        </p>
+                    </div>
+                    <div className="flex-1 w-full h-full relative overflow-auto -webkit-overflow-scrolling-touch">
+                        {pdfUrl ? (
+                             <object
+                                data={pdfUrl}
+                                type="application/pdf"
+                                className="w-full h-full min-h-[500px]"
+                             >
+                                <iframe
+                                    src={pdfUrl}
+                                    title="Visualizador de PDF"
+                                    className="w-full h-full border-none"
+                                />
+                             </object>
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white">Carregando PDF...</div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Footer Actions */}
