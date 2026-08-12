@@ -1,5 +1,6 @@
 <p align="center">
-  <a href="[https://lh3.googleusercontent.com/pw/AP1GczO9cP5qFHlSNkfvgaHHNZ5_6X-ooNpa4_HVi1jAKpEiP-qXppoWb3jy32xpPv6T0VMMZeI5aQ731fslbH6y2n4mQnqpBLajMAOWJ3RYcVQXaVX11jCohfA9D7lWNq9w70ojnVm1zJ0RP-htfhqIIrIv=w1145-h599-s-no-gm?authuser=3](https://lh3.googleusercontent.com/pw/AP1GczO9cP5qFHlSNkfvgaHHNZ5_6X-ooNpa4_HVi1jAKpEiP-qXppoWb3jy32xpPv6T0VMMZeI5aQ731fslbH6y2n4mQnqpBLajMAOWJ3RYcVQXaVX11jCohfA9D7lWNq9w70ojnVm1zJ0RP-htfhqIIrIv=w1145-h599-s-no-gm?authuser=3)" />
+  <a href="https://valetechsolucoes.com.br">
+    <img src="https://lh3.googleusercontent.com/pw/AP1GczPhGnFVCsJDN6QkM968cClyfRPNDGlNa81MhyateI-M4S5CRvcVdFuaMesaeSEn6q6ChfM8pWnPQJKLUXfA2EDta9_GfXeR0nVxp05YsKLhKu5Q1yh-vLv-lstCOVbQiEd6xmD7B7KuI8uDL1x0nj5Q=w1366-h434-s-no-gm?authuser=2" />
   </a>
 </p>
 
