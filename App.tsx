@@ -7,7 +7,9 @@ import { JourneyProvider, useJourneys } from './contexts/JourneyContext';
 import { supabase } from './lib/supabaseClient';
 
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import MainLayout from './components/layout/MainLayout';
+import DevDashboardPage from './pages/DevDashboardPage';
 
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -47,9 +49,13 @@ const AppContent: React.FC = () => {
     useEffect(() => {
         const handleAuthToken = async () => {
             const hash = window.location.hash;
-            
-            // Verifica se há um token de acesso na URL (formato do Supabase: #access_token=...)
-            if (hash.includes('access_token=')) {
+
+            // Verifica se há um token de acesso OU um erro do Supabase na URL
+            // (formato: #access_token=... ou #error=access_denied&error_code=otp_expired...)
+            // O caso de erro acontece sempre que o link de recuperação/confirmação já expirou
+            // ou já foi usado — sem esse tratamento, o hash quebrado sobra na URL e o
+            // HashRouter cai na rota 404 assim que a splash screen termina.
+            if (hash.includes('access_token=') || hash.includes('error=')) {
                 setIsIntercepting(true);
 
                 try {
@@ -58,8 +64,13 @@ const AppContent: React.FC = () => {
                     const accessToken = searchParams.get('access_token');
                     const refreshToken = searchParams.get('refresh_token');
                     const type = searchParams.get('type');
+                    const authError = searchParams.get('error');
 
-                    if (accessToken && refreshToken) {
+                    if (authError) {
+                        // Link expirado, já utilizado ou inválido: manda para a tela que já
+                        // trata esse cenário com uma mensagem amigável (UpdatePasswordPage).
+                        navigate('/password-reset', { replace: true });
+                    } else if (accessToken && refreshToken) {
                         // Força o Supabase a aceitar essa sessão
                         const { error } = await supabase.auth.setSession({
                             access_token: accessToken,
@@ -76,10 +87,14 @@ const AppContent: React.FC = () => {
                             }
                         } else {
                             console.error("Erro ao injetar sessão:", error.message);
+                            // Mesmo em caso de falha (token expirado/já usado), leva o usuário
+                            // para uma tela com mensagem clara em vez de deixá-lo num 404.
+                            navigate(type === 'recovery' ? '/password-reset' : '/login', { replace: true });
                         }
                     }
                 } catch (err) {
                     console.error("Erro no processamento do token:", err);
+                    navigate('/login', { replace: true });
                 } finally {
                     // Pequeno delay para garantir que o navigate foi processado
                     setTimeout(() => setIsIntercepting(false), 800);
@@ -121,7 +136,8 @@ const AppContent: React.FC = () => {
             <Route path="/profile" element={<ProtectedRoute><MainLayout><ProfilePage /></MainLayout></ProtectedRoute>} />
             <Route path="/calendar" element={<ProtectedRoute><MainLayout><CalendarPage /></MainLayout></ProtectedRoute>} />
             <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
-            
+            <Route path="/dev" element={<AdminRoute><MainLayout><DevDashboardPage /></MainLayout></AdminRoute>} />
+
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );

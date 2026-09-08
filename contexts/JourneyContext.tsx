@@ -4,9 +4,10 @@ import { Journey, Settings } from '../types';
 import { useAuth } from './AuthContext';
 import { useToast } from '../hooks/useToast';
 
-// Chaves para o localStorage
-const JOURNEYS_CACHE_KEY = 'jornada360-journeys';
-const SETTINGS_CACHE_KEY = 'jornada360-settings';
+// Chaves para o localStorage, isoladas por usuário (evita que, num dispositivo
+// compartilhado, os dados de uma conta apareçam brevemente para a próxima que logar)
+const journeysCacheKey = (userId: string) => `jornada360-journeys-${userId}`;
+const settingsCacheKey = (userId: string) => `jornada360-settings-${userId}`;
 
 interface JourneyContextType {
     journeys: Journey[];
@@ -24,28 +25,31 @@ const JourneyContext = createContext<JourneyContextType | undefined>(undefined);
 export const JourneyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { user } = useAuth();
     const { toast } = useToast();
-    
-    // Inicia o estado com dados do localStorage, se disponíveis
-    const [journeys, setJourneys] = useState<Journey[]>(() => {
-        try {
-            const cachedJourneys = localStorage.getItem(JOURNEYS_CACHE_KEY);
-            return cachedJourneys ? JSON.parse(cachedJourneys) : [];
-        } catch (error) {
-            console.error("Failed to parse journeys from localStorage", error);
-            return [];
-        }
-    });
-    const [settings, setSettings] = useState<Settings | null>(() => {
-        try {
-            const cachedSettings = localStorage.getItem(SETTINGS_CACHE_KEY);
-            return cachedSettings ? JSON.parse(cachedSettings) : null;
-        } catch (error) {
-            console.error("Failed to parse settings from localStorage", error);
-            return null;
-        }
-    });
+
+    // O usuário só é conhecido de forma assíncrona (via AuthContext), então o cache
+    // não pode ser lido de forma síncrona no primeiro render — ele é hidratado no
+    // efeito abaixo, já isolado pelo id do usuário logado.
+    const [journeys, setJourneys] = useState<Journey[]>([]);
+    const [settings, setSettings] = useState<Settings | null>(null);
 
     const [loading, setLoading] = useState(true);
+
+    // Hidrata do cache local assim que soubermos qual usuário está logado
+    useEffect(() => {
+        if (!user) return;
+        try {
+            const cachedJourneys = localStorage.getItem(journeysCacheKey(user.id));
+            if (cachedJourneys) setJourneys(JSON.parse(cachedJourneys));
+        } catch (error) {
+            console.error("Failed to parse journeys from localStorage", error);
+        }
+        try {
+            const cachedSettings = localStorage.getItem(settingsCacheKey(user.id));
+            if (cachedSettings) setSettings(JSON.parse(cachedSettings));
+        } catch (error) {
+            console.error("Failed to parse settings from localStorage", error);
+        }
+    }, [user?.id]);
 
     const fetchData = useCallback(async () => {
         if (!user) return;
@@ -60,20 +64,20 @@ export const JourneyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
             if (journeysError) throw journeysError;
             setJourneys(journeysData || []);
-            localStorage.setItem(JOURNEYS_CACHE_KEY, JSON.stringify(journeysData || []));
+            localStorage.setItem(journeysCacheKey(user.id), JSON.stringify(journeysData || []));
 
             // Carrega as configurações
             const { data: settingsData, error: settingsError } = await supabase
                 .from('settings')
                 .select('*')
                 .eq('user_id', user.id)
-                .single();
+                .maybeSingle();
 
-            if (settingsError && settingsError.code !== 'PGRST116') { // Ignora erro "No rows found"
+            if (settingsError) {
                  throw settingsError;
             }
             setSettings(settingsData);
-            localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(settingsData));
+            localStorage.setItem(settingsCacheKey(user.id), JSON.stringify(settingsData));
 
         } catch (error: any) {
             console.error('Erro ao carregar dados:', error);
@@ -87,11 +91,10 @@ export const JourneyProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (user) {
             fetchData();
         } else {
-            // Limpa os dados e o cache se o usuário deslogar
+            // Limpa os dados em memória se o usuário deslogar (o cache em localStorage já é
+            // isolado por user_id, então não precisa ser removido — só não é mais lido)
             setJourneys([]);
             setSettings(null);
-            localStorage.removeItem(JOURNEYS_CACHE_KEY);
-            localStorage.removeItem(SETTINGS_CACHE_KEY);
             setLoading(false);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,7 +118,7 @@ export const JourneyProvider: React.FC<{ children: ReactNode }> = ({ children })
             .select('id')
             .eq('user_id', user.id)
             .eq('date', journeyData.date)
-            .single();
+            .maybeSingle();
 
         if (existing) {
             toast({ title: 'Jornada já existe', description: 'Já existe uma jornada registrada para esta data.', variant: 'destructive' });
@@ -135,7 +138,7 @@ export const JourneyProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (data) {
             const updatedJourneys = [data, ...journeys].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
             setJourneys(updatedJourneys);
-            localStorage.setItem(JOURNEYS_CACHE_KEY, JSON.stringify(updatedJourneys));
+            localStorage.setItem(journeysCacheKey(user.id), JSON.stringify(updatedJourneys));
             toast({ title: 'Sucesso!', description: 'Jornada adicionada com sucesso.' });
             return true;
         }
@@ -157,7 +160,7 @@ export const JourneyProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (data) {
             const updatedJourneys = journeys.map(j => (j.id === data.id ? data : j));
             setJourneys(updatedJourneys);
-            localStorage.setItem(JOURNEYS_CACHE_KEY, JSON.stringify(updatedJourneys));
+            if (user) localStorage.setItem(journeysCacheKey(user.id), JSON.stringify(updatedJourneys));
             toast({ title: 'Sucesso!', description: 'Jornada atualizada com sucesso.' });
             return true;
         }
@@ -173,7 +176,7 @@ export const JourneyProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
         const updatedJourneys = journeys.filter(j => j.id !== id);
         setJourneys(updatedJourneys);
-        localStorage.setItem(JOURNEYS_CACHE_KEY, JSON.stringify(updatedJourneys));
+        if (user) localStorage.setItem(journeysCacheKey(user.id), JSON.stringify(updatedJourneys));
         toast({ title: 'Sucesso!', description: 'Jornada deletada.' });
         return true;
     };
@@ -203,7 +206,7 @@ export const JourneyProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
         if (data) {
             setSettings(data);
-            localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem(settingsCacheKey(user.id), JSON.stringify(data));
             toast({ title: 'Sucesso!', description: 'Configurações salvas.' });
             return true;
         }

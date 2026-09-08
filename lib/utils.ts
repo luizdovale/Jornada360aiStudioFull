@@ -198,9 +198,21 @@ export const getMonthSummary = (journeys: Journey[], settings: Settings | null):
     }, summary);
 };
 
+/**
+ * Converte o padrão de escala (ex: "6x1", "5x2") em dias de trabalho/folga por ciclo.
+ * "12x36" é um padrão por HORAS (12h trabalhando, 36h de folga) e não por dias — na
+ * prática isso equivale a trabalhar um dia sim, um dia não, então é tratado à parte
+ * em vez de ser interpretado literalmente como 12 dias de trabalho e 36 de folga.
+ */
+export const parseEscalaPattern = (pattern: string): { work: number; off: number } => {
+    if (pattern === '12x36') return { work: 1, off: 1 };
+    const [work, off] = pattern.split('x').map(Number);
+    return { work: work || 1, off: off || 0 };
+};
+
 export const getDayTypeForScale = (date: Date, settings: Settings): 'work' | 'off' | null => {
     if (!settings?.escala_pattern || !settings?.escala_start_date) return null;
-    const [work, off] = settings.escala_pattern.split('x').map(Number);
+    const { work, off } = parseEscalaPattern(settings.escala_pattern);
     const cycle = work + off;
     const diffDays = Math.round((new Date(date).getTime() - new Date(settings.escala_start_date + 'T00:00:00').getTime()) / (1000 * 60 * 60 * 24));
     const dayInCycle = ((diffDays % cycle) + cycle) % cycle;
