@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 // @ts-ignore
 import { HashRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -28,15 +28,22 @@ import NotFoundPage from './pages/NotFoundPage';
 import { Toaster } from './components/ui/Toaster';
 import { Loader2 } from 'lucide-react';
 import SplashScreen from './components/ui/SplashScreen';
+import ProReminderModal from './components/ui/ProReminderModal';
+
+// Rotas onde o lembrete de assinatura não deve aparecer (fluxos públicos,
+// onboarding, a própria tela de assinatura e o painel DEV)
+const PRO_REMINDER_EXCLUDED_ROUTES = ['/login', '/cadastro', '/recuperar-senha', '/password-reset', '/onboarding', '/subscription', '/dev'];
 
 const AppContent: React.FC = () => {
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading, isPro } = useAuth();
     const { settings, loading: journeyLoading } = useJourneys();
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     const [isIntercepting, setIsIntercepting] = useState(false);
     const [showSplash, setShowSplash] = useState(true);
+    const [showProReminder, setShowProReminder] = useState(false);
+    const proReminderShown = useRef(false);
 
     // Tempo mínimo para a Splash Screen
     useEffect(() => {
@@ -114,6 +121,23 @@ const AppContent: React.FC = () => {
         }
     }, [user, settings, authLoading, journeyLoading, location.pathname, navigate]);
 
+    // Lembrete de assinatura: mostra uma vez a cada vez que o app é aberto
+    // (não a cada troca de tela) para quem já concluiu o onboarding e não é PRO.
+    useEffect(() => {
+        if (
+            !proReminderShown.current &&
+            !authLoading &&
+            !journeyLoading &&
+            user &&
+            settings &&
+            !isPro &&
+            !PRO_REMINDER_EXCLUDED_ROUTES.includes(location.pathname)
+        ) {
+            proReminderShown.current = true;
+            setShowProReminder(true);
+        }
+    }, [authLoading, journeyLoading, user, settings, isPro, location.pathname]);
+
     // Carregamento Global / Interceptação / Splash Screen
     const shouldShowSplash = showSplash || isIntercepting || (authLoading && !user && !window.location.hash.includes('access_token'));
 
@@ -122,6 +146,8 @@ const AppContent: React.FC = () => {
     }
 
     return (
+        <>
+        {showProReminder && <ProReminderModal onClose={() => setShowProReminder(false)} />}
         <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/cadastro" element={<SignUpPage />} />
@@ -142,6 +168,7 @@ const AppContent: React.FC = () => {
 
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </>
     );
 }
 

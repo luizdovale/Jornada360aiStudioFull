@@ -19,7 +19,7 @@ const SubscriptionPage: React.FC = () => {
     const { isPro } = useAuth();
     const { toast } = useToast();
     const navigate = useNavigate();
-    const [interval, setInterval] = useState<Interval>('monthly');
+    const [interval, setInterval] = useState<Interval>('yearly');
     const [loading, setLoading] = useState(false);
 
     const features = [
@@ -73,16 +73,16 @@ const SubscriptionPage: React.FC = () => {
                 {!isPro && (
                     <div className="flex bg-white/10 p-1.5 rounded-2xl">
                         <button
-                            onClick={() => setInterval('monthly')}
-                            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${interval === 'monthly' ? 'bg-white text-primary-dark shadow-md' : 'text-white/70'}`}
-                        >
-                            Mensal
-                        </button>
-                        <button
                             onClick={() => setInterval('yearly')}
                             className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${interval === 'yearly' ? 'bg-white text-primary-dark shadow-md' : 'text-white/70'}`}
                         >
                             Anual
+                        </button>
+                        <button
+                            onClick={() => setInterval('monthly')}
+                            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${interval === 'monthly' ? 'bg-white text-primary-dark shadow-md' : 'text-white/70'}`}
+                        >
+                            Mensal
                         </button>
                     </div>
                 )}
