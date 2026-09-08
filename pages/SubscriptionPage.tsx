@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,11 +16,28 @@ const PLANS: Record<Interval, { label: string; price: string; suffix: string; no
 };
 
 const SubscriptionPage: React.FC = () => {
-    const { isPro } = useAuth();
+    const { isPro, refreshSubscription } = useAuth();
     const { toast } = useToast();
     const navigate = useNavigate();
     const [interval, setInterval] = useState<Interval>('yearly');
     const [loading, setLoading] = useState(false);
+
+    // Ao voltar do checkout do Mercado Pago (ou sempre que abrir esta tela),
+    // confere o status real da assinatura direto na API deles e atualiza o
+    // app — o webhook pode atrasar ou nao chegar, e o estado "isPro" do
+    // contexto so era carregado uma vez no login.
+    useEffect(() => {
+        const sync = async () => {
+            try {
+                await supabase.functions.invoke('mp-sync-subscription');
+                await refreshSubscription();
+            } catch (e) {
+                console.error('Erro ao sincronizar assinatura:', e);
+            }
+        };
+        sync();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const features = [
         { icon: ShieldCheck, text: "Relatórios em PDF ilimitados" },

@@ -35,7 +35,14 @@ const Sidebar: React.FC<{ isOpen: boolean; setIsOpen: (isOpen: boolean) => void;
     return (
         <div className="fixed inset-0 bg-black/60 z-50 transition-opacity duration-300" onClick={() => setIsOpen(false)}>
             <div
-                className={`fixed top-0 left-0 h-full w-72 bg-primary-dark shadow-lg p-6 flex flex-col gap-8 transition-transform duration-300 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                // position: fixed ignora o padding-top de safe-area aplicado no <body>, então o
+                // topo do menu fica embaixo do notch/Dynamic Island — por isso o padding vertical
+                // aqui soma explicitamente env(safe-area-inset-*) em vez de usar só p-6.
+                className={`fixed top-0 left-0 h-full w-72 bg-primary-dark shadow-lg px-6 flex flex-col gap-8 transition-transform duration-300 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                style={{
+                    paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
+                    paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
+                }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center">
