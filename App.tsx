@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import MainLayout from './components/layout/MainLayout';
 import DevDashboardPage from './pages/DevDashboardPage';
+import SubscriptionPage from './pages/SubscriptionPage';
 
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -136,6 +137,7 @@ const AppContent: React.FC = () => {
             <Route path="/profile" element={<ProtectedRoute><MainLayout><ProfilePage /></MainLayout></ProtectedRoute>} />
             <Route path="/calendar" element={<ProtectedRoute><MainLayout><CalendarPage /></MainLayout></ProtectedRoute>} />
             <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+            <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
             <Route path="/dev" element={<AdminRoute><MainLayout><DevDashboardPage /></MainLayout></AdminRoute>} />
 
             <Route path="*" element={<NotFoundPage />} />

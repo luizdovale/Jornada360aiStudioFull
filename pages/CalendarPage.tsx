@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
+// @ts-ignore
+import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getDayTypeForScale } from '../lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import ScheduleWeekPreview from '../components/ui/ScheduleWeekPreview';
 
 // Componente de conteúdo reutilizável para o widget e a página completa
 export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget = false }) => {
     const { settings } = useJourneys();
+    const { isPro } = useAuth();
+    const navigate = useNavigate();
     const [currentDate, setCurrentDate] = useState(new Date());
 
     // Estados para controle do Swipe (Toque)
@@ -66,7 +72,33 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
             </div>
         );
     }
-    
+
+    // Free: só a semana atual. Ver o mês inteiro e navegar entre meses é recurso PRO.
+    if (!isPro) {
+        return (
+            <div className="w-full space-y-4">
+                <ScheduleWeekPreview settings={settings} label="Sua semana" />
+                <div className="bg-primary-light/50 border border-primary/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Lock className="w-4 h-4 text-primary-dark" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-sm font-bold text-primary-dark">Veja o mês inteiro e planeje com antecedência</p>
+                        <p className="text-xs text-primary-dark/70 mt-0.5">Assine o PRO para navegar entre meses e enxergar sua escala completa.</p>
+                    </div>
+                    {!isWidget && (
+                        <button
+                            onClick={() => navigate('/subscription')}
+                            className="flex-shrink-0 text-xs font-bold px-3 py-2 rounded-lg bg-primary text-white hover:brightness-110 transition"
+                        >
+                            Assinar
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
          <div 
             className="w-full select-none" // select-none evita selecionar texto ao arrastar

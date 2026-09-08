@@ -5,47 +5,52 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { useToast } from '../hooks/useToast';
-import { Check, ShieldCheck, Zap, Star, ArrowLeft, Loader2, CreditCard } from 'lucide-react';
+import { Check, ShieldCheck, CalendarRange, Clock, ArrowLeft, Loader2, CreditCard } from 'lucide-react';
 import Jornada360Icon from '../components/ui/Jornada360Icon';
 
+type Interval = 'monthly' | 'yearly';
+
+const PLANS: Record<Interval, { label: string; price: string; suffix: string; note?: string }> = {
+    monthly: { label: 'Plano Mensal', price: 'R$ 9,90', suffix: '/mês' },
+    yearly: { label: 'Plano Anual', price: 'R$ 99,90', suffix: '/ano', note: 'Equivale a R$ 8,33/mês — 2 meses grátis' },
+};
+
 const SubscriptionPage: React.FC = () => {
-    const { user, isPro, refreshSubscription } = useAuth();
+    const { isPro } = useAuth();
     const { toast } = useToast();
     const navigate = useNavigate();
+    const [interval, setInterval] = useState<Interval>('monthly');
     const [loading, setLoading] = useState(false);
 
+    const features = [
+        { icon: ShieldCheck, text: "Relatórios em PDF ilimitados" },
+        { icon: CalendarRange, text: "Calendário de escala completo, sem limite de meses" },
+        { icon: Clock, text: "Suporte prioritário" },
+    ];
+
     const handleSubscribe = async () => {
-        if (!user) return;
         setLoading(true);
-
         try {
-            await supabase.from('subscriptions').upsert({
-                user_id: user.id,
-                plan: 'pro',
-                status: 'active',
-                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-            }, { onConflict: 'user_id' });
-
-            await refreshSubscription();
-            toast({ 
-                title: "Assinatura Ativada!", 
-                description: "Parabéns! Você agora é um usuário PRO do Jornada360.",
+            const { data, error } = await supabase.functions.invoke('mp-create-subscription', {
+                body: { interval },
             });
-            navigate('/');
-        } catch (e) {
-            toast({ title: "Erro", description: "Não foi possível processar a assinatura.", variant: 'destructive' });
-        } finally {
+
+            if (error || !data?.init_point) {
+                throw new Error(error?.message || 'Não foi possível iniciar a assinatura.');
+            }
+
+            window.location.href = data.init_point;
+        } catch (e: any) {
+            toast({
+                title: 'Erro ao iniciar assinatura',
+                description: e.message || 'Tente novamente em instantes.',
+                variant: 'destructive',
+            });
             setLoading(false);
         }
     };
 
-    const features = [
-        { icon: ShieldCheck, text: "Relatórios PDF ilimitados" },
-        { icon: Zap, text: "Cálculo automático de Adicional Noturno" },
-        { icon: Star, text: "Sem anúncios e suporte priorizado" },
-        { icon: Star, text: "Controle de KM e Manutenção" },
-        { icon: Star, text: "Backup em tempo real na nuvem" },
-    ];
+    const plan = PLANS[interval];
 
     return (
         <div className="min-h-screen bg-primary flex flex-col p-6 pb-20 overflow-x-hidden">
@@ -62,18 +67,38 @@ const SubscriptionPage: React.FC = () => {
                         </div>
                     </div>
                     <h1 className="text-3xl font-bold text-white">Eleve sua Jornada</h1>
-                    <p className="text-muted-foreground">Tenha o controle total do seu trabalho com as ferramentas profissionais do Jornada360.</p>
+                    <p className="text-muted-foreground">Exporte seus relatórios e planeje sua escala com antecedência.</p>
                 </div>
 
+                {!isPro && (
+                    <div className="flex bg-white/10 p-1.5 rounded-2xl">
+                        <button
+                            onClick={() => setInterval('monthly')}
+                            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${interval === 'monthly' ? 'bg-white text-primary-dark shadow-md' : 'text-white/70'}`}
+                        >
+                            Mensal
+                        </button>
+                        <button
+                            onClick={() => setInterval('yearly')}
+                            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${interval === 'yearly' ? 'bg-white text-primary-dark shadow-md' : 'text-white/70'}`}
+                        >
+                            Anual
+                        </button>
+                    </div>
+                )}
+
                 <div className="bg-white rounded-3xl p-6 shadow-floating border border-accent/20 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 bg-accent text-primary-dark font-bold text-xs px-4 py-1 rounded-bl-2xl">RECOMENDADO</div>
-                    
+                    <div className="absolute top-0 right-0 bg-accent text-primary-dark font-bold text-xs px-4 py-1 rounded-bl-2xl">
+                        {interval === 'yearly' ? 'MELHOR CUSTO' : 'RECOMENDADO'}
+                    </div>
+
                     <div className="mb-6">
-                        <span className="text-sm font-bold text-primary-dark/60 uppercase tracking-widest">Plano Mensal</span>
+                        <span className="text-sm font-bold text-primary-dark/60 uppercase tracking-widest">{plan.label}</span>
                         <div className="flex items-baseline gap-1 mt-1">
-                            <span className="text-4xl font-black text-primary-dark">R$ 19,90</span>
-                            <span className="text-muted-foreground">/mês</span>
+                            <span className="text-4xl font-black text-primary-dark">{plan.price}</span>
+                            <span className="text-muted-foreground">{plan.suffix}</span>
                         </div>
+                        {plan.note && <p className="text-xs text-green-600 font-semibold mt-1">{plan.note}</p>}
                     </div>
 
                     <ul className="space-y-4 mb-8">
@@ -87,16 +112,23 @@ const SubscriptionPage: React.FC = () => {
                         ))}
                     </ul>
 
-                    <button 
-                        onClick={handleSubscribe}
-                        disabled={loading || isPro}
-                        className="w-full bg-accent text-primary-dark font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
-                    >
-                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (
-                            isPro ? "Você já é PRO" : <> <CreditCard className="w-5 h-5" /> Assinar Agora </>
-                        )}
-                    </button>
-                    <p className="text-[10px] text-center text-muted-foreground mt-4">Cancele a qualquer momento. Pagamento seguro via CPF.</p>
+                    {isPro ? (
+                        <button
+                            disabled
+                            className="w-full bg-primary/10 text-primary-dark font-black py-4 rounded-2xl flex items-center justify-center gap-3"
+                        >
+                            Você já é PRO ✓
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleSubscribe}
+                            disabled={loading}
+                            className="w-full bg-accent text-primary-dark font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                        >
+                            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <><CreditCard className="w-5 h-5" /> Assinar Agora</>}
+                        </button>
+                    )}
+                    <p className="text-[10px] text-center text-muted-foreground mt-4">Pagamento processado com segurança pelo Mercado Pago. Cancele quando quiser.</p>
                 </div>
             </div>
         </div>

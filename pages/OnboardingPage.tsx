@@ -6,9 +6,8 @@ import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Clock, Map, Calendar, Briefcase, Coffee, ArrowLeft, Check, ChevronRight } from 'lucide-react';
 import { Settings } from '../types';
-import { getLocalDateString, parseEscalaPattern, getDayTypeForScale } from '../lib/utils';
-
-const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+import { getLocalDateString, parseEscalaPattern } from '../lib/utils';
+import ScheduleWeekPreview from '../components/ui/ScheduleWeekPreview';
 
 const OnboardingPage: React.FC = () => {
     const navigate = useNavigate();
@@ -55,21 +54,6 @@ const OnboardingPage: React.FC = () => {
         start.setDate(start.getDate() - dayInCycle);
         setFormData(prev => ({ ...prev, escala_start_date: getLocalDateString(start) }));
     }, [todayStatus, dayNumber, workDays]);
-
-    // Prévia visual: próximos 7 dias, mostrando Trabalho/Folga com a configuração atual
-    const previewDays = useMemo(() => {
-        const tempSettings: Settings = { ...formData, user_id: '' };
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return Array.from({ length: 7 }).map((_, i) => {
-            const d = new Date(today);
-            d.setDate(d.getDate() + i);
-            return {
-                date: d,
-                type: getDayTypeForScale(d, tempSettings),
-            };
-        });
-    }, [formData]);
 
     // Se já tiver settings carregados, redireciona para a home
     useEffect(() => {
@@ -151,28 +135,6 @@ const OnboardingPage: React.FC = () => {
             </div>
             {selected && <div className="w-6 h-6 rounded-full bg-accent text-primary-dark flex items-center justify-center"><Check className="w-4 h-4"/></div>}
         </button>
-    );
-
-    const SchedulePreview = () => (
-        <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-            <p className="text-xs text-gray-400 mb-3">Prévia dos próximos dias com essa configuração:</p>
-            <div className="grid grid-cols-7 gap-1.5">
-                {previewDays.map((d, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1">
-                        <span className="text-[10px] text-gray-400">{i === 0 ? 'Hoje' : WEEKDAY_LABELS[d.date.getDay()]}</span>
-                        <div className={`w-full aspect-square rounded-lg flex items-center justify-center text-[11px] font-bold
-                            ${d.type === 'work' ? 'bg-accent text-primary-dark' : 'bg-white/10 text-gray-300'}
-                        `}>
-                            {d.date.getDate()}
-                        </div>
-                    </div>
-                ))}
-            </div>
-            <div className="flex items-center gap-4 mt-3 text-[11px] text-gray-400">
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-accent inline-block" /> Trabalho</span>
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-white/10 inline-block" /> Folga</span>
-            </div>
-        </div>
     );
 
     // Conteúdo dos Passos
@@ -341,7 +303,11 @@ const OnboardingPage: React.FC = () => {
                             </div>
                         )}
 
-                        <SchedulePreview />
+                        <ScheduleWeekPreview
+                            settings={formData}
+                            variant="dark"
+                            label="Prévia dos próximos dias com essa configuração:"
+                        />
                         <p className="text-[11px] text-center text-gray-400">
                             Não precisa ser exato — dá pra ajustar depois em Configurações.
                         </p>

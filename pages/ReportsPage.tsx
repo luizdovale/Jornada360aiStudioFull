@@ -1,16 +1,19 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+// @ts-ignore
+import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getMonthSummary, calculateJourney, formatMinutesToHours, getLocalDateString } from '../lib/utils';
-import { FileDown, Clock, Map, CalendarDays, AlertCircle } from 'lucide-react';
+import { FileDown, Clock, Map, CalendarDays, AlertCircle, Lock } from 'lucide-react';
 import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
 type ReportType = 'hours' | 'km';
 
 const ReportsPage: React.FC = () => {
     const { journeys, settings } = useJourneys();
-    const { user } = useAuth();
+    const { user, isPro } = useAuth();
+    const navigate = useNavigate();
     const [reportType, setReportType] = useState<ReportType>('hours');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState('');
@@ -77,6 +80,11 @@ const ReportsPage: React.FC = () => {
     };
 
     const generatePdf = async () => {
+        if (!isPro) {
+            navigate('/subscription');
+            return;
+        }
+
         const filtered = journeys.filter(j => j.date >= startDate && j.date <= endDate);
         
         if (!filtered.length) {
@@ -325,18 +333,27 @@ const ReportsPage: React.FC = () => {
                 </div>
 
                 <div className="pt-2 w-full">
-                    <button 
-                        onClick={generatePdf} 
-                        disabled={isGenerating} 
-                        className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark transition active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70"
+                    <button
+                        onClick={generatePdf}
+                        disabled={isGenerating}
+                        className={`w-full py-4 rounded-xl font-bold shadow-lg transition active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70
+                            ${isPro ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-accent text-primary-dark hover:brightness-105'}
+                        `}
                     >
                         {isGenerating ? (
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
+                        ) : isPro ? (
                             <FileDown className="w-5 h-5" />
+                        ) : (
+                            <Lock className="w-5 h-5" />
                         )}
-                        {isGenerating ? "Processando..." : "Gerar Relatório PDF"}
+                        {isGenerating ? "Processando..." : isPro ? "Gerar Relatório PDF" : "Recurso PRO — Assinar para gerar PDF"}
                     </button>
+                    {!isPro && (
+                        <p className="text-[11px] text-center text-muted-foreground mt-2">
+                            Exportação de relatórios em PDF é exclusiva do plano PRO.
+                        </p>
+                    )}
                 </div>
             </div>
 
