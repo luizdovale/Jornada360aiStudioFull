@@ -53,3 +53,15 @@ export interface MonthSummary extends JourneyCalculations {
   totalDiasTrabalhados: number;
   totalDeliveries: number;
 }
+
+// Painel DEV
+export interface AdminUserRow {
+  id: string;
+  email: string;
+  role: 'user' | 'admin';
+  created_at: string;
+  journeys_count: number;
+  last_journey_date: string | null;
+  plan: 'free' | 'pro' | null;
+  status: string | null;
+}

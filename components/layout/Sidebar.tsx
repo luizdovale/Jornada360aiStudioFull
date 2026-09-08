@@ -3,7 +3,7 @@ import React from 'react';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Home, List, Settings, FileText, LogOut, X, User, CalendarDays } from 'lucide-react';
+import { Home, List, Settings, FileText, LogOut, X, User, CalendarDays, ShieldCheck } from 'lucide-react';
 import Jornada360Icon from '../ui/Jornada360Icon';
 
 const NavItem = ({ icon: Icon, label, path, onClick, highlight = false }: { icon: any, label: string, path?: string, onClick?: () => void, highlight?: boolean }) => {
@@ -22,7 +22,7 @@ const NavItem = ({ icon: Icon, label, path, onClick, highlight = false }: { icon
 };
 
 const Sidebar: React.FC<{ isOpen: boolean; setIsOpen: (isOpen: boolean) => void; }> = ({ isOpen, setIsOpen }) => {
-    const { signOut } = useAuth();
+    const { signOut, isAdmin } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -55,6 +55,9 @@ const Sidebar: React.FC<{ isOpen: boolean; setIsOpen: (isOpen: boolean) => void;
                     <NavItem icon={Settings} label="Configurações" path="/settings" onClick={() => setIsOpen(false)}/>
                     <NavItem icon={FileText} label="Exportar PDF" path="/reports" onClick={() => setIsOpen(false)}/>
                     <NavItem icon={User} label="Meu Perfil" path="/profile" onClick={() => setIsOpen(false)}/>
+                    {isAdmin && (
+                        <NavItem icon={ShieldCheck} label="Painel DEV" path="/dev" onClick={() => setIsOpen(false)} highlight />
+                    )}
                 </nav>
 
                 <div>

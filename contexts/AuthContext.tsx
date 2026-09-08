@@ -15,6 +15,8 @@ interface AuthContextType {
     updateUserMetadata: (data: object) => Promise<void>;
     isPro: boolean;
     refreshSubscription: () => Promise<void>;
+    isAdmin: boolean;
+    adminLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,6 +27,8 @@ const AuthContext = createContext<AuthContextType>({
     updateUserMetadata: async (data: object) => {},
     isPro: false,
     refreshSubscription: async () => {},
+    isAdmin: false,
+    adminLoading: true,
 });
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -32,6 +36,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
     const [isPro, setIsPro] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [adminLoading, setAdminLoading] = useState(true);
+
+    // Verifica se o usuário logado tem role de admin (painel DEV)
+    useEffect(() => {
+        const checkAdmin = async () => {
+            if (!user) {
+                setIsAdmin(false);
+                setAdminLoading(false);
+                return;
+            }
+            setAdminLoading(true);
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+                setIsAdmin(!error && data?.role === 'admin');
+            } catch (e) {
+                console.error("Error checking admin role:", e);
+                setIsAdmin(false);
+            } finally {
+                setAdminLoading(false);
+            }
+        };
+        checkAdmin();
+    }, [user]);
 
     // Fix: Implement refreshSubscription to check the user's current subscription status in Supabase
     const refreshSubscription = async () => {
@@ -44,7 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 .from('subscriptions')
                 .select('status, plan')
                 .eq('user_id', user.id)
-                .single();
+                .maybeSingle();
             
             if (!error && data && data.status === 'active' && data.plan === 'pro') {
                 setIsPro(true);
@@ -122,7 +154,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, signOut, updateUserMetadata, isPro, refreshSubscription }}>
+        <AuthContext.Provider value={{ user, session, loading, signOut, updateUserMetadata, isPro, refreshSubscription, isAdmin, adminLoading }}>
             {children}
         </AuthContext.Provider>
     );
