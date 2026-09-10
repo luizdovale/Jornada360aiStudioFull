@@ -64,4 +64,5 @@ export interface AdminUserRow {
   last_journey_date: string | null;
   plan: 'free' | 'pro' | null;
   status: string | null;
+  avatar_url: string | null;
 }

@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import { AdminUserRow, Journey, Settings, Subscription } from '../../types';
 import { formatMinutesToHours } from '../../lib/utils';
-import { X, Shield, ShieldOff, Trash2, KeyRound, Save, Loader2 } from 'lucide-react';
+import { X, Shield, ShieldOff, Trash2, KeyRound, Save, Loader2, User as UserIcon } from 'lucide-react';
 
 interface Props {
     userRow: AdminUserRow;
@@ -137,11 +137,20 @@ const DevUserDetailModal: React.FC<Props> = ({ userRow, onClose, onChanged }) =>
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white">
-                    <div>
-                        <h2 className="font-bold text-primary-dark">{userRow.email}</h2>
-                        <p className="text-xs text-muted-foreground">ID: {userRow.id}</p>
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-11 h-11 rounded-full bg-primary-light flex items-center justify-center text-primary-dark overflow-hidden flex-shrink-0">
+                            {userRow.avatar_url ? (
+                                <img src={userRow.avatar_url} alt={userRow.email} className="w-full h-full object-cover" />
+                            ) : (
+                                <UserIcon className="w-5 h-5" />
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="font-bold text-primary-dark truncate">{userRow.email}</h2>
+                            <p className="text-xs text-muted-foreground truncate">ID: {userRow.id}</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-700 flex-shrink-0"><X className="w-5 h-5" /></button>
                 </div>
 
                 <div className="overflow-y-auto p-5 space-y-6 flex-1">

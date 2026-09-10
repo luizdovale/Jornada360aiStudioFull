@@ -26,14 +26,18 @@ const DevDashboardPage: React.FC = () => {
 
     const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();
-        if (!q) return rows;
-        return rows.filter(r => r.email?.toLowerCase().includes(q));
+        const base = q ? rows.filter(r => r.email?.toLowerCase().includes(q)) : rows;
+        return [...base].sort((a, b) => (a.email || '').localeCompare(b.email || ''));
     }, [rows, search]);
 
+    // "PRO" só conta quando o pagamento foi realmente confirmado (status active).
+    // plan='pro' sozinho só significa que o usuário clicou em "Assinar" e o
+    // checkout foi iniciado — o status continua "pending" até o Mercado Pago
+    // confirmar o pagamento.
     const stats = useMemo(() => ({
         total: rows.length,
         admins: rows.filter(r => r.role === 'admin').length,
-        pro: rows.filter(r => r.plan === 'pro').length,
+        pro: rows.filter(r => r.plan === 'pro' && r.status === 'active').length,
         journeys: rows.reduce((acc, r) => acc + (r.journeys_count || 0), 0),
     }), [rows]);
 
@@ -86,7 +90,8 @@ const DevDashboardPage: React.FC = () => {
                                     <div className="flex items-center gap-2">
                                         <span className="font-medium text-primary-dark truncate">{r.email}</span>
                                         {r.role === 'admin' && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent/15 text-accent">ADMIN</span>}
-                                        {r.plan === 'pro' && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary-light text-primary-dark">PRO</span>}
+                                        {r.plan === 'pro' && r.status === 'active' && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary-light text-primary-dark">PRO</span>}
+                                        {r.plan === 'pro' && r.status === 'pending' && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">PAGAMENTO PENDENTE</span>}
                                     </div>
                                     <p className="text-xs text-gray-400">
                                         {r.journeys_count} jornadas · desde {new Date(r.created_at).toLocaleDateString('pt-BR')}
