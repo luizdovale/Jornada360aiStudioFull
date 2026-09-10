@@ -22,6 +22,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- App Links: faz o Android abrir estes domínios direto no app (em vez do
+                 navegador) quando o usuário toca em um link, como o de recuperação de senha
+                 vindo por e-mail. Exige o assetlinks.json publicado em cada domínio (ver
+                 public/.well-known/assetlinks.json) e a app reinstalada/atualizada depois
+                 de gerar um novo build assinado. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="jornada360.vercel.app" />
+                <data android:scheme="https" android:host="jornada360.valetechsolucoes.com.br" />
+            </intent-filter>
+
         </activity>
 
         <provider

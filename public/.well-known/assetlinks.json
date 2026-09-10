@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.jornada360.app",
+      "sha256_cert_fingerprints": [
+        "17:27:9F:A2:EE:13:C7:BC:43:EF:B1:E1:39:13:96:48:53:3A:F2:E5:A1:0F:D6:48:FD:E0:67:87:4D:70:C4:BE"
+      ]
+    }
+  }
+]
