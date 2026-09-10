@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+// Credenciais de assinatura ficam em keystore.properties (fora do git) em vez de
+// hardcoded aqui — esse arquivo já é público no GitHub.
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.jornada360.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -19,10 +27,10 @@ android {
 
     signingConfigs {
         release {
-            storeFile file('key.jks')
-            storePassword "510688"
-            keyAlias "calculadora"
-            keyPassword "510688"
+            storeFile file(keystoreProperties.getProperty('storeFile', 'key.jks'))
+            storePassword keystoreProperties.getProperty('storePassword')
+            keyAlias keystoreProperties.getProperty('keyAlias')
+            keyPassword keystoreProperties.getProperty('keyPassword')
         }
     }
 
