@@ -14,6 +14,8 @@ interface AuthContextType {
     signOut: () => Promise<void>;
     updateUserMetadata: (data: object) => Promise<void>;
     isPro: boolean;
+    // Vencimento do PRO quando foi pago com Pix (null para cartão / liberação manual).
+    pixExpiresAt: string | null;
     refreshSubscription: () => Promise<void>;
     isAdmin: boolean;
     adminLoading: boolean;
@@ -26,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
     signOut: async () => {},
     updateUserMetadata: async (data: object) => {},
     isPro: false,
+    pixExpiresAt: null,
     refreshSubscription: async () => {},
     isAdmin: false,
     adminLoading: true,
@@ -36,6 +39,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
     const [isPro, setIsPro] = useState(false);
+    const [pixExpiresAt, setPixExpiresAt] = useState<string | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [adminLoading, setAdminLoading] = useState(true);
 
@@ -69,23 +73,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const refreshSubscription = async () => {
         if (!user) {
             setIsPro(false);
+            setPixExpiresAt(null);
             return;
         }
         try {
             const { data, error } = await supabase
                 .from('subscriptions')
-                .select('status, plan')
+                .select('status, plan, payment_method, current_period_end')
                 .eq('user_id', user.id)
                 .maybeSingle();
-            
-            if (!error && data && data.status === 'active' && data.plan === 'pro') {
-                setIsPro(true);
-            } else {
-                setIsPro(false);
-            }
+
+            // Cartão e PRO liberado manualmente não vencem aqui (o cartão é
+            // cancelado pelo webhook). Pix vale até current_period_end.
+            const isPix = data?.payment_method === 'pix';
+            const pixValid = isPix && !!data?.current_period_end && new Date(data.current_period_end) > new Date();
+            const active = !error && !!data && data.status === 'active' && data.plan === 'pro' && (!isPix || pixValid);
+
+            setIsPro(active);
+            setPixExpiresAt(active && isPix ? data!.current_period_end : null);
         } catch (e) {
             console.error("Error refreshing subscription:", e);
             setIsPro(false);
+            setPixExpiresAt(null);
         }
     };
 
@@ -154,7 +163,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, signOut, updateUserMetadata, isPro, refreshSubscription, isAdmin, adminLoading }}>
+        <AuthContext.Provider value={{ user, session, loading, signOut, updateUserMetadata, isPro, pixExpiresAt, refreshSubscription, isAdmin, adminLoading }}>
             {children}
         </AuthContext.Provider>
     );
