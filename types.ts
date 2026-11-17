@@ -31,6 +31,7 @@ export interface Settings {
   month_start_day: number; // 1-31
   escala_pattern: string; // e.g., "6x2", "5x2"
   escala_start_date?: string; // YYYY-MM-DD
+  company_name?: string | null; // exibido no cabeçalho dos relatórios
 }
 
 export interface Subscription {

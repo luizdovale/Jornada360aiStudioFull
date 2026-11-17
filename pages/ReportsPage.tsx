@@ -158,6 +158,22 @@ const ReportsPage: React.FC = () => {
             doc.setTextColor(100, 100, 100);
             const periodLabel = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
             doc.text(`Colaborador: ${user?.user_metadata?.nome || 'Usuário'}`, margin, 28);
+            const companyName = settings.company_name?.trim();
+            if (companyName) {
+                // À direita, nas linhas do colaborador e do período; nomes longos
+                // quebram em até 2 linhas para não encostar no texto da esquerda.
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(titleColor[0], titleColor[1], titleColor[2]);
+                const companyLines: string[] = doc.splitTextToSize(`Empresa: ${companyName}`, 90);
+                if (companyLines.length > 2) {
+                    companyLines[1] = doc.splitTextToSize(companyLines.slice(1).join(' '), 84)[0].trimEnd() + '...';
+                }
+                companyLines.slice(0, 2).forEach((line, i) => {
+                    doc.text(line, rightMargin, 28 + i * 5, { align: 'right' });
+                });
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(100, 100, 100);
+            }
             doc.text(`Período: ${periodLabel}`, margin, 33);
             doc.text(`Tipo: ${reportType === 'hours' ? 'Ponto e Horas Extras' : 'Controle de KM e Entregas'}`, margin, 38);
 

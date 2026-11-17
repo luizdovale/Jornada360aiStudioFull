@@ -17,6 +17,7 @@ const SettingsPage: React.FC = () => {
         month_start_day: 21,
         escala_pattern: '6x1',
         escala_start_date: getLocalDateString(),
+        company_name: '',
     });
     const [loading, setLoading] = useState(false);
 
@@ -28,6 +29,7 @@ const SettingsPage: React.FC = () => {
                 month_start_day: settings.month_start_day,
                 escala_pattern: settings.escala_pattern,
                 escala_start_date: settings.escala_start_date || getLocalDateString(),
+                company_name: settings.company_name || '',
             });
         }
     }, [settings]);
@@ -53,6 +55,7 @@ const SettingsPage: React.FC = () => {
             ...formData,
             jornada_base: Number(formData.jornada_base),
             month_start_day: Number(formData.month_start_day),
+            company_name: formData.company_name?.trim() || null,
         };
         const success = await saveSettings(dataToSave);
         if (success) {
@@ -81,6 +84,20 @@ const SettingsPage: React.FC = () => {
             <h1 className="text-title-lg text-primary-dark">Configurações</h1>
             <div className="bg-white p-6 rounded-2xl shadow-card">
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label htmlFor="company_name" className="block text-sm font-medium text-gray-700">Nome da Empresa</label>
+                        <input
+                            type="text"
+                            name="company_name"
+                            id="company_name"
+                            maxLength={80}
+                            placeholder="Opcional"
+                            value={formData.company_name || ''}
+                            onChange={handleChange}
+                            className={inputStyle}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Aparece no cabeçalho dos relatórios em PDF.</p>
+                    </div>
                     <div>
                         <label htmlFor="jornada_base" className="block text-sm font-medium text-gray-700">Jornada Diária</label>
                         <select
