@@ -6,6 +6,7 @@ import { useJourneys } from '../contexts/JourneyContext';
 import { useToast } from '../hooks/useToast';
 import { Journey } from '../types';
 import { getLocalDateString, getTripLabel } from '../lib/utils';
+import DateField from '../components/ui/DateField';
 import { X, Coffee, Clock, Map, FileText, Calendar, Check, ArrowLeft, Shield, Package, FileInput } from 'lucide-react';
 
 const DRAFT_KEY = 'jornada360_journey_draft';
@@ -286,11 +287,16 @@ const JourneyFormPage: React.FC = () => {
                     </div>
 
                     <div className={inputContainerStyle}>
-                        <label className={labelStyle}>Data</label>
-                        <div className="relative w-full">
-                            <Calendar className={inputIconStyle} />
-                            <input type="date" name="date" value={formData.date} onChange={handleChange} required className={inputStyle} />
-                        </div>
+                        <label htmlFor="journey_date" className={labelStyle}>Data</label>
+                        <DateField
+                            id="journey_date"
+                            name="date"
+                            value={formData.date}
+                            onChange={value => handleChange({ target: { name: 'date', value, type: 'date' } })}
+                            required
+                            boxClassName="h-[58px] px-4 gap-3 bg-gray-50 border border-gray-200 rounded-xl shadow-sm text-base"
+                            iconClassName="w-5 h-5"
+                        />
                     </div>
 
                     {!formData.is_day_off && (

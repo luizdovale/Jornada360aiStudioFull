@@ -2,11 +2,20 @@ import React from 'react';
 import { CalendarDays } from 'lucide-react';
 
 interface DateFieldProps {
-    id: string;
+    id?: string;
+    name?: string;
     value: string; // YYYY-MM-DD
     onChange: (value: string) => void;
+    required?: boolean;
     placeholder?: string;
+    // Classes do contêiner (ex.: margem) e da caixa visível, para cada tela
+    // manter o tamanho e o estilo dos seus outros campos.
+    className?: string;
+    boxClassName?: string;
+    iconClassName?: string;
 }
+
+const DEFAULT_BOX = 'h-11 px-3 border border-gray-200 rounded-lg bg-white text-sm';
 
 /**
  * Campo de data com visual próprio. O Safari do iPhone ignora boa parte do
@@ -15,7 +24,17 @@ interface DateFieldProps {
  * input nativo fica invisível por cima: o toque continua abrindo o calendário
  * do próprio aparelho.
  */
-const DateField: React.FC<DateFieldProps> = ({ id, value, onChange, placeholder = 'dd/mm/aaaa' }) => {
+const DateField: React.FC<DateFieldProps> = ({
+    id,
+    name,
+    value,
+    onChange,
+    required,
+    placeholder = 'dd/mm/aaaa',
+    className = '',
+    boxClassName = DEFAULT_BOX,
+    iconClassName = 'w-4 h-4',
+}) => {
     const display = value ? new Date(value + 'T00:00:00').toLocaleDateString('pt-BR') : placeholder;
 
     const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
@@ -28,11 +47,13 @@ const DateField: React.FC<DateFieldProps> = ({ id, value, onChange, placeholder 
     };
 
     return (
-        <div className="relative min-w-0">
+        <div className={`relative min-w-0 ${className}`}>
             <input
                 id={id}
+                name={name}
                 type="date"
                 value={value}
+                required={required}
                 onChange={e => onChange(e.target.value)}
                 onClick={openPicker}
                 // appearance-none + min/max-w: o Safari impõe largura mínima ao
@@ -41,10 +62,10 @@ const DateField: React.FC<DateFieldProps> = ({ id, value, onChange, placeholder 
             />
             <div
                 aria-hidden="true"
-                className="flex items-center gap-2 h-11 px-3 border border-gray-200 rounded-lg bg-white text-sm transition-colors
-                    peer-focus-visible:ring-2 peer-focus-visible:ring-primary/20 peer-focus-visible:border-primary peer-hover:border-gray-300"
+                className={`flex items-center gap-2 transition-colors peer-hover:border-gray-300
+                    peer-focus-visible:ring-2 peer-focus-visible:ring-primary/20 peer-focus-visible:border-primary ${boxClassName}`}
             >
-                <CalendarDays className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <CalendarDays className={`text-gray-400 flex-shrink-0 ${iconClassName}`} />
                 <span className={`truncate tabular-nums ${value ? 'text-primary-dark' : 'text-gray-400'}`}>{display}</span>
             </div>
         </div>

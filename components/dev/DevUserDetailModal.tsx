@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import { AdminUserRow, Journey, Settings, Subscription } from '../../types';
 import { formatMinutesToHours } from '../../lib/utils';
+import DateField from '../ui/DateField';
 import { X, Shield, ShieldOff, Trash2, KeyRound, Save, Loader2, User as UserIcon } from 'lucide-react';
 
 interface Props {
@@ -234,7 +235,7 @@ const DevUserDetailModal: React.FC<Props> = ({ userRow, onClose, onChanged }) =>
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-500">Início da Escala</label>
-                                        <input type="date" className={inputStyle} value={settings.escala_start_date ?? ''} onChange={e => setSettings(prev => ({ ...prev, escala_start_date: e.target.value }))} />
+                                        <DateField value={settings.escala_start_date ?? ''} onChange={value => setSettings(prev => ({ ...prev, escala_start_date: value }))} className="mt-1" boxClassName="h-10 px-2.5 border border-gray-200 rounded-lg bg-white shadow-sm text-sm" />
                                     </div>
                                 </div>
                                 <label className="flex items-center gap-2 mt-3 text-sm text-gray-700">

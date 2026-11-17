@@ -8,6 +8,7 @@ import { Settings, SettingsVersion } from '../types';
 import { getLocalDateString, formatMinutesToHours, getTripLabel, DEFAULT_TRIP_LABEL, SETTINGS_BASELINE_DATE } from '../lib/utils';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
 import TripLabelPicker from '../components/ui/TripLabelPicker';
+import DateField from '../components/ui/DateField';
 import { History, Trash2 } from 'lucide-react';
 
 type FormData = Omit<Settings, 'id' | 'user_id'>;
@@ -213,14 +214,14 @@ const SettingsPage: React.FC = () => {
                     </div>
                      <div>
                         <label htmlFor="escala_start_date" className="block text-sm font-medium text-gray-700">Primeiro Dia da Escala</label>
-                        <input
-                            type="date"
-                            name="escala_start_date"
+                        <DateField
                             id="escala_start_date"
-                            value={formData.escala_start_date}
-                            onChange={handleChange}
+                            name="escala_start_date"
+                            value={formData.escala_start_date || ''}
+                            onChange={value => setFormData(prev => ({ ...prev, escala_start_date: value }))}
                             required
-                            className={inputStyle}
+                            className="mt-1"
+                            boxClassName="h-[50px] px-3 border border-gray-200 rounded-lg bg-white shadow-sm text-base"
                         />
                          <p className="mt-1 text-xs text-gray-500">Informe a data do seu primeiro dia de trabalho no ciclo da escala.</p>
                     </div>
@@ -246,13 +247,12 @@ const SettingsPage: React.FC = () => {
                     {versionedChanged && (
                         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
                             <label htmlFor="effective_from" className="block text-sm font-bold text-amber-900">Essas alterações valem a partir de</label>
-                            <input
-                                type="date"
+                            <DateField
                                 id="effective_from"
                                 value={effectiveFrom}
-                                onChange={e => setEffectiveFrom(e.target.value)}
+                                onChange={setEffectiveFrom}
                                 required
-                                className={inputStyle}
+                                boxClassName="h-[50px] px-3 border border-gray-200 rounded-lg bg-white shadow-sm text-base"
                             />
                             <p className="text-xs text-amber-800">
                                 Os dias anteriores continuam com as configurações de antes: horas extras, períodos, escala e relatórios já lançados não mudam.
