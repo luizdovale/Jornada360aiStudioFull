@@ -1,12 +1,14 @@
 
 import React, { useMemo } from 'react';
 import { Settings } from '../../types';
-import { getDayTypeForScale } from '../../lib/utils';
+import { getDayTypeForScale, getLocalDateString, SettingsAt } from '../../lib/utils';
 
 const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 interface ScheduleWeekPreviewProps {
     settings: Pick<Settings, 'escala_pattern' | 'escala_start_date'>;
+    // Quando informado, cada dia usa a escala vigente nele (histórico de configurações).
+    settingsAt?: SettingsAt;
     days?: number;
     variant?: 'dark' | 'light';
     label?: string;
@@ -16,6 +18,7 @@ interface ScheduleWeekPreviewProps {
 // prévia do onboarding quanto na visão semanal (free) do Calendário de Escala.
 const ScheduleWeekPreview: React.FC<ScheduleWeekPreviewProps> = ({
     settings,
+    settingsAt,
     days = 7,
     variant = 'light',
     label = 'Sua semana',
@@ -26,9 +29,10 @@ const ScheduleWeekPreview: React.FC<ScheduleWeekPreviewProps> = ({
         return Array.from({ length: days }).map((_, i) => {
             const d = new Date(today);
             d.setDate(d.getDate() + i);
-            return { date: d, type: getDayTypeForScale(d, settings as Settings) };
+            const daySettings = settingsAt ? settingsAt(getLocalDateString(d)) : (settings as Settings);
+            return { date: d, type: getDayTypeForScale(d, daySettings) };
         });
-    }, [settings, days]);
+    }, [settings, settingsAt, days]);
 
     const isDark = variant === 'dark';
 

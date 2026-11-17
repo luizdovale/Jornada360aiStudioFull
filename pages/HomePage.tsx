@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
-import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysForDisplayMonth, getJourneysForCalendarMonth } from '../lib/utils';
+import { getMonthSummary, formatMinutesToHours, calculateJourney, getJourneysInPeriod, getJourneysForCalendarMonth, getPeriodMonthDate, formatPeriodRange, addDaysToDateString, getLocalDateString, getTripLabel } from '../lib/utils';
+import { AccountingPeriod } from '../types';
 import OverlappingCard from '../components/ui/OverlappingCard';
 import Skeleton from '../components/ui/Skeleton';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
@@ -35,12 +36,14 @@ const RecentJourneyItem: React.FC<{
     onToggle: () => void,
     onDelete: (id: string) => void
 }> = ({ journey, isExpanded, onToggle, onDelete }) => {
-    const { settings } = useJourneys();
+    const { settings, settingsAt } = useJourneys();
     const navigate = useNavigate();
 
-    if (!settings) return null;
+    if (!settings || !settingsAt) return null;
 
-    const calcs = calculateJourney(journey, settings);
+    // Configurações vigentes no dia da jornada, não as de hoje.
+    const daySettings = settingsAt(journey.date);
+    const calcs = calculateJourney(journey, daySettings);
     const date = new Date(journey.date + 'T00:00:00');
 
     const handleEdit = (e: React.MouseEvent) => {
@@ -136,7 +139,7 @@ const RecentJourneyItem: React.FC<{
                         {journey.rv_number && !journey.is_plantao && (
                             <div className="flex items-center gap-2">
                                 <FileText className="w-3.5 h-3.5 text-primary" />
-                                <span>RV: <strong>{journey.rv_number}</strong></span>
+                                <span>{getTripLabel(daySettings)}: <strong>{journey.rv_number}</strong></span>
                             </div>
                         )}
                         {journey.notes && (
@@ -189,8 +192,8 @@ const HomePageSkeleton: React.FC = () => (
 
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
-    const { journeys, settings, loading, deleteJourney, fetchData } = useJourneys();
-    const [displayDate, setDisplayDate] = useState<Date | null>(null);
+    const { journeys, settings, settingsAt, getPeriod, loading, deleteJourney, fetchData } = useJourneys();
+    const [period, setPeriod] = useState<AccountingPeriod | null>(null);
     const [expandedJourneyId, setExpandedJourneyId] = useState<string | null>(null);
     const [journeyToDelete, setJourneyToDelete] = useState<string | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -238,16 +241,13 @@ const HomePage: React.FC = () => {
     const visualDistance = Math.min(pullDistance, PULL_THRESHOLD + 20);
 
     useEffect(() => {
-        if (settings) {
-            const now = new Date();
-            const startDay = settings.month_start_day || 1;
-            const initialDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            if (now.getDate() < startDay) {
-                initialDate.setMonth(initialDate.getMonth() - 1);
-            }
-            setDisplayDate(initialDate);
+        if (getPeriod) {
+            setPeriod(getPeriod(getLocalDateString()));
         }
-    }, [settings]);
+    }, [getPeriod]);
+
+    // O período leva o nome do mês em que começa (21/10 a 20/11 = Outubro).
+    const displayDate = period ? getPeriodMonthDate(period) : null;
 
     const recentJourneys = useMemo(() => {
         return [...journeys]
@@ -258,49 +258,35 @@ const HomePage: React.FC = () => {
     const incompleteJourneys = useMemo(() => detectIncomplete(journeys), [journeys]);
 
     const summary: MonthSummary = useMemo(() => {
-        if (!settings || !displayDate) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, adicionalNoturno: 0, kmRodados: 0, totalDiasTrabalhados: 0, totalDeliveries: 0 };
+        if (!settingsAt || !period || !displayDate) return { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, adicionalNoturno: 0, kmRodados: 0, totalDiasTrabalhados: 0, totalDeliveries: 0 };
 
-        const accountingJourneys = getJourneysForDisplayMonth(journeys, displayDate, settings);
-        const accountingSummary = getMonthSummary(accountingJourneys, settings);
+        const accountingJourneys = getJourneysInPeriod(journeys, period);
+        const accountingSummary = getMonthSummary(accountingJourneys, settingsAt);
 
         const calendarJourneys = getJourneysForCalendarMonth(journeys, displayDate);
-        const calendarSummary = getMonthSummary(calendarJourneys, settings);
+        const calendarSummary = getMonthSummary(calendarJourneys, settingsAt);
 
         return {
             ...accountingSummary,
             kmRodados: calendarSummary.kmRodados,
             totalDiasTrabalhados: calendarSummary.totalDiasTrabalhados
         };
-    }, [journeys, settings, displayDate]);
+    }, [journeys, settingsAt, period]);
 
+    // Navega período a período (um período de transição pode ser mais curto que um mês).
     const handlePrevMonth = () => {
-        setDisplayDate(current => {
-            if (!current) return null;
-            const newDate = new Date(current);
-            newDate.setMonth(newDate.getMonth() - 1);
-            return newDate;
-        });
+        if (!getPeriod) return;
+        setPeriod(current => current ? getPeriod(addDaysToDateString(current.start, -1)) : current);
     };
 
     const handleNextMonth = () => {
-        setDisplayDate(current => {
-            if (!current) return null;
-            const newDate = new Date(current);
-            newDate.setMonth(newDate.getMonth() + 1);
-            return newDate;
-        });
+        if (!getPeriod) return;
+        setPeriod(current => current ? getPeriod(addDaysToDateString(current.end, 1)) : current);
     };
 
     const isCurrentAccountingMonth = () => {
-        if (!settings || !displayDate) return false;
-        const now = new Date();
-        const startDay = settings.month_start_day || 1;
-        let currentMonthStartDate = new Date(now.getFullYear(), now.getMonth(), startDay);
-        if (now.getDate() < startDay) {
-            currentMonthStartDate.setMonth(currentMonthStartDate.getMonth() - 1);
-        }
-        return currentMonthStartDate.getFullYear() === displayDate.getFullYear() &&
-            currentMonthStartDate.getMonth() === displayDate.getMonth();
+        if (!getPeriod || !period) return false;
+        return getPeriod(getLocalDateString()).start === period.start;
     };
 
     const toggleJourney = (id: string) => {
@@ -319,7 +305,7 @@ const HomePage: React.FC = () => {
         }
     };
 
-    if ((loading && journeys.length === 0) || !displayDate) {
+    if ((loading && journeys.length === 0) || !displayDate || !period) {
         return (
             <div className="-mt-16 space-y-5 pb-4">
                 <HomePageSkeleton />
@@ -375,6 +361,7 @@ const HomePage: React.FC = () => {
                                         {formattedMonth}
                                         {isCurrentAccountingMonth() && <span className="text-xs bg-accent text-primary-dark font-bold px-2 py-0.5 rounded-full">Atual</span>}
                                     </h2>
+                                    <p className="text-xs text-white/60 mt-0.5">{formatPeriodRange(period)}</p>
                                 </div>
                                 <button onClick={handleNextMonth} className="p-2 rounded-full hover:bg-white/10 transition-colors"><ChevronRight className="w-5 h-5" /></button>
                             </div>

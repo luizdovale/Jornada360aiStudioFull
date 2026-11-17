@@ -4,14 +4,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { getMonthSummary, calculateJourney, formatMinutesToHours, getLocalDateString } from '../lib/utils';
+import { getMonthSummary, calculateJourney, formatMinutesToHours, getLocalDateString, addDaysToDateString, getPeriodMonthDate, formatPeriodRange, getTripLabel } from '../lib/utils';
 import { FileDown, Clock, Map, CalendarDays, AlertCircle, Lock } from 'lucide-react';
 import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
 type ReportType = 'hours' | 'km';
 
 const ReportsPage: React.FC = () => {
-    const { journeys, settings } = useJourneys();
+    const { journeys, settings, settingsAt, getPeriod } = useJourneys();
     const { user, isPro } = useAuth();
     const navigate = useNavigate();
     const [reportType, setReportType] = useState<ReportType>('hours');
@@ -22,32 +22,39 @@ const ReportsPage: React.FC = () => {
     const [endDate, setEndDate] = useState('');
     const [selectedOptionIndex, setSelectedOptionIndex] = useState<number>(1);
 
+    // Períodos contábeis com o mesmo nome usado no Início (o mês em que o
+    // período começa): o próximo, o atual e os 10 anteriores. Respeita trocas
+    // de dia contábil, que podem criar um período de transição mais curto.
     const monthOptions = useMemo(() => {
-        const options = [];
-        const today = new Date();
-        const startDay = settings?.month_start_day || 1;
-        
-        for (let i = -1; i < 11; i++) {
-            const ref = new Date(today.getFullYear(), today.getMonth() - i, 1);
-            
-            const cycleStart = new Date(ref.getFullYear(), ref.getMonth() - 1, startDay);
-            const cycleEnd = new Date(ref.getFullYear(), ref.getMonth(), startDay - 1);
-            
-            const calendarStart = new Date(ref.getFullYear(), ref.getMonth(), 1);
-            const calendarEnd = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
-            
-            const label = ref.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-            options.push({ 
-                label: label.charAt(0).toUpperCase() + label.slice(1), 
-                cycleStart: getLocalDateString(cycleStart), 
-                cycleEnd: getLocalDateString(cycleEnd),
-                calendarStart: getLocalDateString(calendarStart),
-                calendarEnd: getLocalDateString(calendarEnd),
-                value: i 
-            });
+        if (!getPeriod) return [];
+        const current = getPeriod(getLocalDateString());
+        const periods = [getPeriod(addDaysToDateString(current.end, 1)), current];
+        let p = current;
+        for (let i = 0; i < 10; i++) {
+            p = getPeriod(addDaysToDateString(p.start, -1));
+            periods.push(p);
         }
-        return options;
-    }, [settings]);
+
+        const named = periods.map(period => {
+            const monthDate = getPeriodMonthDate(period);
+            const label = monthDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            return { period, monthDate, label: label.charAt(0).toUpperCase() + label.slice(1) };
+        });
+
+        return named.map((o, i) => {
+            // Dois períodos no mesmo mês (troca de dia contábil): mostra as datas.
+            const repeated = named.filter(x => x.label === o.label).length > 1;
+            const calendarEnd = new Date(o.monthDate.getFullYear(), o.monthDate.getMonth() + 1, 0);
+            return {
+                label: repeated ? `${o.label} (${formatPeriodRange(o.period)})` : o.label,
+                cycleStart: o.period.start,
+                cycleEnd: o.period.end,
+                calendarStart: getLocalDateString(o.monthDate),
+                calendarEnd: getLocalDateString(calendarEnd),
+                value: i - 1,
+            };
+        });
+    }, [getPeriod]);
 
     useEffect(() => {
         if (monthOptions.length > 0) {
@@ -92,7 +99,7 @@ const ReportsPage: React.FC = () => {
             return;
         }
 
-        if (!settings) {
+        if (!settings || !settingsAt) {
             alert('Configurações não encontradas.');
             return;
         }
@@ -158,7 +165,12 @@ const ReportsPage: React.FC = () => {
             doc.setTextColor(100, 100, 100);
             const periodLabel = `${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} até ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}`;
             doc.text(`Colaborador: ${user?.user_metadata?.nome || 'Usuário'}`, margin, 28);
-            const companyName = settings.company_name?.trim();
+            // Empresa e nome do registro vigentes nas datas do relatório; se o período
+            // atravessa uma troca de empresa, mostra os dois.
+            const distinct = (values: string[]) => Array.from(new Set(values));
+            const periodSettings = filtered.map(j => settingsAt(j.date));
+            const companyName = distinct(periodSettings.map(st => st.company_name?.trim() || '').filter(Boolean)).join(' / ');
+            const tripLabel = distinct(periodSettings.map(getTripLabel)).join(' / ');
             if (companyName) {
                 // À direita, nas linhas do colaborador e do período; nomes longos
                 // quebram em até 2 linhas para não encostar no texto da esquerda.
@@ -177,11 +189,11 @@ const ReportsPage: React.FC = () => {
             doc.text(`Período: ${periodLabel}`, margin, 33);
             doc.text(`Tipo: ${reportType === 'hours' ? 'Ponto e Horas Extras' : 'Controle de KM e Entregas'}`, margin, 38);
 
-            const summary = getMonthSummary(filtered, settings);
+            const summary = getMonthSummary(filtered, settingsAt);
             if (reportType === 'hours') {
                 const currentOption = monthOptions[selectedOptionIndex];
                 const calendarFiltered = journeys.filter(j => j.date >= currentOption.calendarStart && j.date <= currentOption.calendarEnd);
-                const calendarSummary = getMonthSummary(calendarFiltered, settings);
+                const calendarSummary = getMonthSummary(calendarFiltered, settingsAt);
                 summary.totalDiasTrabalhados = calendarSummary.totalDiasTrabalhados;
             }
 
@@ -198,11 +210,11 @@ const ReportsPage: React.FC = () => {
                 const summaryText = `Dias Trabalhados: ${summary.totalDiasTrabalhados} | HE 50%: ${formatMinutesToHours(summary.horasExtras50)}  |  HE 100%: ${formatMinutesToHours(summary.horasExtras100)}  |  Adic. Noturno: ${formatMinutesToHours(summary.adicionalNoturno)}`;
                 doc.text(summaryText, margin, 53);
 
-                const tableColumn = ["Data", "RV", "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Noturno", "Obs"];
+                const tableColumn = ["Data", tripLabel, "Início", "Fim", "Refeição", "HE 50%", "HE 100%", "Noturno", "Obs"];
                 const tableRows = filtered
                     .sort((a, b) => a.date.localeCompare(b.date))
                     .map(j => {
-                        const c = calculateJourney(j, settings);
+                        const c = calculateJourney(j, settingsAt(j.date));
                         const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                         if (j.is_day_off) return [d, j.rv_number || "-", "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", "FOLGA", j.notes || ""];
                         const mealLabel = j.is_plantao ? "PLANTÃO" : `${j.meal_start || '00:00'} - ${j.meal_end || '00:00'}`;
@@ -248,11 +260,11 @@ const ReportsPage: React.FC = () => {
                 const summaryText = `Distância Total: ${summary.kmRodados.toFixed(1)} km  |  Total de Entregas: ${summary.totalDeliveries}  |  Dias Trabalhados: ${summary.totalDiasTrabalhados}`;
                 doc.text(summaryText, margin, 53);
 
-                const tableColumn = ["Data", "RV", "Entregas", "KM Inicial", "KM Final", "Total KM"];
+                const tableColumn = ["Data", tripLabel, "Entregas", "KM Inicial", "KM Final", "Total KM"];
                 const tableRows = filtered
                     .sort((a, b) => a.date.localeCompare(b.date))
                     .map(j => {
-                        const c = calculateJourney(j, settings);
+                        const c = calculateJourney(j, settingsAt(j.date));
                         const d = new Date(j.date + 'T00:00:00').toLocaleDateString('pt-BR');
                         if (j.is_day_off) return [d, "FOLGA", "FOLGA", "FOLGA", "FOLGA", c.kmRodados > 0 ? c.kmRodados.toFixed(1) : "FOLGA"];
                         return [d, j.rv_number || "-", j.deliveries || "0", j.km_start || "0", j.km_end || "0", c.kmRodados.toFixed(1)];

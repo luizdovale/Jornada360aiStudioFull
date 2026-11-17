@@ -32,6 +32,29 @@ export interface Settings {
   escala_pattern: string; // e.g., "6x2", "5x2"
   escala_start_date?: string; // YYYY-MM-DD
   company_name?: string | null; // exibido no cabeçalho dos relatórios
+  trip_label?: string | null; // nome do registro de viagem ("RV", "Shift"...); vazio = "RV"
+}
+
+// Campos de Settings que mudam com o tempo: cada versão vale a partir de
+// effective_from, e os cálculos de um dia usam a versão vigente naquela data.
+export const VERSIONED_SETTINGS_FIELDS = ['jornada_base', 'month_start_day', 'escala_pattern', 'escala_start_date', 'company_name', 'trip_label'] as const;
+
+export interface SettingsVersion {
+  id?: string;
+  user_id?: string;
+  effective_from: string; // YYYY-MM-DD; a versão inicial usa 1900-01-01
+  jornada_base: number;
+  month_start_day: number;
+  escala_pattern: string;
+  escala_start_date?: string | null;
+  company_name?: string | null;
+  trip_label?: string | null;
+}
+
+// Período contábil ("mês" de horas), em datas YYYY-MM-DD inclusivas.
+export interface AccountingPeriod {
+  start: string;
+  end: string;
 }
 
 export interface Subscription {

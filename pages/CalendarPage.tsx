@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { getDayTypeForScale } from '../lib/utils';
+import { getDayTypeForScale, getLocalDateString } from '../lib/utils';
 import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import ScheduleWeekPreview from '../components/ui/ScheduleWeekPreview';
 
 // Componente de conteúdo reutilizável para o widget e a página completa
 export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget = false }) => {
-    const { settings } = useJourneys();
+    const { settings, settingsAt } = useJourneys();
     const { isPro } = useAuth();
     const navigate = useNavigate();
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -77,7 +77,7 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
     if (!isPro) {
         return (
             <div className="w-full space-y-4">
-                <ScheduleWeekPreview settings={settings} label="Sua semana" />
+                <ScheduleWeekPreview settings={settings} settingsAt={settingsAt ?? undefined} label="Sua semana" />
                 <div className="bg-primary-light/50 border border-primary/10 rounded-2xl p-4 flex items-start gap-3">
                     <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <Lock className="w-4 h-4 text-primary-dark" />
@@ -123,7 +123,8 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
 
                 {days.map(day => {
                     const date = new Date(year, month, day);
-                    const dayType = getDayTypeForScale(date, settings);
+                    // Escala vigente naquele dia: trocar de escala não muda os meses passados.
+                    const dayType = getDayTypeForScale(date, settingsAt ? settingsAt(getLocalDateString(date)) : settings);
                     
                     let bgColor = 'bg-transparent';
                     let textColor = 'text-gray-800';

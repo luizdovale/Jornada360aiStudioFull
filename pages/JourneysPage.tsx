@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { Journey } from '../types';
-import { calculateJourney, formatMinutesToHours } from '../lib/utils';
+import { calculateJourney, formatMinutesToHours, getLocalDateString, getTripLabel } from '../lib/utils';
 import Skeleton from '../components/ui/Skeleton';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
 import { Plus, Edit2, Trash2, Filter, ArrowDownUp, Clock, ListX, ChevronDown, FileText, StickyNote, Coffee, Shield, Package, Moon } from 'lucide-react';
@@ -16,13 +16,15 @@ const JourneyItem: React.FC<{
     isExpanded: boolean,
     onToggleExpand: () => void
 }> = ({ journey, onEdit, onDelete, isExpanded, onToggleExpand }) => {
-    const { settings } = useJourneys();
+    const { settings, settingsAt } = useJourneys();
     
-    if (!settings || !journey) return null;
+    if (!settings || !settingsAt || !journey) return null;
 
+    // Configurações vigentes no dia da jornada, não as de hoje.
+    const daySettings = settingsAt(journey.date);
     let calcs;
     try {
-        calcs = calculateJourney(journey, settings);
+        calcs = calculateJourney(journey, daySettings);
     } catch (e) {
         console.error("Erro ao calcular jornada:", e);
         calcs = { totalTrabalhado: 0, horasExtras50: 0, horasExtras100: 0, adicionalNoturno: 0, kmRodados: 0 };
@@ -150,7 +152,7 @@ const JourneyItem: React.FC<{
                     {journey.rv_number && !journey.is_plantao && (
                          <div className="flex items-start gap-2">
                             <FileText className="w-4 h-4 mt-0.5 text-primary-dark flex-shrink-0" />
-                            <p><span className="font-semibold text-primary-dark">RV:</span> {journey.rv_number}</p>
+                            <p><span className="font-semibold text-primary-dark">{getTripLabel(daySettings)}:</span> {journey.rv_number}</p>
                         </div>
                     )}
                      {journey.notes && (
@@ -187,7 +189,7 @@ const JourneyItemSkeleton: React.FC = () => (
 );
 
 const JourneysPage: React.FC = () => {
-    const { journeys, loading, deleteJourney, settings } = useJourneys();
+    const { journeys, loading, deleteJourney, settings, settingsAt, getPeriod } = useJourneys();
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [journeyToDelete, setJourneyToDelete] = useState<string | null>(null);
     const [expandedJourneyId, setExpandedJourneyId] = useState<string | null>(null);
@@ -213,29 +215,15 @@ const JourneysPage: React.FC = () => {
     }, [location.search, navigate, loading]);
 
     const filteredAndSortedJourneys = useMemo(() => {
-        if (!settings || !journeys) return [];
+        if (!settings || !settingsAt || !getPeriod || !journeys) return [];
 
         let filtered = [...journeys];
         const now = new Date();
         
         try {
             if (filterPeriod === 'current_month') {
-                const startDay = settings?.month_start_day || 1;
-                let startDate = new Date(now.getFullYear(), now.getMonth(), startDay);
-                if (now.getDate() < startDay) {
-                    startDate = new Date(now.getFullYear(), now.getMonth() - 1, startDay);
-                }
-                let endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDay - 1);
-                endDate.setHours(23, 59, 59, 999); 
-                
-                filtered = journeys.filter(j => {
-                    if (!j || !j.date) return false;
-                    try {
-                        const d = new Date(j.date + 'T00:00:00');
-                        if (isNaN(d.getTime())) return false;
-                        return d >= startDate && d <= endDate;
-                    } catch { return false; }
-                });
+                const period = getPeriod(getLocalDateString(now));
+                filtered = journeys.filter(j => !!j && !!j.date && j.date >= period.start && j.date <= period.end);
             } else if (filterPeriod === 'last_7_days') {
                 const sevenDaysAgo = new Date(now);
                 sevenDaysAgo.setDate(now.getDate() - 7);
@@ -265,10 +253,12 @@ const JourneysPage: React.FC = () => {
                 switch (sortBy) {
                     case 'date_asc': return dateA - dateB;
                     case 'total_hours_desc': 
-                        return calculateJourney(b, settings).totalTrabalhado - calculateJourney(a, settings).totalTrabalhado;
+                        return calculateJourney(b, settingsAt(b.date)).totalTrabalhado - calculateJourney(a, settingsAt(a.date)).totalTrabalhado;
                     case 'extra_hours_desc': 
-                        const extraA = calculateJourney(a, settings).horasExtras50 + calculateJourney(a, settings).horasExtras100;
-                        const extraB = calculateJourney(b, settings).horasExtras50 + calculateJourney(b, settings).horasExtras100;
+                        const calcA = calculateJourney(a, settingsAt(a.date));
+                        const calcB = calculateJourney(b, settingsAt(b.date));
+                        const extraA = calcA.horasExtras50 + calcA.horasExtras100;
+                        const extraB = calcB.horasExtras50 + calcB.horasExtras100;
                         return extraB - extraA;
                     default: return dateB - dateA;
                 }
@@ -278,7 +268,7 @@ const JourneysPage: React.FC = () => {
         });
         
         return filtered;
-    }, [journeys, settings, filterPeriod, sortBy]);
+    }, [journeys, settings, settingsAt, getPeriod, filterPeriod, sortBy]);
 
     const handleEdit = (id: string) => {
         navigate(`/journeys/edit/${id}`);

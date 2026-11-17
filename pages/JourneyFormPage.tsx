@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useToast } from '../hooks/useToast';
 import { Journey } from '../types';
-import { getLocalDateString } from '../lib/utils';
+import { getLocalDateString, getTripLabel } from '../lib/utils';
 import { X, Coffee, Clock, Map, FileText, Calendar, Check, ArrowLeft, Shield, Package, FileInput } from 'lucide-react';
 
 const DRAFT_KEY = 'jornada360_journey_draft';
@@ -38,7 +38,7 @@ type JourneyFormState = Omit<
 const JourneyFormPage: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
-    const { addJourney, updateJourney, journeys, settings, loading: journeysLoading } = useJourneys();
+    const { addJourney, updateJourney, journeys, settings, settingsAt, loading: journeysLoading } = useJourneys();
     const { toast } = useToast();
 
     const isEditing = Boolean(id);
@@ -383,7 +383,7 @@ const JourneyFormPage: React.FC = () => {
                                 </div>
                                 {!formData.is_plantao && (
                                     <div className={inputContainerStyle}>
-                                        <label className={labelStyle}>Nº do RV</label>
+                                        <label className={labelStyle}>Nº do {getTripLabel(settingsAt && formData.date ? settingsAt(formData.date) : settings)}</label>
                                         <div className="relative w-full">
                                             <FileText className={inputIconStyle} />
                                             <input type="text" name="rv_number" value={formData.rv_number} onChange={handleChange} className={inputStyle} placeholder="Opcional" />
