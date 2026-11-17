@@ -18,7 +18,7 @@ const TripLabelPicker: React.FC<TripLabelPickerProps> = ({ value, onChange }) =>
 
     const optionClass = (active: boolean) =>
         `relative flex-1 py-3 px-2 rounded-xl border-2 text-sm font-bold transition-all
-        ${active ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`;
+        ${active ? 'border-primary bg-primary-light text-primary' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`;
 
     return (
         <div className="space-y-2">
@@ -53,7 +53,7 @@ const TripLabelPicker: React.FC<TripLabelPickerProps> = ({ value, onChange }) =>
                     value={value}
                     onChange={e => onChange(e.target.value)}
                     placeholder="Ex.: Ordem de Serviço, Romaneio..."
-                    className="w-full p-3 bg-white border border-gray-200 rounded-xl text-primary-dark shadow-sm focus:ring-2 focus:ring-blue-600/40 focus:border-blue-600 outline-none"
+                    className="w-full p-3 bg-white border border-gray-200 rounded-xl text-primary-dark shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                     aria-label="Nome do registro de viagem"
                 />
             )}

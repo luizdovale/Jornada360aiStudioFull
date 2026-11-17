@@ -75,7 +75,7 @@ const RecentJourneyItem: React.FC<{
                         {journey.is_day_off ? (
                             <p className="text-xs text-red-600 font-bold uppercase tracking-tighter">FOLGA</p>
                         ) : journey.is_plantao ? (
-                            <p className="text-xs text-blue-600 font-bold uppercase tracking-tighter flex items-center gap-1"><Shield className="w-3 h-3" /> PLANTÃO</p>
+                            <p className="text-xs text-primary font-bold uppercase tracking-tighter flex items-center gap-1"><Shield className="w-3 h-3" /> PLANTÃO</p>
                         ) : (
                             <p className="text-xs text-muted-foreground">{formatMinutesToHours(calcs.totalTrabalhado)} trabalhadas</p>
                         )}
@@ -154,7 +154,7 @@ const RecentJourneyItem: React.FC<{
                     <div className="flex gap-2 pt-2 border-t border-gray-50">
                         <button
                             onClick={handleEdit}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"
+                            className="flex-1 flex items-center justify-center gap-2 py-2 bg-primary-light text-primary rounded-lg text-xs font-bold hover:bg-primary-medium/30 transition-colors"
                         >
                             <Edit2 className="w-3.5 h-3.5" /> Editar
                         </button>

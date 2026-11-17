@@ -62,7 +62,7 @@ const JourneyItem: React.FC<{
         bgColorClass = 'bg-red-50/30'; 
     } else if (journey.is_plantao) {
         statusLabel = 'PLANTÃO';
-        statusColorClass = 'text-blue-600 font-bold';
+        statusColorClass = 'text-primary font-bold';
     } else if (journey.is_feriado) {
         statusLabel = 'Feriado';
         statusColorClass = 'text-yellow-600 font-bold';
@@ -95,7 +95,7 @@ const JourneyItem: React.FC<{
                     </div>
                 </div>
                  <div className="flex items-center gap-2">
-                    <button onClick={(e) => handleActionClick(e, () => onEdit(journey.id))} className="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50 transition-colors"><Edit2 className="w-4 h-4"/></button>
+                    <button onClick={(e) => handleActionClick(e, () => onEdit(journey.id))} className="text-primary/70 hover:text-primary p-2 rounded-full hover:bg-primary-light transition-colors"><Edit2 className="w-4 h-4"/></button>
                     <button onClick={(e) => handleActionClick(e, () => onDelete(journey.id))} className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"><Trash2 className="w-4 h-4"/></button>
                     <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>

@@ -25,11 +25,11 @@ const OptionCard = ({
         onClick={onClick}
         aria-pressed={selected}
         className={`w-full text-left p-4 rounded-2xl border-2 bg-white transition-all duration-200 flex items-center gap-4
-            ${selected ? 'border-blue-600 bg-blue-50/60 shadow-sm' : 'border-gray-200 hover:border-gray-300'}
+            ${selected ? 'border-primary bg-primary-light/60 shadow-sm' : 'border-gray-200 hover:border-gray-300'}
         `}
     >
         <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors flex-shrink-0
-            ${selected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}
+            ${selected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'}
         `}>
             <Icon className="w-5 h-5" />
         </div>
@@ -37,7 +37,7 @@ const OptionCard = ({
             <h3 className="font-bold text-base text-primary-dark">{title}</h3>
             {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
         </div>
-        {selected && <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center"><Check className="w-4 h-4"/></div>}
+        {selected && <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center"><Check className="w-4 h-4"/></div>}
     </button>
 );
 
@@ -49,7 +49,7 @@ const Stepper = ({ value, onMinus, onPlus, label }: { value: number, onMinus: ()
             aria-label={`Diminuir ${label}`}
             className="w-11 h-11 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-primary-dark"
         ><Minus className="w-4 h-4" /></button>
-        <span className="text-4xl font-bold text-blue-600 w-16 text-center tabular-nums">{value}</span>
+        <span className="text-4xl font-bold text-primary w-16 text-center tabular-nums">{value}</span>
         <button
             type="button"
             onClick={onPlus}
@@ -185,7 +185,7 @@ const OnboardingPage: React.FC = () => {
                         <div className="bg-white p-5 rounded-2xl border border-gray-200 space-y-5">
                             <div>
                                 <label htmlFor="onb_company" className="flex items-center gap-2 text-sm font-semibold text-primary-dark mb-2">
-                                    <Building2 className="w-4 h-4 text-blue-600" /> Nome da empresa
+                                    <Building2 className="w-4 h-4 text-primary" /> Nome da empresa
                                 </label>
                                 <input
                                     id="onb_company"
@@ -194,7 +194,7 @@ const OnboardingPage: React.FC = () => {
                                     value={formData.company_name || ''}
                                     onChange={e => updateData('company_name', e.target.value)}
                                     placeholder="Opcional"
-                                    className="w-full p-3 bg-white border border-gray-200 rounded-xl text-primary-dark shadow-sm focus:ring-2 focus:ring-blue-600/40 focus:border-blue-600 outline-none"
+                                    className="w-full p-3 bg-white border border-gray-200 rounded-xl text-primary-dark shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                                 />
                             </div>
                             <div>
@@ -253,7 +253,7 @@ const OnboardingPage: React.FC = () => {
                         <StepHeader title="Qual sua escala de trabalho?" subtitle="Define os dias de trabalho e folga do calendário." />
                         <div className="bg-white p-5 rounded-2xl border border-gray-200">
                             <p className="flex items-center gap-2 text-sm font-semibold text-primary-dark mb-3">
-                                <Briefcase className="w-4 h-4 text-blue-600" /> Tipo de escala
+                                <Briefcase className="w-4 h-4 text-primary" /> Tipo de escala
                             </p>
                             <div className="grid grid-cols-2 gap-2">
                                 {['6x1', '5x2', '6x2', '12x36'].map(pattern => (
@@ -264,7 +264,7 @@ const OnboardingPage: React.FC = () => {
                                         aria-pressed={formData.escala_pattern === pattern}
                                         className={`py-3 px-3 rounded-xl text-sm font-bold border-2 transition-colors
                                             ${formData.escala_pattern === pattern
-                                                ? 'border-blue-600 bg-blue-600 text-white'
+                                                ? 'border-primary bg-primary text-white'
                                                 : 'border-gray-200 bg-white text-primary-dark hover:border-gray-300'}
                                         `}
                                     >
@@ -296,10 +296,10 @@ const OnboardingPage: React.FC = () => {
                                     onClick={() => { setTodayStatus(status); setDayNumber(1); }}
                                     aria-pressed={todayStatus === status}
                                     className={`p-4 rounded-2xl border-2 bg-white flex flex-col items-center gap-2 transition-all
-                                        ${todayStatus === status ? 'border-blue-600 bg-blue-50/60' : 'border-gray-200 hover:border-gray-300'}
+                                        ${todayStatus === status ? 'border-primary bg-primary-light/60' : 'border-gray-200 hover:border-gray-300'}
                                     `}
                                 >
-                                    <Icon className={`w-6 h-6 ${todayStatus === status ? 'text-blue-600' : 'text-gray-500'}`} />
+                                    <Icon className={`w-6 h-6 ${todayStatus === status ? 'text-primary' : 'text-gray-500'}`} />
                                     <span className="text-sm font-bold text-primary-dark">{label}</span>
                                 </button>
                             ))}
@@ -336,14 +336,14 @@ const OnboardingPage: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"/></div>;
+    if (loading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"/></div>;
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Cabeçalho */}
             <div className="px-6 pt-6 pb-2 max-w-md mx-auto w-full">
                <h1 className="text-lg font-bold text-primary-dark flex items-center gap-2">
-                   <span className="w-2 h-2 rounded-full bg-blue-600"/> Configuração inicial
+                   <span className="w-2 h-2 rounded-full bg-primary"/> Configuração inicial
                </h1>
             </div>
 
@@ -354,8 +354,8 @@ const OnboardingPage: React.FC = () => {
                         <div
                             key={i}
                             className={`h-1.5 rounded-full transition-all duration-300 ${
-                                i + 1 === step ? 'w-8 bg-blue-600' :
-                                i + 1 < step ? 'w-4 bg-blue-600' : 'w-4 bg-gray-300'
+                                i + 1 === step ? 'w-8 bg-primary' :
+                                i + 1 < step ? 'w-4 bg-primary' : 'w-4 bg-gray-300'
                             }`}
                         />
                     ))}
@@ -383,7 +383,7 @@ const OnboardingPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={handleNext}
-                            className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
+                            className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors flex items-center gap-2 shadow-sm"
                         >
                             Próximo <ChevronRight className="w-5 h-5" />
                         </button>
@@ -392,7 +392,7 @@ const OnboardingPage: React.FC = () => {
                             type="button"
                             onClick={handleFinish}
                             disabled={isSaving}
-                            className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm disabled:opacity-70"
+                            className="px-8 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors flex items-center gap-2 shadow-sm disabled:opacity-70"
                         >
                             {isSaving ? 'Salvando...' : 'Concluir'} <Check className="w-5 h-5" />
                         </button>

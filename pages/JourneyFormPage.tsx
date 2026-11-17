@@ -226,10 +226,10 @@ const JourneyFormPage: React.FC = () => {
 
             {/* Banner de rascunho restaurado */}
             {draftRestored && !isEditing && (
-                <div className="mb-4 flex items-center justify-between gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                <div className="mb-4 flex items-center justify-between gap-3 bg-primary-light border border-primary-medium/40 rounded-xl px-4 py-3">
                     <div className="flex items-center gap-2">
-                        <FileInput className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                        <span className="text-sm font-semibold text-blue-700">Rascunho restaurado. Seus dados foram mantidos.</span>
+                        <FileInput className="w-4 h-4 text-primary/70 flex-shrink-0" />
+                        <span className="text-sm font-semibold text-primary">Rascunho restaurado. Seus dados foram mantidos.</span>
                     </div>
                     <button
                         type="button"
@@ -255,7 +255,7 @@ const JourneyFormPage: React.FC = () => {
                             });
                             setDraftRestored(false);
                         }}
-                        className="text-xs font-bold text-blue-500 hover:text-blue-700 whitespace-nowrap flex-shrink-0"
+                        className="text-xs font-bold text-primary/70 hover:text-primary whitespace-nowrap flex-shrink-0"
                     >
                         Descartar
                     </button>
@@ -272,10 +272,10 @@ const JourneyFormPage: React.FC = () => {
                             <Calendar className={`w-5 h-5 ${formData.is_feriado ? 'text-yellow-600' : 'text-gray-300'}`} />
                         </label>
 
-                        <label className={toggleLabel(formData.is_plantao, "border-blue-500 text-blue-700")}>
+                        <label className={toggleLabel(formData.is_plantao, "border-primary text-primary")}>
                             <input type="checkbox" name="is_plantao" checked={formData.is_plantao} onChange={handleChange} className="hidden" />
                             <span className="text-[10px] uppercase font-bold tracking-tighter mb-1">Plantão</span>
-                            <Shield className={`w-5 h-5 ${formData.is_plantao ? 'text-blue-600' : 'text-gray-300'}`} />
+                            <Shield className={`w-5 h-5 ${formData.is_plantao ? 'text-primary' : 'text-gray-300'}`} />
                         </label>
 
                         <label className={toggleLabel(formData.is_day_off, "border-red-500 text-red-700")}>

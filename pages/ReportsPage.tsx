@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabaseClient';
 import { getMonthSummary, calculateJourney, formatMinutesToHours, getLocalDateString, addDaysToDateString, getPeriodMonthDate, formatPeriodRange, getTripLabel } from '../lib/utils';
 import { FileDown, Clock, Map, Lock, Gift, ChevronDown, Info } from 'lucide-react';
 import PdfPreviewModal from '../components/ui/PdfPreviewModal';
+import DateField from '../components/ui/DateField';
 
 type ReportType = 'hours' | 'km';
 
@@ -371,7 +372,7 @@ const ReportsPage: React.FC = () => {
         }
     };
 
-    const inputStyle = "block w-full h-11 px-3 border border-gray-200 rounded-lg bg-white text-sm text-primary-dark focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition-colors min-w-0";
+    const inputStyle = "block w-full h-11 px-3 border border-gray-200 rounded-lg bg-white text-sm text-primary-dark focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors min-w-0";
     const labelStyle = "block text-xs font-medium text-gray-500 mb-1.5";
     const formatDate = (date: string, opts?: Intl.DateTimeFormatOptions) => new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', opts);
     const shortDate = (date: string) => formatDate(date, { day: '2-digit', month: '2-digit' });
@@ -402,7 +403,7 @@ const ReportsPage: React.FC = () => {
                                 className={`h-9 text-sm font-medium rounded-md flex items-center justify-center gap-2 transition-colors
                                     ${reportType === value ? 'bg-white text-primary-dark shadow-sm' : 'text-gray-500 hover:text-primary-dark'}`}
                             >
-                                <Icon className={`w-4 h-4 ${reportType === value ? 'text-blue-600' : ''}`} /> {label}
+                                <Icon className={`w-4 h-4 ${reportType === value ? 'text-primary' : ''}`} /> {label}
                             </button>
                         ))}
                     </div>
@@ -429,11 +430,11 @@ const ReportsPage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-3">
                         <div className="min-w-0">
                             <label htmlFor="report_start" className={labelStyle}>Início</label>
-                            <input id="report_start" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputStyle} />
+                            <DateField id="report_start" value={startDate} onChange={setStartDate} />
                         </div>
                         <div className="min-w-0">
                             <label htmlFor="report_end" className={labelStyle}>Fim</label>
-                            <input id="report_end" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputStyle} />
+                            <DateField id="report_end" value={endDate} onChange={setEndDate} />
                         </div>
                     </div>
 
@@ -448,7 +449,7 @@ const ReportsPage: React.FC = () => {
                 <div className="p-4 border-t border-gray-100 bg-gray-50/70 space-y-3">
                     {!isPro && freeUsageLoaded && (
                         <p className="flex items-start gap-2 text-xs text-gray-600 leading-relaxed">
-                            <Gift className={`w-4 h-4 flex-shrink-0 ${freeUsage ? 'text-gray-400' : 'text-blue-600'}`} />
+                            <Gift className={`w-4 h-4 flex-shrink-0 ${freeUsage ? 'text-gray-400' : 'text-primary'}`} />
                             {freeUsage ? (
                                 <span>
                                     Relatório grátis de {currentMonthName} já usado
@@ -469,7 +470,7 @@ const ReportsPage: React.FC = () => {
                         disabled={isGenerating || (!isPro && !freeUsageLoaded)}
                         className={`w-full h-11 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60
                             ${unlocked
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                ? 'bg-primary text-white hover:bg-primary-dark'
                                 : 'bg-white text-primary-dark border border-gray-300 hover:bg-gray-50'}`}
                     >
                         {isGenerating ? (
