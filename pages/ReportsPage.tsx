@@ -4,11 +4,15 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJourneys } from '../contexts/JourneyContext';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabaseClient';
 import { getMonthSummary, calculateJourney, formatMinutesToHours, getLocalDateString, addDaysToDateString, getPeriodMonthDate, formatPeriodRange, getTripLabel } from '../lib/utils';
-import { FileDown, Clock, Map, CalendarDays, AlertCircle, Lock } from 'lucide-react';
+import { FileDown, Clock, Map, Lock, Gift, ChevronDown, Info } from 'lucide-react';
 import PdfPreviewModal from '../components/ui/PdfPreviewModal';
 
 type ReportType = 'hours' | 'km';
+
+// Relatório grátis do plano free usado no mês (1 por mês do calendário).
+type FreeReportUsage = { report_type: ReportType; period_start: string; period_end: string };
 
 const ReportsPage: React.FC = () => {
     const { journeys, settings, settingsAt, getPeriod } = useJourneys();
@@ -21,6 +25,37 @@ const ReportsPage: React.FC = () => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [selectedOptionIndex, setSelectedOptionIndex] = useState<number>(1);
+
+    // Plano free: 1 relatório por mês do calendário. Baixar de novo o mesmo
+    // relatório (tipo e período) não conta outro.
+    const [freeUsage, setFreeUsage] = useState<FreeReportUsage | null>(null);
+    const [freeUsageLoaded, setFreeUsageLoaded] = useState(false);
+    const now = new Date();
+    const currentMonth = getLocalDateString(new Date(now.getFullYear(), now.getMonth(), 1));
+    const currentMonthName = now.toLocaleDateString('pt-BR', { month: 'long' });
+    const nextMonthName = new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString('pt-BR', { month: 'long' });
+
+    useEffect(() => {
+        if (!user || isPro) return;
+        let cancelled = false;
+        supabase
+            .from('free_report_usage')
+            .select('report_type, period_start, period_end')
+            .eq('user_id', user.id)
+            .eq('month', currentMonth)
+            .maybeSingle()
+            .then(({ data, error }: { data: FreeReportUsage | null, error: any }) => {
+                if (cancelled) return;
+                if (error) console.error('Erro ao consultar relatório grátis:', error);
+                setFreeUsage(data ?? null);
+                setFreeUsageLoaded(true);
+            });
+        return () => { cancelled = true; };
+    }, [user, isPro, currentMonth]);
+
+    const isSameAsFreeReport = !!freeUsage && freeUsage.report_type === reportType
+        && freeUsage.period_start === startDate && freeUsage.period_end === endDate;
+    const canGenerateFree = !isPro && freeUsageLoaded && (!freeUsage || isSameAsFreeReport);
 
     // Períodos contábeis com o mesmo nome usado no Início (o mês em que o
     // período começa): o próximo, o atual e os 10 anteriores. Respeita trocas
@@ -86,8 +121,39 @@ const ReportsPage: React.FC = () => {
         });
     };
 
+    // Reserva o relatório grátis do mês antes de gerar. O banco aceita só um por
+    // mês (unique), então vale também entre aparelhos diferentes.
+    const claimFreeReport = async (): Promise<boolean> => {
+        if (!user) return false;
+        const usage: FreeReportUsage = { report_type: reportType, period_start: startDate, period_end: endDate };
+        const { error } = await supabase
+            .from('free_report_usage')
+            .insert({ user_id: user.id, month: currentMonth, ...usage });
+        if (!error) {
+            setFreeUsage(usage);
+            return true;
+        }
+        if (error.code === '23505') {
+            const { data } = await supabase
+                .from('free_report_usage')
+                .select('report_type, period_start, period_end')
+                .eq('user_id', user.id)
+                .eq('month', currentMonth)
+                .maybeSingle();
+            setFreeUsage(data ?? null);
+            if (data && data.report_type === usage.report_type && data.period_start === usage.period_start && data.period_end === usage.period_end) {
+                return true;
+            }
+            alert('Você já usou seu relatório grátis deste mês em outro aparelho.');
+            return false;
+        }
+        console.error('Erro ao reservar relatório grátis:', error);
+        alert('Não foi possível liberar o relatório grátis. Tente novamente.');
+        return false;
+    };
+
     const generatePdf = async () => {
-        if (!isPro) {
+        if (!isPro && !canGenerateFree) {
             navigate('/subscription');
             return;
         }
@@ -101,6 +167,10 @@ const ReportsPage: React.FC = () => {
 
         if (!settings || !settingsAt) {
             alert('Configurações não encontradas.');
+            return;
+        }
+
+        if (!isPro && !freeUsage && !(await claimFreeReport())) {
             return;
         }
 
@@ -301,95 +371,125 @@ const ReportsPage: React.FC = () => {
         }
     };
 
-    const commonInputStyles = "block w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 font-medium text-primary-dark focus:ring-2 focus:ring-primary/20 outline-none transition-all box-border min-w-0";
+    const inputStyle = "block w-full h-11 px-3 border border-gray-200 rounded-lg bg-white text-sm text-primary-dark focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 outline-none transition-colors min-w-0";
+    const labelStyle = "block text-xs font-medium text-gray-500 mb-1.5";
+    const formatDate = (date: string, opts?: Intl.DateTimeFormatOptions) => new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', opts);
+    const shortDate = (date: string) => formatDate(date, { day: '2-digit', month: '2-digit' });
+    // PRO, grátis disponível ou ainda consultando: botão principal em azul.
+    const unlocked = isPro || canGenerateFree || !freeUsageLoaded;
+    const reportTypes = [
+        { value: 'hours' as ReportType, icon: Clock, label: 'Ponto e horas' },
+        { value: 'km' as ReportType, icon: Map, label: 'KM rodado' },
+    ];
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-title-lg text-primary-dark">Relatórios</h1>
-                <p className="text-sm text-muted-foreground">Exporte seus dados em PDF para conferência.</p>
+        <div className="space-y-5">
+            <div>
+                <h1 className="text-xl font-bold text-primary-dark">Relatórios</h1>
+                <p className="text-sm text-gray-500 mt-0.5">Exporte seus registros em PDF.</p>
             </div>
 
-            <div className="flex bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200">
-                <button 
-                    onClick={() => setReportType('hours')} 
-                    className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'hours' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
-                >
-                    <Clock className="w-4 h-4" /> Ponto & Horas
-                </button>
-                <button 
-                    onClick={() => setReportType('km')} 
-                    className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${reportType === 'km' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-200'}`}
-                >
-                    <Map className="w-4 h-4" /> KM Rodado
-                </button>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl shadow-soft border border-gray-100 space-y-6 overflow-hidden">
-                <div className="w-full">
-                    <label className="text-xs font-bold text-primary-dark/60 uppercase tracking-widest mb-2 block">Referência do Mês</label>
-                    <select 
-                        value={selectedOptionIndex}
-                        onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))} 
-                        className={`${commonInputStyles} appearance-none`}
-                    >
-                        {monthOptions.map((o, i) => (
-                            <option key={i} value={i}>{o.label}</option>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-gray-100">
+                    <div role="tablist" aria-label="Tipo de relatório" className="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-lg">
+                        {reportTypes.map(({ value, icon: Icon, label }) => (
+                            <button
+                                key={value}
+                                type="button"
+                                role="tab"
+                                aria-selected={reportType === value}
+                                onClick={() => setReportType(value)}
+                                className={`h-9 text-sm font-medium rounded-md flex items-center justify-center gap-2 transition-colors
+                                    ${reportType === value ? 'bg-white text-primary-dark shadow-sm' : 'text-gray-500 hover:text-primary-dark'}`}
+                            >
+                                <Icon className={`w-4 h-4 ${reportType === value ? 'text-blue-600' : ''}`} /> {label}
+                            </button>
                         ))}
-                    </select>
-                </div>
-
-                <div className="space-y-4 w-full">
-                    <div className="w-full">
-                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Início do Período</label>
-                        <input 
-                            type="date" 
-                            value={startDate} 
-                            onChange={e => setStartDate(e.target.value)} 
-                            className={commonInputStyles} 
-                        />
-                    </div>
-                    <div className="w-full">
-                        <label className="text-xs font-bold text-muted-foreground uppercase mb-1.5 block">Fim do Período</label>
-                        <input 
-                            type="date" 
-                            value={endDate} 
-                            onChange={e => setEndDate(e.target.value)} 
-                            className={commonInputStyles} 
-                        />
                     </div>
                 </div>
 
-                <div className="pt-2 w-full">
-                    <button
-                        onClick={generatePdf}
-                        disabled={isGenerating}
-                        className={`w-full py-4 rounded-xl font-bold shadow-lg transition active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70
-                            ${isPro ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-accent text-primary-dark hover:brightness-105'}
-                        `}
-                    >
-                        {isGenerating ? (
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : isPro ? (
-                            <FileDown className="w-5 h-5" />
-                        ) : (
-                            <Lock className="w-5 h-5" />
-                        )}
-                        {isGenerating ? "Processando..." : isPro ? "Gerar Relatório PDF" : "Recurso PRO — Assinar para gerar PDF"}
-                    </button>
-                    {!isPro && (
-                        <p className="text-[11px] text-center text-muted-foreground mt-2">
-                            Exportação de relatórios em PDF é exclusiva do plano PRO.
+                <div className="p-4 space-y-4">
+                    <div>
+                        <label htmlFor="report_month" className={labelStyle}>Mês de referência</label>
+                        <div className="relative">
+                            <select
+                                id="report_month"
+                                value={selectedOptionIndex}
+                                onChange={(e) => setSelectedOptionIndex(parseInt(e.target.value))}
+                                className={`${inputStyle} appearance-none pr-9`}
+                            >
+                                {monthOptions.map((o, i) => (
+                                    <option key={i} value={i}>{o.label}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="min-w-0">
+                            <label htmlFor="report_start" className={labelStyle}>Início</label>
+                            <input id="report_start" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputStyle} />
+                        </div>
+                        <div className="min-w-0">
+                            <label htmlFor="report_end" className={labelStyle}>Fim</label>
+                            <input id="report_end" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputStyle} />
+                        </div>
+                    </div>
+
+                    <p className="flex items-start gap-1.5 text-xs text-gray-500">
+                        <Info className="w-3.5 h-3.5 mt-px flex-shrink-0" />
+                        {reportType === 'hours'
+                            ? 'O período segue o ciclo de fechamento das suas configurações.'
+                            : 'O relatório de KM usa o mês do calendário (do dia 1 ao último dia).'}
+                    </p>
+                </div>
+
+                <div className="p-4 border-t border-gray-100 bg-gray-50/70 space-y-3">
+                    {!isPro && freeUsageLoaded && (
+                        <p className="flex items-start gap-2 text-xs text-gray-600 leading-relaxed">
+                            <Gift className={`w-4 h-4 flex-shrink-0 ${freeUsage ? 'text-gray-400' : 'text-blue-600'}`} />
+                            {freeUsage ? (
+                                <span>
+                                    Relatório grátis de {currentMonthName} já usado
+                                    ({freeUsage.report_type === 'hours' ? 'Ponto' : 'KM'}, {shortDate(freeUsage.period_start)} a {shortDate(freeUsage.period_end)}).
+                                    Você pode baixá-lo de novo; outro, só a partir de 1º de {nextMonthName}.
+                                </span>
+                            ) : (
+                                <span>
+                                    <span className="font-medium text-primary-dark">1 relatório grátis</span> disponível em {currentMonthName}. Confira o tipo e o período antes de gerar.
+                                </span>
+                            )}
                         </p>
                     )}
-                </div>
-            </div>
 
-            <div className="flex items-start gap-3 p-4 bg-primary-light/50 rounded-xl border border-primary/10">
-                <AlertCircle className="w-5 h-5 text-primary-dark/60 flex-shrink-0 mt-0.5" />
-                <p className="text-[11px] text-primary-dark/70 leading-relaxed">
-                    <strong>Dica:</strong> Para o relatório de KM, utilizamos o período civil (dia 01 ao dia 30/31). Para o relatório de Ponto, seguimos o ciclo de fechamento configurado.
-                </p>
+                    <button
+                        type="button"
+                        onClick={generatePdf}
+                        disabled={isGenerating || (!isPro && !freeUsageLoaded)}
+                        className={`w-full h-11 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60
+                            ${unlocked
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-white text-primary-dark border border-gray-300 hover:bg-gray-50'}`}
+                    >
+                        {isGenerating ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : unlocked ? (
+                            <FileDown className="w-4 h-4" />
+                        ) : (
+                            <Lock className="w-4 h-4 text-gray-500" />
+                        )}
+                        {isGenerating ? "Gerando..."
+                            : isPro ? "Gerar PDF"
+                            : !freeUsageLoaded ? "Verificando..."
+                            : canGenerateFree ? (isSameAsFreeReport ? "Baixar novamente" : "Gerar relatório grátis")
+                            : "Assinar PRO para gerar"}
+                    </button>
+
+                    {!isPro && (
+                        <p className="text-[11px] text-center text-gray-400">Relatórios ilimitados no plano PRO.</p>
+                    )}
+                </div>
             </div>
 
             <PdfPreviewModal 
