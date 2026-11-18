@@ -370,9 +370,12 @@ const SubscriptionPageAsaas: React.FC = () => {
                 )}
 
                 <div className="bg-white rounded-3xl p-6 shadow-floating border border-accent/20 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 bg-accent text-primary-dark font-bold text-xs px-4 py-1 rounded-bl-2xl">
-                        {interval === 'yearly' ? 'MELHOR CUSTO' : 'RECOMENDADO'}
-                    </div>
+                    {/* O anual é o plano recomendado (paga uma vez por ano e a taxa pesa menos). */}
+                    {interval === 'yearly' && (
+                        <div className="absolute top-0 right-0 bg-accent text-primary-dark font-bold text-xs px-4 py-1 rounded-bl-2xl">
+                            RECOMENDADO
+                        </div>
+                    )}
 
                     <div className="mb-6">
                         <span className="text-sm font-bold text-primary-dark/60 uppercase tracking-widest">{plan.label}</span>
