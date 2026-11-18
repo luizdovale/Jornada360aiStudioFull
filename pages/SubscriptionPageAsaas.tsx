@@ -256,9 +256,20 @@ const SubscriptionPageAsaas: React.FC = () => {
                             <Loader2 className="w-4 h-4 animate-spin" /> Gerando sua cobrança...
                         </p>
                     )}
-                    <button type="button" onClick={() => setChangingMethod(true)} className="w-full text-sm text-gray-500 py-1">
-                        Trocar forma de pagamento
-                    </button>
+                    <div className="flex items-center justify-center gap-3">
+                        <button type="button" onClick={() => setChangingMethod(true)} className="text-xs text-gray-500 py-1 whitespace-nowrap">
+                            Trocar forma de pagamento
+                        </button>
+                        <span className="text-gray-300" aria-hidden="true">·</span>
+                        <button
+                            type="button"
+                            onClick={() => setConfirmCancel(true)}
+                            disabled={canceling}
+                            className="text-xs text-gray-500 py-1 whitespace-nowrap disabled:opacity-50"
+                        >
+                            {canceling ? 'Cancelando...' : 'Cancelar assinatura'}
+                        </button>
+                    </div>
                 </div>
             );
         }
@@ -319,7 +330,9 @@ const SubscriptionPageAsaas: React.FC = () => {
                 title="Cancelar assinatura"
                 message={proUntil
                     ? `Nenhuma nova cobrança será feita. Seu PRO continua até ${formatDate(proUntil)}.`
-                    : 'Nenhuma nova cobrança será feita.'}
+                    : isPro
+                        ? 'Nenhuma nova cobrança será feita.'
+                        : 'A cobrança pendente será cancelada e você não receberá novas cobranças.'}
                 confirmText="Cancelar assinatura"
             />
 
