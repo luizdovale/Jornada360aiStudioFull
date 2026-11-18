@@ -18,9 +18,11 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
     const navigate = useNavigate();
     const [currentDate, setCurrentDate] = useState(new Date());
 
-    // Plano free: 1 crédito por mês do calendário libera 1 mês à escolha, que
-    // pode ser visto de novo até o fim do mês em que o crédito foi usado.
+    // Plano free: 1 crédito por mês do calendário libera 1 mês à escolha uma
+    // única vez — fica visível só enquanto o usuário está nesta tela. Ao sair,
+    // o estado abaixo se perde e o mês volta a ficar bloqueado.
     const [freeViewedMonth, setFreeViewedMonth] = useState<string | null>(null);
+    const [sessionUnlockedMonth, setSessionUnlockedMonth] = useState<string | null>(null);
     const [freeUsageLoaded, setFreeUsageLoaded] = useState(false);
     const [claiming, setClaiming] = useState(false);
     const now = new Date();
@@ -109,7 +111,9 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
             .insert({ user_id: user.id, month: usageMonth, viewed_month: shownMonth });
         if (!error) {
             setFreeViewedMonth(shownMonth);
+            setSessionUnlockedMonth(shownMonth);
         } else if (error.code === '23505') {
+            // Já usado (por exemplo, em outro aparelho): continua bloqueado.
             const { data } = await supabase
                 .from('free_calendar_usage')
                 .select('viewed_month')
@@ -117,9 +121,6 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
                 .eq('month', usageMonth)
                 .maybeSingle();
             setFreeViewedMonth(data?.viewed_month ?? null);
-            if (data && data.viewed_month !== shownMonth) {
-                alert('Você já usou sua visualização grátis deste mês em outro aparelho.');
-            }
         } else {
             console.error('Erro ao liberar visualização grátis:', error);
             alert('Não foi possível liberar a visualização. Tente novamente.');
@@ -140,7 +141,7 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
         return <ScheduleWeekPreview settings={settings} settingsAt={settingsAt ?? undefined} label="Sua semana" />;
     }
 
-    const isUnlocked = isPro || freeViewedMonth === shownMonth;
+    const isUnlocked = isPro || sessionUnlockedMonth === shownMonth;
 
     const monthGrid = (
         <>
@@ -224,7 +225,7 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
                         {!isPro && (
                             <p className="mt-4 flex items-start gap-2 text-xs text-gray-500 leading-relaxed">
                                 <Gift className="w-4 h-4 flex-shrink-0 text-primary" />
-                                <span>Mês liberado com sua visualização grátis de {usageMonthName}. Você pode voltar aqui até o fim do mês; renova em 1º de {nextMonthName}.</span>
+                                <span>Visualização grátis de {usageMonthName}: este mês fica visível enquanto você estiver nesta tela. Ao sair, ele volta a ficar bloqueado. Renova em 1º de {nextMonthName}.</span>
                             </p>
                         )}
                     </>
@@ -243,12 +244,12 @@ export const CalendarPageContent: React.FC<{ isWidget?: boolean }> = ({ isWidget
                                     <Loader2 className="w-5 h-5 mx-auto animate-spin text-gray-400" />
                                 ) : freeViewedMonth ? (
                                     <p className="text-xs text-gray-600 leading-relaxed">
-                                        Você já usou sua visualização grátis de {usageMonthName} em <span className="font-medium text-primary-dark capitalize">{monthLabel(freeViewedMonth)}</span>. Renova em 1º de {nextMonthName}.
+                                        Você já usou sua visualização grátis de {usageMonthName} (<span className="font-medium text-primary-dark">{monthLabel(freeViewedMonth)}</span>). Renova em 1º de {nextMonthName}.
                                     </p>
                                 ) : (
                                     <div className="space-y-2">
                                         <p className="text-sm font-semibold text-primary-dark">1 visualização grátis disponível este mês</p>
-                                        <p className="text-xs text-gray-500">Libera a escala completa de um mês à sua escolha. Com o PRO, todos os meses ficam liberados.</p>
+                                        <p className="text-xs text-gray-500">Mostra a escala completa de um mês à sua escolha, uma única vez: ao sair desta tela, ele volta a ficar bloqueado. Com o PRO, todos os meses ficam liberados.</p>
                                         <button
                                             type="button"
                                             onClick={claimFreeView}
