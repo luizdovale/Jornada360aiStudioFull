@@ -62,7 +62,10 @@ const Sidebar: React.FC<{ isOpen: boolean; setIsOpen: (isOpen: boolean) => void;
                     <NavItem icon={Settings} label="Configurações" path="/settings" onClick={() => setIsOpen(false)}/>
                     <NavItem icon={FileText} label="Exportar PDF" path="/reports" onClick={() => setIsOpen(false)}/>
                     <NavItem icon={User} label="Meu Perfil" path="/profile" onClick={() => setIsOpen(false)}/>
-                    {!isPro && (
+                    {/* Assinantes também precisam chegar à tela de assinatura (ver status, pagar cobrança, cancelar). */}
+                    {isPro ? (
+                        <NavItem icon={Crown} label="Minha Assinatura" path="/subscription" onClick={() => setIsOpen(false)} />
+                    ) : (
                         <NavItem icon={Crown} label="Seja PRO" path="/subscription" onClick={() => setIsOpen(false)} highlight />
                     )}
                     {isAdmin && (
