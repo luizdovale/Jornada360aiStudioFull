@@ -14,7 +14,12 @@ export function Toaster() {
   const { toasts } = useToast();
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[90vw] sm:w-auto sm:min-w-[320px] max-w-sm pointer-events-none">
+    // Abaixo da barra de status: no iPhone o sistema desfoca o que fica por baixo
+    // dela, e com top fixo a mensagem ficava ilegível.
+    <div
+        className="fixed left-1/2 -translate-x-1/2 z-[100] w-[90vw] sm:w-auto sm:min-w-[320px] max-w-sm pointer-events-none"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
+    >
         <div className="flex flex-col-reverse gap-2 pointer-events-auto">
       {toasts.map(function ({ id, title, description, variant, ...props }) {
         return (
