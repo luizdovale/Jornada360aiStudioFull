@@ -54,6 +54,12 @@ const ReportsPage: React.FC = () => {
         return () => { cancelled = true; };
     }, [user, isPro, currentMonth]);
 
+    // Com o controle de KM desligado nas Configurações, só existe o relatório de Ponto.
+    const kmEnabled = settings?.km_enabled !== false;
+    useEffect(() => {
+        if (!kmEnabled && reportType === 'km') setReportType('hours');
+    }, [kmEnabled, reportType]);
+
     const isSameAsFreeReport = !!freeUsage && freeUsage.report_type === reportType
         && freeUsage.period_start === startDate && freeUsage.period_end === endDate;
     const canGenerateFree = !isPro && freeUsageLoaded && (!freeUsage || isSameAsFreeReport);
@@ -391,6 +397,7 @@ const ReportsPage: React.FC = () => {
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                {kmEnabled && (
                 <div className="p-4 border-b border-gray-100">
                     <div role="tablist" aria-label="Tipo de relatório" className="grid grid-cols-2 gap-1 p-1 bg-gray-100 rounded-lg">
                         {reportTypes.map(({ value, icon: Icon, label }) => (
@@ -408,6 +415,7 @@ const ReportsPage: React.FC = () => {
                         ))}
                     </div>
                 </div>
+                )}
 
                 <div className="p-4 space-y-4">
                     <div>
