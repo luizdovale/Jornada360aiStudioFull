@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { AdminUserRow } from '../types';
 import { Search, Users, Crown, Route, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import DevUserDetailModal from '../components/dev/DevUserDetailModal';
+import AsaasIntegrationCard from '../components/dev/AsaasIntegrationCard';
 
 const DevDashboardPage: React.FC = () => {
     const [rows, setRows] = useState<AdminUserRow[]>([]);
@@ -57,6 +58,8 @@ const DevDashboardPage: React.FC = () => {
                 <StatCard icon={ShieldCheck} label="Plano Pro" value={stats.pro} />
                 <StatCard icon={Route} label="Jornadas" value={stats.journeys} />
             </div>
+
+            <AsaasIntegrationCard />
 
             <div className="flex gap-2">
                 <div className="relative flex-1">

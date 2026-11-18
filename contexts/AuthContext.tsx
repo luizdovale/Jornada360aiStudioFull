@@ -7,6 +7,22 @@ type AuthChangeEvent = any;
 type Session = any;
 type User = any;
 
+// Dados da assinatura usados pela tela de assinatura.
+export interface SubscriptionInfo {
+    provider: 'mercadopago' | 'asaas';
+    status: string;
+    plan: string;
+    payment_method: 'card' | 'pix' | null;
+    billing_interval: 'monthly' | 'yearly' | null;
+    current_period_end: string | null;
+    canceled_at: string | null;
+    asaas_customer_id: string | null;
+    asaas_subscription_id: string | null;
+}
+
+// Dias de tolerância depois do vencimento de uma renovação do Asaas.
+const ASAAS_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
+
 interface AuthContextType {
     user: User | null;
     session: Session | null;
@@ -14,8 +30,9 @@ interface AuthContextType {
     signOut: () => Promise<void>;
     updateUserMetadata: (data: object) => Promise<void>;
     isPro: boolean;
-    // Vencimento do PRO quando foi pago com Pix (null para cartão / liberação manual).
-    pixExpiresAt: string | null;
+    // Até quando o PRO está pago (null para cartão do Mercado Pago / liberação manual).
+    proUntil: string | null;
+    subscription: SubscriptionInfo | null;
     refreshSubscription: () => Promise<void>;
     isAdmin: boolean;
     adminLoading: boolean;
@@ -28,7 +45,8 @@ const AuthContext = createContext<AuthContextType>({
     signOut: async () => {},
     updateUserMetadata: async (data: object) => {},
     isPro: false,
-    pixExpiresAt: null,
+    proUntil: null,
+    subscription: null,
     refreshSubscription: async () => {},
     isAdmin: false,
     adminLoading: true,
@@ -39,7 +57,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
     const [isPro, setIsPro] = useState(false);
-    const [pixExpiresAt, setPixExpiresAt] = useState<string | null>(null);
+    const [proUntil, setProUntil] = useState<string | null>(null);
+    const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [adminLoading, setAdminLoading] = useState(true);
 
@@ -73,28 +92,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const refreshSubscription = async () => {
         if (!user) {
             setIsPro(false);
-            setPixExpiresAt(null);
+            setProUntil(null);
+            setSubscription(null);
             return;
         }
         try {
             const { data, error } = await supabase
                 .from('subscriptions')
-                .select('status, plan, payment_method, current_period_end')
+                .select('provider, status, plan, payment_method, billing_interval, current_period_end, canceled_at, asaas_customer_id, asaas_subscription_id')
                 .eq('user_id', user.id)
                 .maybeSingle();
 
-            // Cartão e PRO liberado manualmente não vencem aqui (o cartão é
-            // cancelado pelo webhook). Pix vale até current_period_end.
-            const isPix = data?.payment_method === 'pix';
-            const pixValid = isPix && !!data?.current_period_end && new Date(data.current_period_end) > new Date();
-            const active = !error && !!data && data.status === 'active' && data.plan === 'pro' && (!isPix || pixValid);
+            // Asaas: vale até o vencimento pago + 3 dias de tolerância.
+            // Pix do Mercado Pago: vale até current_period_end.
+            // Cartão do Mercado Pago e PRO liberado manualmente não vencem aqui
+            // (o cartão é cancelado pelo webhook).
+            const end = data?.current_period_end ? new Date(data.current_period_end).getTime() : null;
+            const hasPeriod = data?.provider === 'asaas' || data?.payment_method === 'pix';
+            const periodValid = !hasPeriod || (end !== null && end + (data?.provider === 'asaas' ? ASAAS_GRACE_MS : 0) > Date.now());
+            const active = !error && !!data && data.status === 'active' && data.plan === 'pro' && periodValid;
 
             setIsPro(active);
-            setPixExpiresAt(active && isPix ? data!.current_period_end : null);
+            setProUntil(active && hasPeriod ? data!.current_period_end : null);
+            setSubscription(!error && data ? (data as SubscriptionInfo) : null);
         } catch (e) {
             console.error("Error refreshing subscription:", e);
             setIsPro(false);
-            setPixExpiresAt(null);
+            setProUntil(null);
+            setSubscription(null);
         }
     };
 
@@ -163,7 +188,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, signOut, updateUserMetadata, isPro, pixExpiresAt, refreshSubscription, isAdmin, adminLoading }}>
+        <AuthContext.Provider value={{ user, session, loading, signOut, updateUserMetadata, isPro, proUntil, subscription, refreshSubscription, isAdmin, adminLoading }}>
             {children}
         </AuthContext.Provider>
     );
