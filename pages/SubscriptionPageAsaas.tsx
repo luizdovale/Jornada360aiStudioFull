@@ -97,10 +97,11 @@ const SubscriptionPageAsaas: React.FC = () => {
         return () => document.removeEventListener('visibilitychange', onVisible);
     }, [sync]);
 
-    // Com assinatura no Asaas, o card mostra o plano assinado.
+    // Com assinatura em andamento no Asaas, o card mostra o plano assinado.
+    // Quem vai assinar (inclusive após cancelar) sempre começa no anual.
     useEffect(() => {
-        if (subscription?.provider === 'asaas' && subscription.billing_interval) setInterval(subscription.billing_interval);
-    }, [subscription?.provider, subscription?.billing_interval]);
+        setInterval(asaasActive && subscription?.billing_interval ? subscription.billing_interval : 'yearly');
+    }, [asaasActive, subscription?.billing_interval]);
 
     const features = [
         { icon: ShieldCheck, text: "Relatórios em PDF ilimitados" },

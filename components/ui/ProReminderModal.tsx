@@ -40,7 +40,7 @@ const ProReminderModal: React.FC<ProReminderModalProps> = ({ onClose }) => {
                 <p className="text-sm text-muted-foreground mb-5">Exporte relatórios em PDF e veja sua escala completa, sem limites.</p>
 
                 <div className="bg-primary-light/40 border border-accent/30 rounded-2xl p-4 mb-5">
-                    <span className="text-[11px] font-bold text-accent uppercase tracking-widest">Plano Anual · Melhor custo</span>
+                    <span className="text-[11px] font-bold text-accent uppercase tracking-widest">Plano Anual · Recomendado</span>
                     <div className="flex items-baseline justify-center gap-1 mt-1">
                         <span className="text-3xl font-black text-primary-dark">R$ 99,90</span>
                         <span className="text-muted-foreground text-sm">/ano</span>
