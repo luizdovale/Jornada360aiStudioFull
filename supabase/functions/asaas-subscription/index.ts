@@ -138,7 +138,9 @@ async function processAsaasPayment(admin: SupabaseClient, paymentId: string): Pr
     billing_type: payment.billingType,
     value: payment.value,
     due_date: payment.dueDate,
-    status: payment.status,
+    // Cobrança apagada pelo Asaas (ex.: troca de forma de pagamento) volta com
+    // o último status; registra como DELETED para não parecer pendente.
+    status: payment.deleted ? "DELETED" : payment.status,
     updated_at: new Date().toISOString(),
   };
   if (!existing) {
@@ -220,8 +222,9 @@ async function handleCreate(admin: SupabaseClient, user: any, body: any) {
     customerId = customer.id;
   }
 
-  // Quem ainda tem dias pagos só é cobrado quando eles acabam.
-  const nextDueDate = hasPaidPeriod ? brasiliaDate(periodEnd!) : brasiliaDate(now);
+  // Quem ainda tem dias pagos só é cobrado no último dia deles. O fim do
+  // período do Asaas é a meia-noite seguinte ao vencimento, por isso o -1 ms.
+  const nextDueDate = hasPaidPeriod ? brasiliaDate(new Date(periodEnd!.getTime() - 1)) : brasiliaDate(now);
 
   const created = await asaas("/subscriptions", {
     method: "POST",

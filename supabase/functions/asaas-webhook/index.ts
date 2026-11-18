@@ -96,7 +96,9 @@ async function processAsaasPayment(admin: SupabaseClient, paymentId: string): Pr
     billing_type: payment.billingType,
     value: payment.value,
     due_date: payment.dueDate,
-    status: payment.status,
+    // Cobrança apagada pelo Asaas (ex.: troca de forma de pagamento) volta com
+    // o último status; registra como DELETED para não parecer pendente.
+    status: payment.deleted ? "DELETED" : payment.status,
     updated_at: new Date().toISOString(),
   };
   if (!existing) {
